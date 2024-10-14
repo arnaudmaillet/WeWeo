@@ -1,7 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React, { useState } from 'react'
 
 import MapView, { Marker } from 'react-native-maps'
+
+
+const locations = require('../data/locations.json')
 
 const Map = () => {
     // fake user location San Francisco
@@ -11,6 +14,18 @@ const Map = () => {
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
     }
+
+    const [zoomLevel, setZoomLevel] = useState(0);
+
+    const handleRegionChange = (region: { latitudeDelta: number }) => {
+        const newZoomLevel = calculateZoomLevel(region);
+        setZoomLevel(newZoomLevel);
+    };
+
+    const calculateZoomLevel = (region: { latitudeDelta: number }) => {
+        // Calcule un niveau de zoom approximatif basé sur latitudeDelta
+        return Math.log(360 / region.latitudeDelta) / Math.LN2;
+    };
 
     return (
         <View style={styles.map}>
@@ -23,6 +38,7 @@ const Map = () => {
                     latitudeDelta: fakeUserLocation.latitudeDelta,
                     longitudeDelta: fakeUserLocation.longitudeDelta
                 }}
+                onRegionChange={handleRegionChange}
             >
                 <Marker
                     coordinate={{
@@ -36,6 +52,22 @@ const Map = () => {
                         <View style={styles.inneruserLocationMaker} />
                     </View>
                 </Marker>
+
+                {locations.points.map((point: { id: number; latitude: number; longitude: number; type: number; dataId: number; minZoom: number; }) => (
+                    // On n'affiche que les Markers si le niveau de zoom est supérieur à 12
+
+                    <Marker
+                        key={point.id}
+                        coordinate={{
+                            latitude: point.latitude,
+                            longitude: point.longitude,
+                        }}
+                        title={point.type.toString()}
+                        description={point.id.toString()}
+                    />
+
+                ))}
+
             </MapView>
         </View>
     )
