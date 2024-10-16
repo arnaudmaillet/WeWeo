@@ -3,8 +3,11 @@ import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
 import chats from '../data/chats.json'
 import ChatScreen from '~/components/Chat'
-import { GestureDetector } from 'react-native-gesture-handler'
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
+
+
+const locations = require('../data/locations.json')
 
 interface IPoint {
     id: number;
@@ -15,15 +18,7 @@ interface IPoint {
     minZoom: number;
 }
 
-interface ICoordinates {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-}
-
 const HomeScreen = () => {
-
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -35,8 +30,6 @@ const HomeScreen = () => {
     }
 
     const [selectedPoint, setSelectedPoint] = useState<IPoint | null>(null);
-
-    const [flyTo, setFlyTo] = useState<ICoordinates>(fakeUserLocation);
 
     const getChat = (id: number) => {
         return chats.data.find(chat => chat.id === id);
@@ -52,17 +45,62 @@ const HomeScreen = () => {
         };
     })
 
-    useEffect(() => {
+    const runOnJSSetSelectedPoint = (point: IPoint | null) => {
+        setSelectedPoint(point);
+    }
+
+    const allPoints = locations.points;
+
+    // Fonction pour aller au point suivant
+    const goToNextPoint = () => {
         if (selectedPoint) {
-            // Si un point est sélectionné, déplacer la caméra vers ce point
-            setFlyTo({
-                latitude: selectedPoint.latitude,
-                longitude: selectedPoint.longitude,
-                latitudeDelta: 0.005,  // Ajustez selon vos besoins
-                longitudeDelta: 0.005, // Ajustez selon vos besoins
-            });
+            const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
+            const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
+            setSelectedPoint(allPoints[nextIndex]);
         }
-    }, [selectedPoint]);
+    }
+
+    // Fonction pour aller au point précédent
+    const goToPreviousPoint = () => {
+        if (selectedPoint) {
+            const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
+            const previousIndex = (currentIndex - 1 + allPoints.length) % allPoints.length;  // Boucle à la fin après le premier point
+            setSelectedPoint(allPoints[previousIndex]);
+        }
+    }
+
+    const panGesture = Gesture.Pan()
+        .onUpdate((event) => {
+            const isVerticalSwipe = Math.abs(event.translationY) > Math.abs(event.translationX);
+            if (isVerticalSwipe) {
+                // Gérer le swipe haut/bas
+                const offsetDelta = event.translationY;  // Calculer le déplacement + offset
+                const clamp = Math.max(-20, offsetDelta); // Limiter le déplacement vers le haut
+                offset.value = offsetDelta > 0 ? offsetDelta : withSpring(clamp); // Appliquer le déplacement avec un rebond
+            }
+        })
+        .onEnd((event) => {
+            const isVerticalSwipe = Math.abs(event.translationY) > Math.abs(event.translationX);
+            if (isVerticalSwipe) {
+                if (offset.value < 520 / 3) {
+                    offset.value = withSpring(0);
+                } else {
+                    offset.value = withTiming(520, {}, () => {
+                        runOnJS(runOnJSSetSelectedPoint)(null);
+                    });
+                }
+            } else {
+                runOnJS(dismissKeyboard)();
+                if (Math.abs(event.translationX) > Math.abs(event.translationY)) {
+                    if (event.translationX > 0) {
+                        runOnJS(goToPreviousPoint)();  // Swipe right: go to previous point
+                    } else {
+                        runOnJS(goToNextPoint)();  // Swipe left: go to next point
+                    }
+                }
+            }
+        });
+
 
     return (
         <View>
@@ -74,39 +112,37 @@ const HomeScreen = () => {
                             <AnimatedPressable
                                 style={styles.backdrop}
                                 onPress={() => {
-                                    setSelectedPoint(null)
-                                    dismissKeyboard()
+                                    setSelectedPoint(null);
+                                    dismissKeyboard();
                                 }}
                             />
-                            <Animated.View
-                                style={[styles.sheet, translateSheetY]}
-                            >
-                                <KeyboardAvoidingView
-                                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                    keyboardVerticalOffset={160}
-                                    style={styles.keyboardAvoidingView}
-                                >
-                                    <ChatScreen chat={chat} currentUserId={1} />
-                                </KeyboardAvoidingView>
-                            </Animated.View>
-                        </>
-                            : <Text>No chat available</Text>;
+                            <GestureDetector gesture={panGesture}>
+                                <Animated.View style={[styles.sheet, translateSheetY]}>
+                                    <KeyboardAvoidingView
+                                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                        keyboardVerticalOffset={160}
+                                        style={styles.keyboardAvoidingView}
+                                    >
+                                        <ChatScreen chat={chat} currentUserId={1} />
+                                    </KeyboardAvoidingView>
+                                </Animated.View>
+                            </GestureDetector>
+                        </> : <Text>No chat available</Text>;
                     default:
-                        return (
-                            <></>
-                        );
+                        return <></>;
                 }
             })()}
             <Map
                 userLocation={fakeUserLocation}
                 selectedPoint={selectedPoint}
                 setSelectedPoint={setSelectedPoint}
-                flyTo={flyTo}  // Passer les nouvelles coordonnées ici
-                setFlyTo={setFlyTo}
+                locations={locations}
+                chats={chats}
             />
         </View>
     )
 }
+
 
 export default HomeScreen
 
