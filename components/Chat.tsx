@@ -1,28 +1,17 @@
-import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity } from 'react-native'
-import Animated, { BounceIn, FadeIn, SlideInDown, SlideOutDown, StretchInY, ZoomIn } from 'react-native-reanimated'
-import users from '~/data/users'
+import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard } from 'react-native'
+import Animated, { BounceIn, FadeIn, FadeOut, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import users from '~/data/users.json';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { useState } from 'react';
+import { ChatScreenProps, ChatProps, MessageProps } from '~/types/ChatInterfaces';
 
-interface MessageProps {
-    userId: number,
-    content: string,
-    date: string
-}
+import { useEffect, useState } from 'react';
+import Stickers from './Stickers';
+import Message from './Message';
 
-interface ChatProps {
-    id: number,
-    messages: MessageProps[]
-    usersId: number[]
-}
-
-interface ChatScreenProps {
-    chat: ChatProps,
-    currentUserId: number
-}
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
 
@@ -30,117 +19,185 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
 
     const isTyping = newMessageContent !== '';
 
+    const [showStickers, setShowStickers] = useState<boolean>(false);
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-    const renderMessage = ({ item, index }: { item: MessageProps, index: number }) => {
-
-        const isCurrentUser = item.userId === currentUserId;
-        const messageKey = `${index}-${item.content}`;
-        const messageUser = users.data.find((user: { id: number }) => user.id === item.userId);
-
-        return (
-            <View
-                key={messageKey}
-                style={[
-                    styles.messageWrapper,
-                    isCurrentUser ? styles.currentUserMessageWrapper : styles.otherUserMessageWrapper
-                ]}
-            >
-                {!isCurrentUser && (
-                    <Animated.View
-                        style={styles.profileIconContainer}
-                        entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
-                    >
-                        <View style={styles.userIconMessage}>
-                            <Text style={styles.userIconMessageText}>
-                                {messageUser?.username}
-                            </Text>
-                        </View>
-                    </Animated.View>
-                )}
-                <Animated.View
-                    entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
-                    style={[styles.messageBubble, isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble]}
-                >
-                    {!isCurrentUser && (
-                        <Text style={styles.usernameText}>{messageUser?.username}</Text>
-                    )}
-                    <Text style={styles.messageText}>{item.content}</Text>
-                    <Text style={styles.messageDate}>{new Date(item.date).toLocaleTimeString().slice(0, -3)}</Text>
-                </Animated.View>
-            </View>
-        );
+    // Gérer l'envoi d'un sticker
+    const handleStickerSend = (stickerSrc: any) => {
+        console.log('Sticker sent:', stickerSrc);
+        // Ajoutez la logique pour envoyer le sticker ici
     };
 
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener(
+            'keyboardDidShow',
+            () => {
+                setKeyboardVisible(true); // Le clavier est visible
+            }
+        );
+        const keyboardDidHideListener = Keyboard.addListener(
+            'keyboardDidHide',
+            () => {
+                setKeyboardVisible(false); // Le clavier est caché
+            }
+        );
+
+        // Nettoyage des écouteurs lors du démontage
+        return () => {
+            keyboardDidHideListener.remove();
+            keyboardDidShowListener.remove();
+        };
+    }, [])
+
+    const renderUserIcon = ({ item, index }: { item: number, index: number }) => {
+        const user = users.data.find((user: { id: number }) => user.id === item);
+
+        // Le premier utilisateur est positionné normalement, les autres sont empilés en arrière-plan
+        return (
+            <Animated.View
+                entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
+                key={chat.id}
+                style={[
+                    styles.userStackIcon,
+                    {
+                        left: index === 0 ? 0 : index * 15, // Décaler les autres icônes vers la gauche
+                        zIndex: index === 0 ? 10 : 10 - index, // Le premier a le zIndex le plus grand
+                    },
+                ]}
+            >
+                <Animated.Text style={styles.userAvatarText} entering={FadeIn.springify()}>
+                    {user?.username.slice(0, 2).toUpperCase()}
+                </Animated.Text>
+            </Animated.View>
+        );
+    };
 
     return (
         <View
             style={styles.container}
         >
             <Animated.View
-                style={styles.messagesContainer}
+                style={styles.messageSection}
                 entering={StretchInY.springify().damping(17)}
                 exiting={SlideOutDown}
             >
                 {/* Header Bandeau */}
-                <View style={styles.headerContainer}>
-                    <View style={styles.userContainer}>
-                        <View style={styles.userIcon}>
-                            <Animated.Text style={styles.userIconText} key={chat.usersId[0]} entering={FadeIn.springify()}>
-                                {users.data.find((user: { id: number }) => user.id === chat.usersId[0])?.username}
-                            </Animated.Text>
+                <View style={styles.chatHeader}>
+                    <View style={styles.userStackContainer}>
+                        <View style={styles.userStack}>
+                            {chat.participantsIds.reverse().map((userId: number, index: number) => (
+                                <View key={index}>
+                                    {renderUserIcon({ item: userId, index })}
+                                </View>
+                            ))}
+                            <Animated.View
+                                key={chat.id}
+                                entering={FadeIn.springify().damping(17).delay(chat.participantsIds.length * 15 + 500)}
+                                style={[
+                                    styles.userCountBadge,
+                                    { left: chat.participantsIds.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
+                                ]}>
+                                <Text style={styles.userCountText}>{chat.participantsIds.length}</Text>
+                                <FontAwesome6 name="users" size={13} color="gray" />
+                            </Animated.View>
                         </View>
-                        <Animated.Text style={styles.userName} key={chat.usersId[0]} entering={FadeIn.springify()}>
-                            {users.data.find((user: { id: number }) => user.id === chat.usersId[0])?.username}
-                        </Animated.Text>
                     </View>
-                    <View style={styles.firstMessageContainer}>
-                        <Text
-                            style={styles.firstMessageContent}
+                    <View style={styles.firstMessageSection}>
+                        <Animated.Text
+                            key={chat.id}
+                            entering={FadeIn.springify()}
+                            style={styles.firstMessageText}
                             numberOfLines={1}
                         >
                             {chat.messages[0].content}
-                        </Text>
+                        </Animated.Text>
                     </View>
                 </View>
 
                 <FlatList
                     data={chat.messages}
-                    renderItem={renderMessage}
+                    renderItem={({ item, index }) => (
+                        <Message
+                            key={index}
+                            item={item}
+                            isCurrentUser={item.userId === currentUserId}
+                            currentUserId={currentUserId}
+                        />
+                    )}
                     keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.messagesList}
+                    contentContainerStyle={styles.messageList}
                 />
+                {
+                    showStickers && (
+
+                        <TouchableOpacity
+                            onPress={() => setShowStickers(false)}
+                            style={styles.closeStickerButton}
+                        >
+                            <Animated.View
+                                entering={BounceIn.springify().damping(17)}
+                            >
+                                <FontAwesome6 name="circle-xmark" size={20} color="#D3D3D3" />
+                            </Animated.View>
+                        </TouchableOpacity>
+
+                    )
+                }
             </Animated.View>
             <Animated.View
-                style={styles.inputContainer}
+                style={styles.inputSection}
                 entering={SlideInDown.springify().damping(17)}
                 exiting={SlideOutDown}
+                key={showStickers.toString()}
             >
-                <View style={styles.inputWrapper}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Type your message..."
-                        value={newMessageContent}
-                        onChangeText={setNewMessageContent}
-                    />
-                    {/* Animated icon change between microphone and send button */}
-                    <TouchableOpacity onPress={() => { }} style={styles.sendButton}>
-                        <Animated.View style={styles.animatedIcon} key={isTyping.toString()} entering={ZoomIn.springify()}>
-                            {isTyping ? (
-                                <View style={styles.sendCircle}>
-                                    <Ionicons name="send" size={15} color="white" />
-                                </View>
-                            ) : (
-                                <FontAwesome6 name="microphone" size={20} color='#D3D3D3' />
-                            )}
+                {showStickers ? (
+                    <View style={styles.stickerSelector}>
+                        <Stickers onStickerSend={handleStickerSend} />
+                    </View>
+                ) : (
+                    <View style={styles.messageInputWrapper}>
+                        <TextInput
+                            style={styles.messageInput}
+                            placeholder="Tapez votre message..."
+                            value={newMessageContent}
+                            onChangeText={setNewMessageContent}
+                        />
+
+                        {/* Bouton pour afficher la liste des stickers */}
+                        <Animated.View
+                            style={styles.toggleStickerButton}
+                            key={isKeyboardVisible.toString()}
+                            entering={ZoomIn.springify().damping(17)}
+                            exiting={ZoomOut.springify().damping(17).duration(500)}
+                        >
+                            <TouchableOpacity onPress={() => setShowStickers(!showStickers)}>
+                                {!isKeyboardVisible && !isTyping && (
+                                    <MaterialCommunityIcons name="sticker-emoji" size={23} color="#D3D3D3" />
+                                )}
+                            </TouchableOpacity>
                         </Animated.View>
-                    </TouchableOpacity>
-                </View>
+
+                        {/* Bouton d'envoi de message ou micro */}
+                        <TouchableOpacity onPress={() => { }} style={styles.sendMessageButton}>
+                            <Animated.View style={styles.iconWrapper} key={isTyping.toString()} entering={ZoomIn.springify().damping(17).delay(100)}>
+                                {isTyping ? (
+                                    <View style={styles.sendIcon}>
+                                        <Ionicons name="send" size={15} color="white" />
+                                    </View>
+                                ) : (
+                                    <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
+                                )}
+                            </Animated.View>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </Animated.View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
+    // Conteneur principal
     container: {
         flex: 1,
         justifyContent: 'flex-end',
@@ -154,14 +211,14 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
     },
-    headerContainer: {
+    // Bandeau du haut avec les utilisateurs
+    chatHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
         padding: 10,
         backgroundColor: '#f1f1f1',
         borderRadius: 10,
-        overflow: 'hidden', // Assurez-vous que le texte défilant reste dans la limite du conteneur
         margin: 10,
         borderWidth: 1,
         borderColor: 'rgba(0, 0, 0, 0.025)',
@@ -170,46 +227,68 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 5,
+        overflow: 'hidden',
     },
-    userContainer: {
-        display: 'flex',
+    // Conteneur pour l'empilement d'icônes d'utilisateurs
+    userStackContainer: {
         flex: 4,
         flexDirection: 'row',
         alignItems: 'center',
     },
-    userIcon: {
+    // Style pour l'empilement des utilisateurs
+    userStack: {
+        flexDirection: 'row',
+        height: 40,
+        width: '100%',
+    },
+    // Icônes empilées des utilisateurs
+    userStackIcon: {
         width: 40,
         height: 40,
         borderRadius: 20,
         backgroundColor: '#0088cc',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 10,
+        position: 'absolute',
+        borderWidth: 2,
+        borderColor: 'white',
     },
-    userIconText: {
+    // Texte à l'intérieur de l'avatar
+    userAvatarText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 12,
     },
-    userName: {
+    // Badge pour le nombre d'utilisateurs
+    userCountBadge: {
+        position: 'absolute',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 40,
+        zIndex: 1,
+    },
+    // Texte du nombre d'utilisateurs
+    userCountText: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: 'black',
-        flex: 1,
+        color: 'gray',
+        marginRight: 5,
     },
-    firstMessageContainer: {
-        flex: 6,
+    // Section affichant le premier message
+    firstMessageSection: {
+        flex: 4,
         overflow: 'hidden',
     },
-    firstMessageContent: {
+    // Texte du premier message
+    firstMessageText: {
         fontSize: 14,
         color: 'gray',
         textAlign: 'right',
     },
-
-
-    messagesContainer: {
-        flex: 4,
+    // Section des messages
+    messageSection: {
+        flex: 10,
         width: '100%',
         backgroundColor: 'white',
         borderRadius: 15,
@@ -221,81 +300,30 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
     },
-    messagesList: {
+    // Liste des messages
+    messageList: {
         flexGrow: 1,
         justifyContent: 'flex-start',
         paddingHorizontal: 10,
         paddingBottom: 10,
     },
-    messageWrapper: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginVertical: 5,
-    },
-    currentUserMessageWrapper: {
-        flexDirection: 'row-reverse',
-        alignItems: 'flex-end',
-        marginVertical: 5,
-    },
-    otherUserMessageWrapper: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginVertical: 5,
-    },
-    profileIconContainer: {
-        width: 50,
+    // Bouton pour fermer les stickers
+    closeStickerButton: {
+        position: 'absolute',
         alignSelf: 'center',
-        alignItems: 'center',
+        bottom: 10,
+        zIndex: 1,
     },
-    userIconMessage: {
-        width: 35,
-        height: 35,
-        borderRadius: 18,
-        backgroundColor: '#0088cc',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    userIconMessageText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 12,
-    },
-    usernameText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: 'gray',
-        margin: 3,
-    },
-    currentUserBubble: {
-        alignSelf: 'flex-end',
-        backgroundColor: '#0088cc',
-    },
-    otherUserBubble: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#f1f1f1',
-    },
-    messageBubble: {
-        padding: 5,
-        borderRadius: 10,
-        maxWidth: '80%',
-    },
-    messageText: {
-        color: 'black',
-        margin: 3,
-    },
-    messageDate: {
-        fontSize: 10,
-        color: 'gray',
-        alignSelf: 'flex-end',
-    },
-
-    inputContainer: {
+    // Section d'entrée du message et des stickers
+    inputSection: {
+        flex: 1,
         width: '100%',
-        height: 80,
         justifyContent: 'center',
         alignItems: 'center',
+        marginVertical: 10,
     },
-    inputWrapper: {
+    // Conteneur d'entrée de message
+    messageInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
@@ -306,24 +334,29 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         height: 45,
     },
-    input: {
+    // Zone d'entrée de texte
+    messageInput: {
         flex: 1,
-
         backgroundColor: 'white',
-        padding: 5,
     },
-    animatedIcon: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    sendButton: {
+    // Bouton pour afficher les stickers
+    toggleStickerButton: {
         padding: 2,
         width: 30,
         height: 30,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    sendCircle: {
+    // Bouton pour envoyer un message
+    sendMessageButton: {
+        padding: 2,
+        width: 30,
+        height: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // Icône d'envoi
+    sendIcon: {
         borderRadius: 15,
         width: 25,
         height: 25,
@@ -331,6 +364,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#0088cc',
     },
-})
+    // Conteneur des stickers
+    stickerSelector: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        backgroundColor: 'white',
+        borderRadius: 15,
+        borderColor: 'rgba(0, 0, 0, 0.15)',
+        borderWidth: 1,
+        overflow: 'hidden',
+    },
+    // Wrapper pour les icônes dans les boutons
+    iconWrapper: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});
 
-export default ChatScreen
+
+
+export default ChatScreen;

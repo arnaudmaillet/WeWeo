@@ -120,7 +120,7 @@ const HomeScreen = () => {
                                 <Animated.View style={[styles.sheet, translateSheetY]}>
                                     <KeyboardAvoidingView
                                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                        keyboardVerticalOffset={160}
+                                        keyboardVerticalOffset={170}
                                         style={styles.keyboardAvoidingView}
                                     >
                                         <ChatScreen chat={chat} currentUserId={1} />

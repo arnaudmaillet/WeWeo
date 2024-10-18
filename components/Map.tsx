@@ -2,14 +2,14 @@ import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
-interface ICoordinates {
+interface CoordinatesProps {
     latitude: number;
     longitude: number;
     latitudeDelta: number;
     longitudeDelta: number;
 }
 
-interface IPoint {
+interface PointProps {
     id: number;
     latitude: number;
     longitude: number;
@@ -19,11 +19,11 @@ interface IPoint {
 }
 
 interface MapProps {
-    userLocation: ICoordinates;
-    selectedPoint: IPoint | null;
-    setSelectedPoint: (point: IPoint | null) => void;
+    userLocation: CoordinatesProps;
+    selectedPoint: PointProps | null;
+    setSelectedPoint: (point: PointProps | null) => void;
     locations: {
-        points: IPoint[];
+        points: PointProps[];
     }
     chats: {
         data: any[];
@@ -34,30 +34,30 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
     const [fallAnimations] = useState(locations.points.map(() => new Animated.Value(-100))); // Animation de translation verticale
     const [opacityAnimations] = useState(locations.points.map(() => new Animated.Value(0))); // Animation d'opacité pour chaque point
-    const [selectedPointTmp, setSelectedPointTmp] = useState<IPoint | null>(null); // to recenter the map on the selected point
+    const [selectedPointTmp, setSelectedPointTmp] = useState<PointProps | null>(null); // to recenter the map on the selected point
 
-    // Animation de pulsation pour le halo du point sélectionné
-    const haloAnimation = useRef(new Animated.Value(1)).current;
+    // Animation de pulsation pour le point sélectionné
+    const pulseAnimation = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
         if (selectedPoint) {
-            // Démarrer l'animation de pulsation en boucle pour le halo
+            // Démarrer l'animation de pulsation en boucle
             Animated.loop(
                 Animated.sequence([
-                    Animated.timing(haloAnimation, {
-                        toValue: 2, // Taille maximale du halo
-                        duration: 1000, // Durée de l'expansion
+                    Animated.timing(pulseAnimation, {
+                        toValue: 1.15, // Taille maximale
+                        duration: 500, // Durée de l'expansion
                         useNativeDriver: true,
                     }),
-                    Animated.timing(haloAnimation, {
+                    Animated.timing(pulseAnimation, {
                         toValue: 1, // Retour à la taille initiale
-                        duration: 1000, // Durée de la contraction
+                        duration: 500, // Durée de la contraction
                         useNativeDriver: true,
                     }),
                 ]),
             ).start();
         } else {
-            haloAnimation.setValue(1); // Réinitialiser si aucun point n'est sélectionné
+            pulseAnimation.setValue(1); // Réinitialiser si aucun point n'est sélectionné
         }
     }, [selectedPoint]);
 
@@ -74,7 +74,7 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
 
     const screenDimensions = Dimensions.get('window');
 
-    const handlePressPoint = (point: IPoint) => {
+    const handlePressPoint = (point: PointProps) => {
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
@@ -157,6 +157,7 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                     bottom: selectedPoint ? screenDimensions.height * 0.78 : 0,
                     left: selectedPoint ? screenDimensions.width * 0.05 : 0
                 }}
+                showsPointsOfInterest={false}
             >
                 <Marker
                     coordinate={{
@@ -171,7 +172,7 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                     </View>
                 </Marker>
 
-                {locations.points.map((point: IPoint, index: number) => {
+                {locations.points.map((point: PointProps, index: number) => {
                     if (point.type === 1) {
                         const chat = getChat(point.dataId);
                         const firstMessageContent = chat?.messages[0]?.content || ''; // Récupérer le contenu du premier message
@@ -201,20 +202,15 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                                         {displayText ? <Text style={styles.pillText}>{displayText}</Text> : null}
                                     </View>
 
-                                    {/* Halo animé */}
-                                    {selectedPoint && selectedPoint.id === point.id && (
-                                        <Animated.View
-                                            style={[
-                                                styles.halo,
-                                                {
-                                                    transform: [{ scale: haloAnimation }],
-                                                },
-                                            ]}
-                                        />
-                                    )}
-
                                     {/* Le point rouge au centre de la vue */}
-                                    <View style={styles.customInnerMarker} />
+                                    <Animated.View
+                                        style={[
+                                            styles.customInnerMarker,
+                                            selectedPoint && selectedPoint.id === point.id && {
+                                                transform: [{ scale: pulseAnimation }],
+                                            },
+                                        ]}
+                                    />
                                 </Animated.View>
                             </Marker>
                         );
@@ -261,14 +257,10 @@ const styles = StyleSheet.create({
         height: 10,
         borderRadius: 7.5,
         backgroundColor: 'red', // Le point rouge au centre
-    },
-    halo: {
-        position: 'absolute',
-        width: 30, // Taille du halo (plus grand que le point rouge)
-        height: 30,
-        borderRadius: 15,
-        backgroundColor: 'rgba(255, 0, 0, 0.3)', // Halo rouge avec transparence
-        zIndex: -1, // Mettre derrière le point rouge
+        shadowColor: '#fff', // Bordure blanche simulée par une ombre
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 2,
     },
     pillContainer: {
         position: 'absolute',
