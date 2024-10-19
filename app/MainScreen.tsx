@@ -4,12 +4,13 @@ import Map from '../components/Map'
 import chats from '../data/chats.json'
 import ChatScreen from '~/components/Chat'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
+import Animated, { runOnJS, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
+import SearchMenu from '~/components/SearchMenu'
 
 
 const locations = require('../data/locations.json')
 
-interface IPoint {
+interface PointProps {
     id: number;
     latitude: number;
     longitude: number;
@@ -18,7 +19,7 @@ interface IPoint {
     minZoom: number;
 }
 
-const HomeScreen = () => {
+const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -29,7 +30,7 @@ const HomeScreen = () => {
         longitudeDelta: 0.0421,
     }
 
-    const [selectedPoint, setSelectedPoint] = useState<IPoint | null>(null);
+    const [selectedPoint, setSelectedPoint] = useState<PointProps | null>(null);
 
     const getChat = (id: number) => {
         return chats.data.find(chat => chat.id === id);
@@ -45,7 +46,7 @@ const HomeScreen = () => {
         };
     })
 
-    const runOnJSSetSelectedPoint = (point: IPoint | null) => {
+    const runOnJSSetSelectedPoint = (point: PointProps | null) => {
         setSelectedPoint(point);
     }
 
@@ -54,7 +55,7 @@ const HomeScreen = () => {
     // Fonction pour aller au point suivant
     const goToNextPoint = () => {
         if (selectedPoint) {
-            const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
+            const currentIndex = allPoints.findIndex((point: PointProps) => point.id === selectedPoint.id);
             const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
             setSelectedPoint(allPoints[nextIndex]);
         }
@@ -63,7 +64,7 @@ const HomeScreen = () => {
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
         if (selectedPoint) {
-            const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
+            const currentIndex = allPoints.findIndex((point: PointProps) => point.id === selectedPoint.id);
             const previousIndex = (currentIndex - 1 + allPoints.length) % allPoints.length;  // Boucle à la fin après le premier point
             setSelectedPoint(allPoints[previousIndex]);
         }
@@ -85,8 +86,10 @@ const HomeScreen = () => {
                 if (offset.value < 520 / 3) {
                     offset.value = withSpring(0);
                 } else {
-                    offset.value = withTiming(520, {}, () => {
-                        runOnJS(runOnJSSetSelectedPoint)(null);
+                    offset.value = withTiming(1000, {}, (finished) => {
+                        if (finished && selectedPoint) {
+                            runOnJS(runOnJSSetSelectedPoint)(null);
+                        }
                     });
                 }
             } else {
@@ -99,7 +102,12 @@ const HomeScreen = () => {
                     }
                 }
             }
-        });
+        })
+
+    useEffect(() => {
+        offset.value = 0;
+    }, [selectedPoint])
+
 
 
     return (
@@ -129,7 +137,32 @@ const HomeScreen = () => {
                             </GestureDetector>
                         </> : <Text>No chat available</Text>;
                     default:
-                        return <></>;
+                        return <>
+                            {/* {
+                            isMenuOpen && (
+                                <AnimatedPressable
+                                    style={styles.backdrop}
+                                    onPress={() => {
+                                        setIsMenuOpen(false)
+                                        dismissKeyboard()
+                                    }}
+                                />
+                            )
+                        } */}
+                            <Animated.View
+                                style={[styles.searchMenu]}
+                                entering={SlideInDown.springify().damping(17)}
+                                exiting={SlideOutDown}
+                            >
+                                <KeyboardAvoidingView
+                                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                    keyboardVerticalOffset={440}
+                                    style={styles.keyboardAvoidingView}
+                                >
+                                    <SearchMenu onBlurInput={() => { }} onFocusInput={() => { }} />
+                                </KeyboardAvoidingView>
+                            </Animated.View>
+                        </>
                 }
             })()}
             <Map
@@ -144,7 +177,7 @@ const HomeScreen = () => {
 }
 
 
-export default HomeScreen
+export default MainScreen
 
 const styles = StyleSheet.create({
     container: {

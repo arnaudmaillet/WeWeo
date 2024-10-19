@@ -153,9 +153,9 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                 }}
                 mapPadding={{
                     top: 0,
-                    right: selectedPoint ? screenDimensions.width * 0.05 : 0,
+                    right: screenDimensions.width * 0.05,
                     bottom: selectedPoint ? screenDimensions.height * 0.78 : 0,
-                    left: selectedPoint ? screenDimensions.width * 0.05 : 0
+                    left: screenDimensions.width * 0.05
                 }}
                 showsPointsOfInterest={false}
             >

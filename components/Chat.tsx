@@ -6,7 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { ChatScreenProps, ChatProps, MessageProps } from '~/types/ChatInterfaces';
+import { ChatScreenProps } from '~/types/ChatInterfaces';
 
 import { useEffect, useState } from 'react';
 import Stickers from './Stickers';
@@ -85,7 +85,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                 <View style={styles.chatHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {chat.participantsIds.reverse().map((userId: number, index: number) => (
+                            {chat.participantsIds.map((userId: number, index: number) => (
                                 <View key={index}>
                                     {renderUserIcon({ item: userId, index })}
                                 </View>
@@ -171,7 +171,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                             exiting={ZoomOut.springify().damping(17).duration(500)}
                         >
                             <TouchableOpacity onPress={() => setShowStickers(!showStickers)}>
-                                {!isKeyboardVisible && !isTyping && (
+                                {!isKeyboardVisible && (
                                     <MaterialCommunityIcons name="sticker-emoji" size={23} color="#D3D3D3" />
                                 )}
                             </TouchableOpacity>
