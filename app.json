@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "testIt",
-    "slug": "testIt",
+    "name": "WeWeo",
+    "slug": "WeWeo",
     "version": "1.0.0",
 
-    "scheme": "testIt",
+    "scheme": "WeWeo",
     "web": {
       "bundler": "metro",
       "output": "static",

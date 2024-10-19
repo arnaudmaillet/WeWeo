@@ -1,6 +1,6 @@
 {
   "cesVersion": "2.11.24",
-  "projectName": "testIt",
+  "projectName": "WeWeo",
   "packages": [
     {
       "name": "expo-router",
