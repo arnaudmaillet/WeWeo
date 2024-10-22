@@ -2,39 +2,20 @@ import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
-interface CoordinatesProps {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-}
+import { MapProps, PointProps } from '../types/MapInterfaces';
+import { useMap } from '~/providers/MapProvider';
 
-interface PointProps {
-    id: number;
-    latitude: number;
-    longitude: number;
-    type: number;
-    dataId: number;
-    minZoom: number;
-}
 
-interface MapProps {
-    userLocation: CoordinatesProps;
-    selectedPoint: PointProps | null;
-    setSelectedPoint: (point: PointProps | null) => void;
-    locations: {
-        points: PointProps[];
-    }
-    chats: {
-        data: any[];
-    }
-}
 
-const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSelectedPoint, chats }) => {
+const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint, chats }) => {
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
-    const [fallAnimations] = useState(locations.points.map(() => new Animated.Value(-100))); // Animation de translation verticale
-    const [opacityAnimations] = useState(locations.points.map(() => new Animated.Value(0))); // Animation d'opacité pour chaque point
-    const [selectedPointTmp, setSelectedPointTmp] = useState<PointProps | null>(null); // to recenter the map on the selected point
+
+    const { markers } = useMap();
+    const previousMarkersRef = useRef<PointProps[]>([]); // Référence pour stocker les anciens marqueurs
+    const [selectedPointSnap, setSelectedPointSnap] = useState<PointProps | null>(null); // to recenter the map on the selected point
+
+    // Créer des animations d'opacité qui seront recréées à chaque changement de markers
+    const [opacityAnimations, setOpacityAnimations] = useState(markers?.map(() => new Animated.Value(0)));
 
     // Animation de pulsation pour le point sélectionné
     const pulseAnimation = useRef(new Animated.Value(1)).current;
@@ -79,14 +60,14 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
-            setSelectedPointTmp(point);
+            setSelectedPointSnap(point);
             setSelectedPoint(point);
         }
     }
 
     useEffect(() => {
         if (selectedPoint && mapRef.current) {
-            setSelectedPointTmp(selectedPoint);
+            setSelectedPointSnap(selectedPoint);
 
             mapRef.current.animateCamera(
                 {
@@ -99,11 +80,11 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
             );
         }
 
-        if (!selectedPoint && selectedPointTmp && mapRef.current) {
+        if (!selectedPoint && selectedPointSnap && mapRef.current) {
             mapRef.current?.animateCamera({
                 center: {
-                    latitude: selectedPointTmp.latitude,
-                    longitude: selectedPointTmp.longitude,
+                    latitude: selectedPointSnap.latitude,
+                    longitude: selectedPointSnap.longitude,
                 },
                 pitch: camera.pitch,
                 heading: camera.heading
@@ -115,29 +96,45 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
         return chats.data.find(chat => chat.id === id);
     }
 
-    // Animation de chute avec rebond et délai aléatoire
     useEffect(() => {
-        locations.points.forEach((_, index) => {
+        // Comparer les nouveaux marqueurs avec les anciens
+        const previousMarkers = previousMarkersRef.current;
+        const newMarkers = markers?.filter((marker: PointProps) =>
+            !previousMarkers.some(prevMarker => prevMarker.id === marker.id)
+        );
+
+        // Si de nouveaux marqueurs existent, créer de nouvelles animations d'opacité pour eux
+        if (newMarkers && newMarkers.length > 0) {
+            const updatedAnimations = markers?.map((marker: PointProps, index: number) => {
+                // Si le marqueur est nouveau, il commence à opacité 0, sinon on garde l'animation existante
+                return newMarkers?.some((newMarker: PointProps) => newMarker.id === marker.id)
+                    ? new Animated.Value(0)
+                    : (opacityAnimations?.[index] ?? new Animated.Value(1));
+            });
+            setOpacityAnimations(updatedAnimations);
+        }
+
+        // Mettre à jour la référence des marqueurs précédents
+        if (markers) {
+            previousMarkersRef.current = markers;
+        }
+    }, [markers]);
+
+    // Animation d'opacité progressive avec un délai aléatoire
+    useEffect(() => {
+        (opacityAnimations ?? []).forEach((animation: Animated.Value, index: number) => {
             const randomDelay = Math.random() * 1000; // Délai aléatoire entre 0 et 1 seconde
 
             setTimeout(() => {
-                // Lancer l'animation de chute et d'opacité en parallèle
-                Animated.parallel([
-                    Animated.spring(fallAnimations[index], {
-                        toValue: 0, // Revenir à la position initiale
-                        useNativeDriver: true,
-                        friction: 5, // Ajout d'un effet de rebond
-                        tension: 40,
-                    }),
-                    Animated.timing(opacityAnimations[index], {
-                        toValue: 1, // L'opacité passe à 1
-                        duration: 500, // Durée de l'animation d'opacité
-                        useNativeDriver: true,
-                    }),
-                ]).start();
+                // Lancer l'animation d'opacité
+                Animated.timing(animation, {
+                    toValue: 1, // L'opacité passe à 1
+                    duration: 1000, // Durée de l'animation d'opacité
+                    useNativeDriver: true,
+                }).start();
             }, randomDelay);
         });
-    }, [fallAnimations, opacityAnimations, locations.points]);
+    }, [opacityAnimations, markers]);
 
     return (
         <View style={styles.map}>
@@ -172,9 +169,9 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                     </View>
                 </Marker>
 
-                {locations.points.map((point: PointProps, index: number) => {
+                {markers?.map((point: PointProps, index: number) => {
                     if (point.type === 1) {
-                        const chat = getChat(point.dataId);
+                        const chat = point.dataId !== undefined ? getChat(point.dataId) : null;
                         const firstMessageContent = chat?.messages[0]?.content || ''; // Récupérer le contenu du premier message
                         const displayText = firstMessageContent.slice(0, 10); // Limiter à 10 caractères
 
@@ -192,8 +189,7 @@ const Map: React.FC<MapProps> = ({ locations, userLocation, selectedPoint, setSe
                                     style={[
                                         styles.markerContainer,
                                         {
-                                            transform: [{ translateY: fallAnimations[index] }],
-                                            opacity: opacityAnimations[index], // Animation d'opacité
+                                            opacity: opacityAnimations?.[index] ?? new Animated.Value(1), // Animation d'opacité
                                         },
                                     ]}
                                 >
