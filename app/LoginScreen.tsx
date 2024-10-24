@@ -61,7 +61,7 @@ const LoginScreen = () => {
                         placeholderTextColor="#aaa"
                         onChangeText={setInput}
                         keyboardType={isEmailOk ? 'visible-password' : 'email-address'}
-                        autoCapitalize="none"
+                        autoCapitalize='none'
                         value={input}
                         secureTextEntry={isEmailOk}
                     />

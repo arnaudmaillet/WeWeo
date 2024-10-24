@@ -164,7 +164,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
     const getFollowingAccounts = (): IUser[] => {
         if (category === 2) {
-            return Users.data.filter(u => user?.following.includes(u.id))
+            return Users.data.filter((u: IUser) => user?.following.includes(u.id))
         } else {
             return Users.data
         }

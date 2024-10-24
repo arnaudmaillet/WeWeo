@@ -1,11 +1,11 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import Users from '~/data/users.json';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { IUser } from '~/types/UserInterfaces';
 import { router } from 'expo-router';
 
 import { CognitoUserAttribute, CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import { userPool } from '~/config/CognitoConfig'
 import { jwtDecode } from 'jwt-decode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextProps {
     user: IUser | null;
@@ -23,13 +23,49 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [userTmp, setUserTmp] = useState<IUser | null>(null)
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        loadUser();
+    }, []);
+
     const createAttribute = (Name: string, Value: string): CognitoUserAttribute => {
         return new CognitoUserAttribute({ Name, Value });
     }
 
+    const storeUser = async (token: string) => {
+        try {
+            await AsyncStorage.setItem('@user_token', token);
+        } catch (e) {
+            console.error('Failed to save the user token.', e);
+        }
+    };
+
+    const loadUser = async () => {
+        try {
+            const token = await AsyncStorage.getItem('@user_token');
+            if (token) {
+                const userInfo = jwtDecode<{
+                    sub: string;
+                    email: string;
+                    preferred_username: string;
+                    birthdate: string;
+                    locale: string;
+                }>(token);
+
+                setUser({
+                    id: userInfo.sub || '',
+                    username: userInfo.preferred_username,
+                    email: userInfo.email,
+                    birthdate: userInfo.birthdate,
+                    locale: userInfo.locale,
+                    following: [],
+                });
+            }
+        } catch (e) {
+            console.error('Failed to load the user token.', e);
+        }
+    };
 
     const signIn = async (email: string, password: string): Promise<boolean> => {
-
         setIsLoading(true);
         const authenticationDetails = new AuthenticationDetails({
             Username: email,
@@ -43,17 +79,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         cognitoUser.authenticateUser(authenticationDetails, {
             onSuccess: (result) => {
-                console.log('Access token:', result.getAccessToken().getJwtToken());
                 const idToken = result.getIdToken().getJwtToken();
-                const userInfo = jwtDecode<{ sub: string; preferred_username: string, birthdate: string, locale: string }>(idToken);
-                console.log('User info:', userInfo);
+                const userInfo = jwtDecode<{
+                    sub: string;
+                    email: string;
+                    preferred_username: string;
+                    birthdate: string;
+                    locale: string;
+                }>(idToken);
                 setUser({
                     id: userInfo.sub || '',
                     username: userInfo.preferred_username,
+                    email: userInfo.email,
                     birthdate: userInfo.birthdate,
                     locale: userInfo.locale,
                     following: [],
                 });
+
+                // Sauvegarder le jeton dans AsyncStorage
+                storeUser(idToken);
             },
             onFailure: (err) => {
                 console.error('Error signing in:', err.message || JSON.stringify(err));
@@ -65,14 +109,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const signOut = async () => {
-
-        // Simuler un délai pour imiter une déconnexion API
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 250));
-        router.push('/LoginScreen');
-        setIsLoading(false);
+
+        // Effacer les données utilisateur et le jeton
+        try {
+            await AsyncStorage.removeItem('@user_token');
+        } catch (e) {
+            console.error('Failed to remove the user token.', e);
+        }
 
         setUser(null);
+        router.push('/LoginScreen');
+        setIsLoading(false);
     };
 
     const signUp = async (email: string, password: string, username: string, birthdate: string, locale: string): Promise<boolean> => {
@@ -97,6 +145,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     setUserTmp({
                         id: result?.userSub,
                         username: username,
+                        email: email,
                         following: [],
                         locale: "",
                         birthdate: "",
