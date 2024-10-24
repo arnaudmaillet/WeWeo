@@ -9,7 +9,7 @@ import SearchMenu from '~/components/SearchMenu'
 import { useKeyboard } from '~/providers/KeyboardProvider'
 import { useMap } from '~/providers/MapProvider'
 
-import { PointProps } from '~/types/MapInterfaces'
+import { IPoint } from '~/types/MapInterfaces'
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
@@ -23,13 +23,13 @@ const MainScreen = () => {
         longitudeDelta: 0.0421,
     }
 
-    const [selectedPoint, setSelectedPoint] = useState<PointProps | null>(null);
+    const [selectedPoint, setSelectedPoint] = useState<IPoint | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
 
     const { keyboardProps } = useKeyboard();
 
-    const getChat = (id: number) => {
+    const getChat = (id: string) => {
         return chats.data.find(chat => chat.id === id);
     }
 
@@ -49,7 +49,7 @@ const MainScreen = () => {
         };
     });
 
-    const runOnJSSetSelectedPoint = (point: PointProps | null) => {
+    const runOnJSSetSelectedPoint = (point: IPoint | null) => {
         setSelectedPoint(point);
     }
 
@@ -59,7 +59,7 @@ const MainScreen = () => {
     const goToNextPoint = () => {
         if (selectedPoint) {
             if (allPoints) {
-                const currentIndex = allPoints.findIndex((point: PointProps) => point.id === selectedPoint.id);
+                const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
                 if (currentIndex !== undefined && currentIndex !== -1) {
                     const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
                     setSelectedPoint(allPoints[nextIndex]);
@@ -71,7 +71,7 @@ const MainScreen = () => {
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
         if (selectedPoint) {
-            const currentIndex = allPoints?.findIndex((point: PointProps) => point.id === selectedPoint.id);
+            const currentIndex = allPoints?.findIndex((point: IPoint) => point.id === selectedPoint.id);
             if (currentIndex !== undefined && currentIndex !== -1) {
                 const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
                 if (allPoints) {
@@ -155,7 +155,7 @@ const MainScreen = () => {
                                         keyboardVerticalOffset={170}
                                         style={styles.keyboardAvoidingView}
                                     >
-                                        <ChatScreen chat={chat} currentUserId={1} />
+                                        <ChatScreen chat={chat} currentUserId={"1"} />
                                     </KeyboardAvoidingView>
                                 </Animated.View>
                             </GestureDetector>

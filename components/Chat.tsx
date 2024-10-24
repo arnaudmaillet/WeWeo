@@ -6,14 +6,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { ChatScreenProps } from '~/types/ChatInterfaces';
+import { IChatScreen } from '~/types/ChatInterfaces';
 
 import { useEffect, useState } from 'react';
 import Stickers from './Stickers';
 import Message from './Message';
 
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
+const ChatScreen: React.FC<IChatScreen> = ({ chat, currentUserId }) => {
 
     const [newMessageContent, setNewMessageContent] = useState<string>('')
 
@@ -49,8 +49,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
         };
     }, [])
 
-    const renderUserIcon = ({ item, index }: { item: number, index: number }) => {
-        const user = users.data.find((user: { id: number }) => user.id === item);
+    const renderUserIcon = ({ item, index }: { item: string, index: number }) => {
+        const user = users.data.find((user: { id: string }) => user.id === item);
 
         // Le premier utilisateur est positionné normalement, les autres sont empilés en arrière-plan
         return (
@@ -85,7 +85,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                 <View style={styles.chatHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {chat.participantsIds.map((userId: number, index: number) => (
+                            {chat.participantsIds.map((userId: string, index: number) => (
                                 <View key={index}>
                                     {renderUserIcon({ item: userId, index })}
                                 </View>

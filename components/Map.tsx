@@ -2,17 +2,17 @@ import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
-import { MapProps, PointProps } from '../types/MapInterfaces';
+import { IMap, IPoint } from '../types/MapInterfaces';
 import { useMap } from '~/providers/MapProvider';
 
 
 
-const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint, chats }) => {
+const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, chats }) => {
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
 
     const { markers } = useMap();
-    const previousMarkersRef = useRef<PointProps[]>([]); // Référence pour stocker les anciens marqueurs
-    const [selectedPointSnap, setSelectedPointSnap] = useState<PointProps | null>(null); // to recenter the map on the selected point
+    const previousMarkersRef = useRef<IPoint[]>([]); // Référence pour stocker les anciens marqueurs
+    const [selectedPointSnap, setSelectedPointSnap] = useState<IPoint | null>(null); // to recenter the map on the selected point
 
     // Créer des animations d'opacité qui seront recréées à chaque changement de markers
     const [opacityAnimations, setOpacityAnimations] = useState(markers?.map(() => new Animated.Value(0)));
@@ -55,7 +55,7 @@ const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint
 
     const screenDimensions = Dimensions.get('window');
 
-    const handlePressPoint = (point: PointProps) => {
+    const handlePressPoint = (point: IPoint) => {
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
@@ -92,22 +92,22 @@ const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint
         }
     }, [selectedPoint]);
 
-    const getChat = (id: number) => {
+    const getChat = (id: string) => {
         return chats.data.find(chat => chat.id === id);
     }
 
     useEffect(() => {
         // Comparer les nouveaux marqueurs avec les anciens
         const previousMarkers = previousMarkersRef.current;
-        const newMarkers = markers?.filter((marker: PointProps) =>
+        const newMarkers = markers?.filter((marker: IPoint) =>
             !previousMarkers.some(prevMarker => prevMarker.id === marker.id)
         );
 
         // Si de nouveaux marqueurs existent, créer de nouvelles animations d'opacité pour eux
         if (newMarkers && newMarkers.length > 0) {
-            const updatedAnimations = markers?.map((marker: PointProps, index: number) => {
+            const updatedAnimations = markers?.map((marker: IPoint, index: number) => {
                 // Si le marqueur est nouveau, il commence à opacité 0, sinon on garde l'animation existante
-                return newMarkers?.some((newMarker: PointProps) => newMarker.id === marker.id)
+                return newMarkers?.some((newMarker: IPoint) => newMarker.id === marker.id)
                     ? new Animated.Value(0)
                     : (opacityAnimations?.[index] ?? new Animated.Value(1));
             });
@@ -169,7 +169,7 @@ const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint
                     </View>
                 </Marker>
 
-                {markers?.map((point: PointProps, index: number) => {
+                {markers?.map((point: IPoint, index: number) => {
                     if (point.type === 1) {
                         const chat = point.dataId !== undefined ? getChat(point.dataId) : null;
                         const firstMessageContent = chat?.messages[0]?.content || ''; // Récupérer le contenu du premier message

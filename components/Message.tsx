@@ -2,17 +2,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { BounceIn } from 'react-native-reanimated';
-import { MessageProps } from '~/types/ChatInterfaces';
+import { IMessage } from '~/types/ChatInterfaces';
 import users from '~/data/users.json';
 
 interface MessageComponentProps {
-    item: MessageProps;
+    item: IMessage;
     isCurrentUser: boolean;
-    currentUserId: number;
+    currentUserId: string;
 }
 
 const Message: React.FC<MessageComponentProps> = ({ item, isCurrentUser, currentUserId }) => {
-    const messageUser = users.data.find((user: { id: number }) => user.id === item.userId);
+    const messageUser = users.data.find((user: { id: String }) => user.id === item.userId);
 
     return (
         <View

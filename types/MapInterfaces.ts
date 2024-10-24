@@ -1,23 +1,23 @@
-export interface CoordinatesProps {
+export interface ICoordinates {
     latitude: number;
     longitude: number;
     latitudeDelta: number;
     longitudeDelta: number;
 }
 
-export interface PointProps {
-    id: number;
+export interface IPoint {
+    id: string;
     latitude: number;
     longitude: number;
     type: number;
-    dataId?: number;
+    dataId?: string;
     minZoom: number;
 }
 
-export interface MapProps {
-    userLocation: CoordinatesProps;
-    selectedPoint: PointProps | null;
-    setSelectedPoint: (point: PointProps | null) => void;
+export interface IMap {
+    userLocation: ICoordinates;
+    selectedPoint: IPoint | null;
+    setSelectedPoint: (point: IPoint | null) => void;
     chats: {
         data: any[];
     }

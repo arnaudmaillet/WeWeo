@@ -1,5 +1,7 @@
-export interface UserProps {
-    id: number,
+export interface IUser {
+    id: string,
     username: string,
-    following: number[],
+    following: string[],
+    locale: string,
+    birthdate: string,
 }

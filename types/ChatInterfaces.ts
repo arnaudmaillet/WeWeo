@@ -1,16 +1,16 @@
-export interface MessageProps {
-    userId: number,
+export interface IMessage {
+    userId: string,
     content: string,
     date: string
 }
 
-export interface ChatProps {
-    id: number,
-    messages: MessageProps[]
-    participantsIds: number[]
+export interface IChat {
+    id: string,
+    messages: IMessage[]
+    participantsIds: string[]
 }
 
-export interface ChatScreenProps {
-    chat: ChatProps,
-    currentUserId: number
+export interface IChatScreen {
+    chat: IChat,
+    currentUserId: string
 }

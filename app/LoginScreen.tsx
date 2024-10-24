@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Keyboard } from 'react-native';
+import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import Animated, { BounceIn, SlideInDown, SlideInRight } from 'react-native-reanimated';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { useKeyboard } from '~/providers/KeyboardProvider';
 import { useAuth } from '~/providers/AuthProvider';
@@ -14,14 +13,14 @@ const LoginScreen = () => {
 
     const router = useRouter();
     const { keyboardPropsOnClick, setKeyboardPropsOnClick } = useKeyboard();
-    const { isLoading, login } = useAuth();
+    const { isLoading, signIn } = useAuth();
 
     const handleLogin = async () => {
         if (isEmailOk) {
             setPassword(input); // Mettez à jour l'état du password
             setIsEmailOk(false);
             console.log('try to login with email:', email, 'and password:', input); // Utilisez 'input' ici directement
-            const isLogged = await login(email, input);
+            const isLogged = await signIn(email, input);
             if (isLogged) {
                 setEmail('');
                 setPassword('');
@@ -64,6 +63,7 @@ const LoginScreen = () => {
                         keyboardType={isEmailOk ? 'visible-password' : 'email-address'}
                         autoCapitalize="none"
                         value={input}
+                        secureTextEntry={isEmailOk}
                     />
                     <TouchableOpacity onPress={handleLogin} disabled={input === ''}>
                         <Animated.View entering={SlideInRight.springify().stiffness(150).damping(100)} style={styles.buttonContainer}>

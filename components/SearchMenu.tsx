@@ -1,11 +1,11 @@
-import { Button, FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
+import { FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor } from 'react-native-reanimated'
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useAuth } from '~/providers/AuthProvider';
 import Users from '~/data/users.json';
-import { UserProps } from '~/types/UserInterfaces';
+import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/providers/MapProvider';
 
 interface SearchMenuProps {
@@ -13,7 +13,7 @@ interface SearchMenuProps {
     onBlurInput: () => void;
 }
 
-const UserItem: React.FC<{ user: UserProps; isSelected: boolean; isAnySelected: boolean; onPress: () => void }> = ({ user, isSelected, onPress }) => {
+const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: boolean; onPress: () => void }> = ({ user, isSelected, onPress }) => {
     // Animation pour la couleur de fond
     const backgroundColorValue = useSharedValue(isSelected ? 0 : 1);
 
@@ -81,7 +81,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     const [switchWidth, setSwitchWidth] = useState<number>(0);
     const [modalVisible, setModalVisible] = useState(false);
 
-    const { user, isLoading, logout } = useAuth();
+    const { user, isLoading, signOut } = useAuth();
     const { category, setCategory, displayMarkersForUser, setDisplayMarkersForUser } = useMap();
 
     const isTyping = searchContent !== '';
@@ -162,7 +162,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     }
 
 
-    const getFollowingAccounts = (): UserProps[] => {
+    const getFollowingAccounts = (): IUser[] => {
         if (category === 2) {
             return Users.data.filter(u => user?.following.includes(u.id))
         } else {
@@ -172,7 +172,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
 
     // Lorsqu'un utilisateur est sélectionné ou désélectionné
-    const handlePressUser = (userId: number) => {
+    const handlePressUser = (userId: string) => {
         if (displayMarkersForUser === userId) {
             backgroundColorValue.value = withTiming(0); // Revenir à la couleur par défaut (bleu)
             setDisplayMarkersForUser(null);  // Désélectionner l'utilisateur
@@ -184,7 +184,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
 
     const handleSignOut = async () => {
-        logout().then(() => {
+        signOut().then(() => {
             setModalVisible(false);
         });
     };
@@ -195,7 +195,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
             <FlatList
                 data={getFollowingAccounts()}
                 horizontal={true}
-                keyExtractor={(user: UserProps) => user.id.toString()}
+                keyExtractor={(user: IUser) => user.id.toString()}
                 key={getFollowingAccounts().flatMap(u => u.id).join('')} // Forcer le remontage de la liste
                 showsHorizontalScrollIndicator={false}
                 style={styles.followingAccounts}
