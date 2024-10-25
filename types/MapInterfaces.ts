@@ -1,24 +1,18 @@
-export interface ICoordinates {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
+import { IMarker } from "./MarkerInterfaces";
+
+export interface ICoodinatesWithZoom extends ICoordinates {
+    latDelta: number;
+    longDelta: number;
 }
 
-export interface IPoint {
-    id: string;
-    latitude: number;
-    longitude: number;
-    type: number;
-    dataId?: string;
-    minZoom: number;
+export interface ICoordinates {
+    lat: number;
+    long: number;
 }
 
 export interface IMap {
-    userLocation: ICoordinates;
-    selectedPoint: IPoint | null;
-    setSelectedPoint: (point: IPoint | null) => void;
-    chats: {
-        data: any[];
-    }
+    userLocation: ICoodinatesWithZoom;
+    selectedMarker: IMarker | null;
+    setSelectedMarker: (marker: IMarker | null) => void;
+    markers: IMarker[];
 }

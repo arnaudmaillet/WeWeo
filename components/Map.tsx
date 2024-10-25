@@ -2,26 +2,33 @@ import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
-import { IMap, IPoint } from '../types/MapInterfaces';
+import { IMap } from '../types/MapInterfaces';
+import { IMarker } from '../types/MarkerInterfaces';
 import { useMap } from '~/providers/MapProvider';
 
 
 
-const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, chats }) => {
+const Map: React.FC<IMap> = ({ userLocation, selectedMarker, setSelectedMarker }) => {
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
 
     const { markers } = useMap();
-    const previousMarkersRef = useRef<IPoint[]>([]); // Référence pour stocker les anciens marqueurs
-    const [selectedPointSnap, setSelectedPointSnap] = useState<IPoint | null>(null); // to recenter the map on the selected point
+    const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
+    const [selectedMarkerSnap, setSelectedMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
+
+    // console.log('Type of markers:', typeof markers);
+    // console.log('Is markers an array:', Array.isArray(markers));
+    // console.log('markers:', markers);
+    // console.log('markersMap:', markers && markers.map((marker: IMarker) => marker.id));
+
 
     // Créer des animations d'opacité qui seront recréées à chaque changement de markers
-    const [opacityAnimations, setOpacityAnimations] = useState(markers?.map(() => new Animated.Value(0)));
+    const [opacityAnimations, setOpacityAnimations] = useState(markers && markers.map(() => new Animated.Value(0)));
 
     // Animation de pulsation pour le point sélectionné
     const pulseAnimation = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
-        if (selectedPoint) {
+        if (selectedMarker) {
             // Démarrer l'animation de pulsation en boucle
             Animated.loop(
                 Animated.sequence([
@@ -40,13 +47,13 @@ const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, ch
         } else {
             pulseAnimation.setValue(1); // Réinitialiser si aucun point n'est sélectionné
         }
-    }, [selectedPoint]);
+    }, [selectedMarker]);
 
     const pitch = 60; // Déclarer la variable pitch
     const [camera, setCamera] = useState<Camera>({
         center: {
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
+            latitude: userLocation.lat,
+            longitude: userLocation.long,
         },
         zoom: 0,
         pitch: pitch,
@@ -55,59 +62,56 @@ const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, ch
 
     const screenDimensions = Dimensions.get('window');
 
-    const handlePressPoint = (point: IPoint) => {
+    const handlePressPoint = (point: IMarker) => {
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
-            setSelectedPointSnap(point);
-            setSelectedPoint(point);
+            setSelectedMarkerSnap(point);
+            setSelectedMarker(point);
         }
     }
 
     useEffect(() => {
-        if (selectedPoint && mapRef.current) {
-            setSelectedPointSnap(selectedPoint);
+        if (selectedMarker && mapRef.current) {
+            setSelectedMarkerSnap(selectedMarker);
 
             mapRef.current.animateCamera(
                 {
                     center: {
-                        latitude: selectedPoint.latitude,
-                        longitude: selectedPoint.longitude,
+                        latitude: selectedMarker.coordinates.lat,
+                        longitude: selectedMarker.coordinates.long,
                     },
                 },
                 { duration: 1000 } // Durée de l'animation en millisecondes
             );
         }
 
-        if (!selectedPoint && selectedPointSnap && mapRef.current) {
+        if (!selectedMarker && selectedMarkerSnap && mapRef.current) {
             mapRef.current?.animateCamera({
                 center: {
-                    latitude: selectedPointSnap.latitude,
-                    longitude: selectedPointSnap.longitude,
+                    latitude: selectedMarkerSnap.coordinates.lat,
+                    longitude: selectedMarkerSnap.coordinates.long,
                 },
                 pitch: camera.pitch,
                 heading: camera.heading
             });
         }
-    }, [selectedPoint]);
+    }, [selectedMarker]);
 
-    const getChat = (id: string) => {
-        return chats.data.find(chat => chat.id === id);
-    }
 
     useEffect(() => {
         // Comparer les nouveaux marqueurs avec les anciens
         const previousMarkers = previousMarkersRef.current;
-        const newMarkers = markers?.filter((marker: IPoint) =>
+        const newMarkers = markers?.filter((marker: IMarker) =>
             !previousMarkers.some(prevMarker => prevMarker.id === marker.id)
         );
 
         // Si de nouveaux marqueurs existent, créer de nouvelles animations d'opacité pour eux
         if (newMarkers && newMarkers.length > 0) {
-            const updatedAnimations = markers?.map((marker: IPoint, index: number) => {
+            const updatedAnimations = markers && markers.map((marker: IMarker, index: number) => {
                 // Si le marqueur est nouveau, il commence à opacité 0, sinon on garde l'animation existante
-                return newMarkers?.some((newMarker: IPoint) => newMarker.id === marker.id)
+                return newMarkers?.some((newMarker: IMarker) => newMarker.id === marker.id)
                     ? new Animated.Value(0)
                     : (opacityAnimations?.[index] ?? new Animated.Value(1));
             });
@@ -143,23 +147,23 @@ const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, ch
                 style={styles.map}
                 showsUserLocation={true}
                 initialRegion={{
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    latitudeDelta: userLocation.latitudeDelta,
-                    longitudeDelta: userLocation.longitudeDelta,
+                    latitude: userLocation.lat,
+                    longitude: userLocation.long,
+                    latitudeDelta: userLocation.latDelta,
+                    longitudeDelta: userLocation.longDelta,
                 }}
                 mapPadding={{
                     top: 0,
                     right: screenDimensions.width * 0.05,
-                    bottom: selectedPoint ? screenDimensions.height * 0.78 : 0,
+                    bottom: selectedMarker ? screenDimensions.height * 0.78 : 0,
                     left: screenDimensions.width * 0.05
                 }}
                 showsPointsOfInterest={false}
             >
                 <Marker
                     coordinate={{
-                        latitude: userLocation.latitude,
-                        longitude: userLocation.longitude,
+                        latitude: userLocation.lat,
+                        longitude: userLocation.long,
                     }}
                     title="Vous êtes ici"
                 >
@@ -169,50 +173,49 @@ const Map: React.FC<IMap> = ({ userLocation, selectedPoint, setSelectedPoint, ch
                     </View>
                 </Marker>
 
-                {markers?.map((point: IPoint, index: number) => {
-                    if (point.type === 1) {
-                        const chat = point.dataId !== undefined ? getChat(point.dataId) : null;
-                        const firstMessageContent = chat?.messages[0]?.content || ''; // Récupérer le contenu du premier message
-                        const displayText = firstMessageContent.slice(0, 10); // Limiter à 10 caractères
+                {markers && markers.map((marker: IMarker, index: number) => {
+                    // if (point.dataType === "1") {
+                    const firstMessageContent = marker?.label;
+                    const displayText = firstMessageContent?.slice(0, 10); // Limiter à 10 caractères
 
-                        return (
-                            <Marker
-                                key={point.id}
-                                coordinate={{
-                                    latitude: point.latitude,
-                                    longitude: point.longitude,
-                                }}
-                                onPress={() => handlePressPoint(point)}
+                    return (
+                        <Marker
+                            key={marker.id}
+                            coordinate={{
+                                latitude: marker.coordinates.lat,
+                                longitude: marker.coordinates.long,
+                            }}
+                            onPress={() => handlePressPoint(marker)}
+                        >
+                            {/* Appliquer l'animation de chute et d'opacité */}
+                            <Animated.View
+                                style={[
+                                    styles.markerContainer,
+                                    {
+                                        opacity: opacityAnimations?.[index] ?? new Animated.Value(1), // Animation d'opacité
+                                    },
+                                ]}
                             >
-                                {/* Appliquer l'animation de chute et d'opacité */}
+                                {/* La pilule avec le texte */}
+                                <View style={styles.pillContainer}>
+                                    {displayText ? <Text style={styles.pillText}>{displayText}</Text> : null}
+                                </View>
+
+                                {/* Le point rouge au centre de la vue */}
                                 <Animated.View
                                     style={[
-                                        styles.markerContainer,
-                                        {
-                                            opacity: opacityAnimations?.[index] ?? new Animated.Value(1), // Animation d'opacité
+                                        styles.customInnerMarker,
+                                        selectedMarker && selectedMarker.id === marker.id && {
+                                            transform: [{ scale: pulseAnimation }],
                                         },
                                     ]}
-                                >
-                                    {/* La pilule avec le texte */}
-                                    <View style={styles.pillContainer}>
-                                        {displayText ? <Text style={styles.pillText}>{displayText}</Text> : null}
-                                    </View>
-
-                                    {/* Le point rouge au centre de la vue */}
-                                    <Animated.View
-                                        style={[
-                                            styles.customInnerMarker,
-                                            selectedPoint && selectedPoint.id === point.id && {
-                                                transform: [{ scale: pulseAnimation }],
-                                            },
-                                        ]}
-                                    />
-                                </Animated.View>
-                            </Marker>
-                        );
-                    } else {
-                        return null;
-                    }
+                                />
+                            </Animated.View>
+                        </Marker>
+                    );
+                    // } else {
+                    //     return null;
+                    // }
                 })}
             </MapView>
         </View>

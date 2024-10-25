@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { BounceIn } from 'react-native-reanimated';
-import { IMessage } from '~/types/ChatInterfaces';
+import { IMessage } from '~/types/MarkerInterfaces';
 import users from '~/data/users.json';
 
 interface MessageComponentProps {
@@ -12,11 +12,11 @@ interface MessageComponentProps {
 }
 
 const Message: React.FC<MessageComponentProps> = ({ item, isCurrentUser, currentUserId }) => {
-    const messageUser = users.data.find((user: { id: String }) => user.id === item.userId);
+    const messageUser = users.data.find((user: { id: String }) => user.id === item.senderId);
 
     return (
         <View
-            key={`${item.userId}-${item.date}-${item.content}`}
+            key={`${item.senderId}-${item.timestamp}-${item.content}`}
             style={[
                 styles.messageContainer,
                 isCurrentUser ? styles.currentUserMessageContainer : styles.otherUserMessageContainer
@@ -41,11 +41,11 @@ const Message: React.FC<MessageComponentProps> = ({ item, isCurrentUser, current
                 {!isCurrentUser && (
                     <Text style={styles.usernameText}>{messageUser?.username}</Text>
                 )}
-                <Text style={[styles.messageContent, { color: currentUserId === item.userId ? 'white' : 'black' }]}>
+                <Text style={[styles.messageContent, { color: currentUserId === item.senderId ? 'white' : 'black' }]}>
                     {item.content}
                 </Text>
-                <Text style={[styles.messageTime, { color: currentUserId === item.userId ? '#D3D3D3' : 'gray' }]}>
-                    {new Date(item.date).toLocaleTimeString('en-US', {
+                <Text style={[styles.messageTime, { color: currentUserId === item.senderId ? '#D3D3D3' : 'gray' }]}>
+                    {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit',
                         hour12: true,

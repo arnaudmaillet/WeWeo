@@ -2,10 +2,15 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import { IUser } from '~/types/UserInterfaces';
 import { router } from 'expo-router';
 
-import { CognitoUserAttribute, CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
-import { userPool } from '~/config/CognitoConfig'
+import { CognitoUserAttribute, CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
 import { jwtDecode } from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import awsConfig from '~/config/awsConfig';
+
+const userPool = new CognitoUserPool({
+    UserPoolId: awsConfig.cognito.userPoolId,
+    ClientId: awsConfig.cognito.clientId,
+});
 
 interface AuthContextProps {
     user: IUser | null;
@@ -77,35 +82,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         const cognitoUser = new CognitoUser(userData);
 
-        cognitoUser.authenticateUser(authenticationDetails, {
-            onSuccess: (result) => {
-                const idToken = result.getIdToken().getJwtToken();
-                const userInfo = jwtDecode<{
-                    sub: string;
-                    email: string;
-                    preferred_username: string;
-                    birthdate: string;
-                    locale: string;
-                }>(idToken);
-                setUser({
-                    id: userInfo.sub || '',
-                    username: userInfo.preferred_username,
-                    email: userInfo.email,
-                    birthdate: userInfo.birthdate,
-                    locale: userInfo.locale,
-                    following: [],
-                });
+        return new Promise<boolean>((resolve) => {
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: (result) => {
+                    const idToken = result.getIdToken().getJwtToken();
+                    const userInfo = jwtDecode<{
+                        sub: string;
+                        email: string;
+                        preferred_username: string;
+                        birthdate: string;
+                        locale: string;
+                    }>(idToken);
+                    setUser({
+                        id: userInfo.sub || '',
+                        username: userInfo.preferred_username,
+                        email: userInfo.email,
+                        birthdate: userInfo.birthdate,
+                        locale: userInfo.locale,
+                        following: [],
+                    });
 
-                // Sauvegarder le jeton dans AsyncStorage
-                storeUser(idToken);
-            },
-            onFailure: (err) => {
-                console.error('Error signing in:', err.message || JSON.stringify(err));
-            },
+                    // Sauvegarder le jeton dans AsyncStorage
+                    storeUser(idToken);
+                    setIsLoading(false);
+                    resolve(true);
+                },
+                onFailure: (err) => {
+                    console.error('Error signing in:', err.message || JSON.stringify(err));
+                    setIsLoading(false);
+                    resolve(false);
+                },
+            });
         });
-
-        setIsLoading(false);
-        return true;
     };
 
     const signOut = async () => {

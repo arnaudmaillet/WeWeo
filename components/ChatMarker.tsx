@@ -1,32 +1,40 @@
 import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard } from 'react-native'
-import Animated, { BounceIn, FadeIn, FadeOut, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import Animated, { BounceIn, FadeIn, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import users from '~/data/users.json';
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { IChatScreen } from '~/types/ChatInterfaces';
+import { IChatMarkerScreen } from '~/types/MarkerInterfaces';
 
 import { useEffect, useState } from 'react';
 import Stickers from './Stickers';
 import Message from './Message';
 
+import { useMarker } from '~/providers/MarkerProvider';
+import { IUser } from '~/types/UserInterfaces';
 
-const ChatScreen: React.FC<IChatScreen> = ({ chat, currentUserId }) => {
+
+const ChatMarker: React.FC<IChatMarkerScreen> = ({ marker, currentUserId }) => {
+
+    const { fetchMessages, messages, participants } = useMarker()
 
     const [newMessageContent, setNewMessageContent] = useState<string>('')
-
-    const isTyping = newMessageContent !== '';
-
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+    const isTyping = newMessageContent !== '';
 
     // Gérer l'envoi d'un sticker
     const handleStickerSend = (stickerSrc: any) => {
         console.log('Sticker sent:', stickerSrc);
         // Ajoutez la logique pour envoyer le sticker ici
     };
+
+    useEffect(() => {
+        fetchMessages(marker.id)
+    }, [marker])
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
@@ -49,14 +57,14 @@ const ChatScreen: React.FC<IChatScreen> = ({ chat, currentUserId }) => {
         };
     }, [])
 
-    const renderUserIcon = ({ item, index }: { item: string, index: number }) => {
-        const user = users.data.find((user: { id: string }) => user.id === item);
+    const renderUserIcon = ({ item, index }: { item: IUser, index: number }) => {
+        const user = users.data.find((user: IUser) => user.id === item.id);
 
         // Le premier utilisateur est positionné normalement, les autres sont empilés en arrière-plan
         return (
             <Animated.View
                 entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
-                key={chat.id}
+                key={marker.id}
                 style={[
                     styles.userStackIcon,
                     {
@@ -82,49 +90,49 @@ const ChatScreen: React.FC<IChatScreen> = ({ chat, currentUserId }) => {
                 exiting={SlideOutDown}
             >
                 {/* Header Bandeau */}
-                <View style={styles.chatHeader}>
+                <View style={styles.markerHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {chat.participantsIds.map((userId: string, index: number) => (
+                            {participants.map((userId: IUser, index: number) => (
                                 <View key={index}>
                                     {renderUserIcon({ item: userId, index })}
                                 </View>
                             ))}
                             <Animated.View
-                                key={chat.id}
-                                entering={FadeIn.springify().damping(17).delay(chat.participantsIds.length * 15 + 500)}
+                                key={marker.id}
+                                entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
                                 style={[
                                     styles.userCountBadge,
-                                    { left: chat.participantsIds.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
+                                    { left: participants.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
                                 ]}>
-                                <Text style={styles.userCountText}>{chat.participantsIds.length}</Text>
+                                <Text style={styles.userCountText}>{participants.length}</Text>
                                 <FontAwesome6 name="users" size={13} color="gray" />
                             </Animated.View>
                         </View>
                     </View>
                     <View style={styles.firstMessageSection}>
                         <Animated.Text
-                            key={chat.id}
+                            key={marker.id}
                             entering={FadeIn.springify()}
                             style={styles.firstMessageText}
                             numberOfLines={1}
                         >
-                            {chat.messages[0].content}
+                            {marker.label}
                         </Animated.Text>
                     </View>
                 </View>
 
                 <FlatList
-                    data={chat.messages}
+                    data={messages}
                     renderItem={({ item, index }) => (
                         <Message
                             key={index}
                             item={item}
-                            isCurrentUser={item.userId === currentUserId}
+                            isCurrentUser={item.senderId === currentUserId}
                             currentUserId={currentUserId}
                         />
                     )}
-                    keyExtractor={(item, index) => index.toString()}
+                    keyExtractor={(_, index) => index.toString()}
                     contentContainerStyle={styles.messageList}
                 />
                 {
@@ -212,7 +220,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     // Bandeau du haut avec les utilisateurs
-    chatHeader: {
+    markerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
@@ -384,4 +392,4 @@ const styles = StyleSheet.create({
 
 
 
-export default ChatScreen;
+export default ChatMarker;

@@ -1,15 +1,14 @@
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
-import chats from '../data/chats.json'
-import ChatScreen from '~/components/Chat'
+import ChatMarker from '~/components/ChatMarker'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import SearchMenu from '~/components/SearchMenu'
 import { useKeyboard } from '~/providers/KeyboardProvider'
 import { useMap } from '~/providers/MapProvider'
 
-import { IPoint } from '~/types/MapInterfaces'
+import { IMarker } from '~/types/MarkerInterfaces'
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
@@ -17,21 +16,18 @@ const MainScreen = () => {
     const { markers } = useMap();
 
     const fakeUserLocation = {
-        latitude: 37.7749,
-        longitude: -122.4194,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
+        lat: 37.7749,
+        long: -122.4194,
+        latDelta: 0.0922,
+        longDelta: 0.0421,
     }
 
-    const [selectedPoint, setSelectedPoint] = useState<IPoint | null>(null);
+    const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
 
     const { keyboardProps } = useKeyboard();
 
-    const getChat = (id: string) => {
-        return chats.data.find(chat => chat.id === id);
-    }
 
     const dismissKeyboard = () => {
         Keyboard.dismiss();
@@ -49,20 +45,21 @@ const MainScreen = () => {
         };
     });
 
-    const runOnJSSetSelectedPoint = (point: IPoint | null) => {
-        setSelectedPoint(point);
+    const runOnJSSetSelectedMarker = (point: IMarker | null) => {
+        setSelectedMarker(point);
     }
 
     const allPoints = markers;
 
     // Fonction pour aller au point suivant
     const goToNextPoint = () => {
-        if (selectedPoint) {
+        if (selectedMarker) {
             if (allPoints) {
-                const currentIndex = allPoints.findIndex((point: IPoint) => point.id === selectedPoint.id);
+                const currentIndex = allPoints.findIndex((point: IMarker) => point.id === selectedMarker.id);
                 if (currentIndex !== undefined && currentIndex !== -1) {
                     const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
-                    setSelectedPoint(allPoints[nextIndex]);
+                    setSelectedMarker(allPoints[nextIndex]);
+                    console.log("Next point: ", selectedMarker);
                 }
             }
         }
@@ -70,12 +67,13 @@ const MainScreen = () => {
 
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
-        if (selectedPoint) {
-            const currentIndex = allPoints?.findIndex((point: IPoint) => point.id === selectedPoint.id);
+        if (selectedMarker) {
+            const currentIndex = allPoints?.findIndex((point: IMarker) => point.id === selectedMarker.id);
             if (currentIndex !== undefined && currentIndex !== -1) {
                 const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
                 if (allPoints) {
-                    setSelectedPoint(allPoints[previousIndex]);
+                    setSelectedMarker(allPoints[previousIndex]);
+                    console.log("Previous point: ", selectedMarker);
                 }
             }
         }
@@ -98,8 +96,8 @@ const MainScreen = () => {
                     offset.value = withSpring(0);
                 } else {
                     offset.value = withTiming(1000, {}, (finished) => {
-                        if (finished && selectedPoint) {
-                            runOnJS(runOnJSSetSelectedPoint)(null);
+                        if (finished && selectedMarker) {
+                            runOnJS(runOnJSSetSelectedMarker)(null);
                         }
                     });
                 }
@@ -117,11 +115,11 @@ const MainScreen = () => {
 
     useEffect(() => {
         offset.value = 0;
-    }, [selectedPoint])
+    }, [selectedMarker])
 
     useEffect(() => {
         offset.value = 0;
-    }, [selectedPoint])
+    }, [selectedMarker])
 
 
     useEffect(() => {
@@ -136,65 +134,59 @@ const MainScreen = () => {
 
     return (
         <View>
-            {(() => {
-                switch (selectedPoint?.type) {
-                    case 1:
-                        const chat = selectedPoint?.dataId !== undefined ? getChat(selectedPoint.dataId) : null;
-                        return chat ? <>
-                            <AnimatedPressable
-                                style={styles.backdrop}
-                                onPress={() => {
-                                    setSelectedPoint(null);
-                                    dismissKeyboard();
-                                }}
-                            />
-                            <GestureDetector gesture={panGesture}>
-                                <Animated.View style={[styles.sheet, translateSheetY]}>
-                                    <KeyboardAvoidingView
-                                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                        keyboardVerticalOffset={170}
-                                        style={styles.keyboardAvoidingView}
-                                    >
-                                        <ChatScreen chat={chat} currentUserId={"1"} />
-                                    </KeyboardAvoidingView>
-                                </Animated.View>
-                            </GestureDetector>
-                        </> : <Text>No chat available</Text>;
-                    default:
-                        return <>
-                            {
-                                isMenuOpen && (
-                                    <AnimatedPressable
-                                        style={styles.backdrop}
-                                        onPress={() => {
-                                            setIsMenuOpen(false)
-                                            dismissKeyboard()
-                                        }}
-                                    />
-                                )
-                            }
-                            <Animated.View
-                                style={[styles.searchMenu, translateSearchMenuY]}
-                                entering={SlideInDown.springify().damping(17)}
-                                exiting={SlideOutDown}
+            {selectedMarker ? (
+                <>
+                    <AnimatedPressable
+                        style={styles.backdrop}
+                        onPress={() => {
+                            setSelectedMarker(null);
+                            dismissKeyboard();
+                        }}
+                    />
+                    <GestureDetector gesture={panGesture}>
+                        <Animated.View style={[styles.sheet, translateSheetY]}>
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                keyboardVerticalOffset={170}
+                                style={styles.keyboardAvoidingView}
                             >
-                                <KeyboardAvoidingView
-                                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                    keyboardVerticalOffset={380}
-                                    style={styles.keyboardAvoidingView}
-                                >
-                                    <SearchMenu onBlurInput={() => setIsMenuOpen(false)} onFocusInput={() => { setIsMenuOpen(true) }} />
-                                </KeyboardAvoidingView>
-                            </Animated.View>
-                        </>
-                }
-            })()}
+                                <ChatMarker marker={selectedMarker} currentUserId={"1"} />
+                            </KeyboardAvoidingView>
+                        </Animated.View>
+                    </GestureDetector>
+                </>
+            ) : (
+                <>
+                    {isMenuOpen && (
+                        <AnimatedPressable
+                            style={styles.backdrop}
+                            onPress={() => {
+                                setIsMenuOpen(false);
+                                dismissKeyboard();
+                            }}
+                        />
+                    )}
+                    <Animated.View
+                        style={[styles.searchMenu, translateSearchMenuY]}
+                        entering={SlideInDown.springify().damping(17)}
+                        exiting={SlideOutDown}
+                    >
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            keyboardVerticalOffset={380}
+                            style={styles.keyboardAvoidingView}
+                        >
+                            <SearchMenu onBlurInput={() => setIsMenuOpen(false)} onFocusInput={() => setIsMenuOpen(true)} />
+                        </KeyboardAvoidingView>
+                    </Animated.View>
+                </>
+            )}
 
             <Map
                 userLocation={fakeUserLocation}
-                selectedPoint={selectedPoint}
-                setSelectedPoint={setSelectedPoint}
-                chats={chats} />
+                selectedMarker={selectedMarker}
+                setSelectedMarker={setSelectedMarker}
+                markers={markers && markers ? markers : []} />
         </View>
     )
 }

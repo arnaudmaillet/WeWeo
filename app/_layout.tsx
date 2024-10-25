@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '~/providers/AuthProvider';
 import { KeyboardProvider } from '~/providers/KeyboardProvider';
 import { MapProvider } from '~/providers/MapProvider';
+import { MarkerProvider } from '~/providers/MarkerProvider';
 
 export default function Layout() {
   return (
@@ -12,13 +13,15 @@ export default function Layout() {
       <SafeAreaProvider>
         <KeyboardProvider>
           <AuthProvider>
-            <MapProvider>
-              <Stack>
-                <Stack.Screen name="LoginScreen" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
-                <Stack.Screen name="SignupScreen" options={{ title: 'Signup', headerShown: false }} />
-                <Stack.Screen name="MainScreen" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
-              </Stack>
-            </MapProvider>
+            <MarkerProvider>
+              <MapProvider>
+                <Stack>
+                  <Stack.Screen name="LoginScreen" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
+                  <Stack.Screen name="SignupScreen" options={{ title: 'Signup', headerShown: false }} />
+                  <Stack.Screen name="MainScreen" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
+                </Stack>
+              </MapProvider>
+            </MarkerProvider>
           </AuthProvider>
         </KeyboardProvider>
       </SafeAreaProvider>
