@@ -13,15 +13,15 @@ export default function Layout() {
       <SafeAreaProvider>
         <KeyboardProvider>
           <AuthProvider>
-            <MarkerProvider>
-              <MapProvider>
+            <MapProvider>
+              <MarkerProvider>
                 <Stack>
                   <Stack.Screen name="LoginScreen" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
                   <Stack.Screen name="SignupScreen" options={{ title: 'Signup', headerShown: false }} />
                   <Stack.Screen name="MainScreen" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
                 </Stack>
-              </MapProvider>
-            </MarkerProvider>
+              </MarkerProvider>
+            </MapProvider>
           </AuthProvider>
         </KeyboardProvider>
       </SafeAreaProvider>

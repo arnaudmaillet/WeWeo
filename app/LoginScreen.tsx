@@ -20,14 +20,15 @@ const LoginScreen = () => {
             setPassword(input); // Mettez à jour l'état du password
             console.log('try to login with email:', email, 'and password:', input); // Utilisez 'input' ici directement
             const isLogged = await signIn(email, input);
-            setEmail('');
             setPassword('');
-            setInput('');
             setIsEmailOk(false);
             if (isLogged) {
+                setEmail('');
+                setInput('');
                 setKeyboardPropsOnClick(!keyboardPropsOnClick);
                 router.push('/MainScreen');
             } else {
+                setInput(email);
                 alert('Invalid email or password');
             }
         } else {

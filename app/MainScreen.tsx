@@ -1,7 +1,7 @@
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
-import ChatMarker from '~/components/ChatMarker'
+import MarkerChat from '~/components/MarkerChat'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import SearchMenu from '~/components/SearchMenu'
@@ -13,7 +13,7 @@ import { IMarker } from '~/types/MarkerInterfaces'
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-    const { markers } = useMap();
+    const { selectedMarker, markers, setSelectedMarker } = useMap();
 
     const fakeUserLocation = {
         lat: 37.7749,
@@ -22,7 +22,6 @@ const MainScreen = () => {
         longDelta: 0.0421,
     }
 
-    const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
 
@@ -150,7 +149,7 @@ const MainScreen = () => {
                                 keyboardVerticalOffset={170}
                                 style={styles.keyboardAvoidingView}
                             >
-                                <ChatMarker marker={selectedMarker} currentUserId={"1"} />
+                                <MarkerChat marker={selectedMarker} />
                             </KeyboardAvoidingView>
                         </Animated.View>
                     </GestureDetector>

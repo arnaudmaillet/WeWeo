@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
-import dummyMarkers from '../data/markers.json';
 import { useAuth } from './AuthProvider';
 import { ICoordinates } from '~/types/MapInterfaces';
 import { IMarker } from '~/types/MarkerInterfaces';
@@ -9,8 +8,10 @@ import awsConfig from '~/config/awsConfig';
 export interface MapContextProps {
     markers: IMarker[] | null
     category: number;
-    setCategory: (value: number) => void;
+    selectedMarker: IMarker | null;
     displayMarkersForUser: string | null;
+    setCategory: (value: number) => void;
+    setSelectedMarker: (value: IMarker | null) => void;
     setDisplayMarkersForUser: (value: string | null) => void;
 }
 
@@ -20,6 +21,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const { user } = useAuth();
 
+    const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null);
     const [markers, setMarkers] = useState<IMarker[] | null>(null);
     const [displayMarkersForUser, setDisplayMarkersForUser] = useState<string | null>(null);
     const [category, setCategory] = useState<number>(1);
@@ -70,10 +72,11 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } else {
             const fetchMarkers = async () => {
                 try {
-                    const response = await fetch(awsConfig.apiGateway.markers.endpoint);
+                    const url = `https://${awsConfig.apiGateway.restApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}/markers`;
+                    const response = await fetch(url);
                     const data: string = (await response.json()).body;
                     const mappedData: IMarker[] = JSON.parse(data).map((item: any) => ({
-                        id: item.id,
+                        id: item.markerId,
                         coordinates: {
                             long: parseFloat(item.coordinate.long),
                             lat: parseFloat(item.coordinate.lat)
@@ -94,7 +97,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [user]);
 
     return (
-        <MapContext.Provider value={{ markers, category, setCategory, displayMarkersForUser, setDisplayMarkersForUser }}>
+        <MapContext.Provider value={{ markers, category, selectedMarker, displayMarkersForUser, setCategory, setSelectedMarker, setDisplayMarkersForUser }}>
             {children}
         </MapContext.Provider>
     );
