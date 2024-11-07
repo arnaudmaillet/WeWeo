@@ -18,8 +18,9 @@ import { IUser } from '~/types/UserInterfaces';
 const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
     const flatListRef = useRef<FlatList>(null);
+    const inputRef = useRef<TextInput>(null);
 
-    const { isLoading, message, messages, participants, fetchMessages, setMessage, sendMessage } = useMarker()
+    const { isLoading, message, messages, participants, fetchMessages, setMessage, setMessages, setParticipants, sendMessage } = useMarker()
 
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -27,23 +28,25 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
     const isTyping = message !== '';
 
-    // Gérer l'envoi d'un sticker
-    const handleStickerSend = (stickerSrc: any) => {
-        console.log('Sticker sent:', stickerSrc);
-        // Ajoutez la logique pour envoyer le sticker ici
-    };
-
     useEffect(() => {
-        fetchMessages()
+        setMessages([])
+        setParticipants([])
+        if (marker.label === '') {
+            inputRef.current?.focus()
+        } else {
+            fetchMessages()
+        }
     }, [marker])
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardWillShow', (e: any) => {
             setKeyboardHeight(6.9999); // Récupère la hauteur du clavier
+            setKeyboardVisible(true);
             flatListRef.current?.scrollToEnd({ animated: true });
         });
 
         const keyboardDidHideListener = Keyboard.addListener('keyboardWillHide', () => {
+            setKeyboardVisible(false);
             setKeyboardHeight(7);
         });
 
@@ -53,13 +56,22 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         };
     }, []);
 
-    const renderUserIcon = ({ user, index }: { user: IUser, index: number }) => {
+    const handleShowStickers = () => {
+        setShowStickers(true);
+    }
 
-        // Le premier utilisateur est positionné normalement, les autres sont empilés en arrière-plan
+    const renderUserIcon = ({ user, index }: { user: IUser, index: number }) => {
+        // Récupérer les initiales : 2 lettres si deux mots, sinon une seule lettre
+        const initials = user.username
+            ? user.username.split(' ').length > 1
+                ? user.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
+                : user.username[0].toUpperCase()
+            : '';
+
         return (
             <Animated.View
                 entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
-                key={marker.id}
+                key={user.id}
                 style={[
                     styles.userStackIcon,
                     {
@@ -69,11 +81,12 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                 ]}
             >
                 <Animated.Text style={styles.userAvatarText} entering={FadeIn.springify()}>
-                    {user.username && user.username.slice(0, 2).toUpperCase()}
+                    {initials}
                 </Animated.Text>
             </Animated.View>
         );
     };
+
 
     return (
         <View
@@ -88,27 +101,39 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                 <View style={styles.markerHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {participants && participants.map((user: IUser, index: number) => (
-                                <View key={index}>
-                                    {renderUserIcon({ user: user, index })}
+                            {marker.label === '' ? (
+                                <TextInput
+                                    style={styles.firstMessageText}
+                                    placeholder="Send your first message here!"
+                                    value={message}
+                                    onChangeText={setMessage}
+                                    editable={false}
+                                />
+                            ) : (
+                                <View>
+                                    {participants && participants.map((user: IUser, index: number) => (
+                                        <View key={index}>
+                                            {renderUserIcon({ user: user, index })}
+                                        </View>
+                                    ))}
+                                    {participants.length > 0 && <Animated.View
+                                        key={marker.markerId}
+                                        entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
+                                        style={[
+                                            styles.userCountBadge,
+                                            { left: participants.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
+                                        ]}>
+                                        <Text style={styles.userCountText}>{participants.length}</Text>
+                                        <FontAwesome6 name="users" size={13} color="gray" />
+                                    </Animated.View>
+                                    }
                                 </View>
-                            ))}
-                            {participants.length > 0 && <Animated.View
-                                key={marker.id}
-                                entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
-                                style={[
-                                    styles.userCountBadge,
-                                    { left: participants.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
-                                ]}>
-                                <Text style={styles.userCountText}>{participants.length}</Text>
-                                <FontAwesome6 name="users" size={13} color="gray" />
-                            </Animated.View>
-                            }
+                            )}
                         </View>
                     </View>
                     <View style={styles.firstMessageSection}>
                         <Animated.Text
-                            key={marker.id}
+                            key={marker.markerId}
                             entering={FadeIn.springify()}
                             style={styles.firstMessageText}
                             numberOfLines={1}
@@ -123,7 +148,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                     data={messages}
                     renderItem={({ item, index }) => (
                         <Message
-                            key={index}
+                            key={item.messageId}
                             item={item}
                             previousSender={index > 0 ? messages[index - 1].senderInfo : null}
                         />
@@ -153,17 +178,18 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
             </Animated.View>
             <Animated.View
                 style={styles.inputSection}
-                entering={SlideInDown.springify().damping(17)}
+                entering={marker.label !== '' ? SlideInDown.springify().damping(17) : undefined}
                 exiting={SlideOutDown}
                 key={showStickers.toString()}
             >
                 {showStickers ? (
                     <View style={styles.stickerSelector}>
-                        <Stickers onStickerSend={handleStickerSend} />
+                        <Stickers />
                     </View>
                 ) : (
                     <View style={styles.messageInputWrapper}>
                         <TextInput
+                            ref={inputRef}
                             style={styles.messageInput}
                             placeholder="Tapez votre message..."
                             value={message}
@@ -177,7 +203,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                             entering={ZoomIn.springify().damping(17)}
                             exiting={ZoomOut.springify().damping(17).duration(500)}
                         >
-                            <TouchableOpacity onPress={() => setShowStickers(!showStickers)}>
+                            <TouchableOpacity onPress={handleShowStickers}>
                                 {!isKeyboardVisible && (
                                     <MaterialCommunityIcons name="sticker-emoji" size={23} color="#D3D3D3" />
                                 )}

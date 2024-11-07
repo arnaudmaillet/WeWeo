@@ -1,12 +1,32 @@
 import { ICoordinates } from "./MapInterfaces";
 import { IUser } from "./UserInterfaces";
 
+export enum ChatTypes {
+    Chat = 'chat',
+    Group = 'group',
+    Channel = 'channel'
+}
+
+export enum MimeTypes {
+    GIF = 'image/gif',
+    JPEG = 'image/jpeg',
+    PNG = 'image/png'
+}
+
+export interface IFile {
+    name: string,
+    uri: string,
+    url: string,
+    type: MimeTypes
+}
+
 export interface IMessage {
     messageId: string,
     senderInfo: IUser,
     markerId: string,
     content: string,
-    timestamp: number
+    timestamp: number,
+    type: string
 }
 
 export interface IRoom {
@@ -26,7 +46,7 @@ export interface IMarkerLive extends IMarker {}
 
 
 export interface IMarker {
-    id: string;
+    markerId: string;
     coordinates: ICoordinates;
     dataType: string;
     dataId?: string;

@@ -64,6 +64,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     locale: userInfo.locale,
                     following: [],
                 });
+            } else {
+                router.push('/LoginScreen');
             }
         } catch (e) {
             console.error('Failed to load the user token.', e);

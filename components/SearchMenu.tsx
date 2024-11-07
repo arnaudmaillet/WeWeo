@@ -1,12 +1,13 @@
 import { FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor } from 'react-native-reanimated'
-import { PanGestureHandler } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown } from 'react-native-reanimated'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useAuth } from '~/providers/AuthProvider';
 import Users from '~/data/users.json';
 import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/providers/MapProvider';
+import { ISwitch } from '~/types/SwitchInterface';
+import Switch from './Switch';
 
 interface SearchMenuProps {
     onFocusInput: () => void;
@@ -78,7 +79,6 @@ const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: bool
 
 const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) => {
     const [searchContent, setSearchContent] = React.useState<string>('')
-    const [switchWidth, setSwitchWidth] = useState<number>(0);
     const [modalVisible, setModalVisible] = useState(false);
 
     const { user, isLoading, signOut } = useAuth();
@@ -86,80 +86,9 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
     const isTyping = searchContent !== '';
 
-    // Animation shared value for the sliding effect
-    const slidePosition = useSharedValue(category)
 
     // Valeur partagée pour animer la couleur de fond
     const backgroundColorValue = useSharedValue(category);
-
-    // Shared value for indicator and text color
-    const colorValue = useSharedValue(category);
-
-    // Update indicator color based on category
-    useEffect(() => {
-        colorValue.value = withTiming(category, { duration: 300 });
-    }, [category]);
-
-    const animatedIndicatorStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateX: slidePosition.value }],
-            width: switchWidth / 3,
-            backgroundColor: interpolateColor(
-                colorValue.value,
-                [0, 1, 2],
-                ['#0088cc', '#FF7518', '#DA70D6'] // Couleurs selon la catégorie
-            ),
-        };
-    });
-
-
-    useEffect(() => {
-        if (switchWidth > 0) {
-            const buttonWidth = switchWidth / 3;
-            slidePosition.value = withTiming(category * buttonWidth, { duration: 300 }); // Se positionner en fonction de la catégorie
-        }
-    }, [switchWidth, category]);
-
-    // Update position when switch changes with less pronounced spring animation
-    const handleSwitchChange = (index: number) => {
-        setCategory(index)
-        const buttonWidth = switchWidth / 3; // Calculate the width of each button
-        slidePosition.value = withSpring(index * buttonWidth, {
-            damping: 20,
-            stiffness: 100,
-        });
-    }
-
-    // Handle layout to get the switchContainer's width
-    const handleLayout = (event: any) => {
-        const { width } = event.nativeEvent.layout;
-        setSwitchWidth(width);
-    }
-
-    // Handle swipe gesture to follow the user's finger
-    const handleGestureEvent = (event: any) => {
-        const { translationX } = event.nativeEvent;
-        const buttonWidth = switchWidth / 3;
-
-        // Update the slidePosition as the user swipes
-        const newPosition = category * buttonWidth + translationX;
-        if (newPosition >= 0 && newPosition <= switchWidth - buttonWidth) {
-            slidePosition.value = newPosition;
-        }
-    }
-
-    // Handle the end of the gesture to snap the switch to the nearest button
-    const handleGestureEnd = (event: any) => {
-        const { translationX } = event.nativeEvent;
-        const buttonWidth = switchWidth / 3;
-
-        // Calculate the final position based on how far the user swiped
-        const newActiveSwitch = Math.round((category * buttonWidth + translationX) / buttonWidth);
-
-        // Make sure the new index is within the valid range [0, 2]
-        const validIndex = Math.max(0, Math.min(2, newActiveSwitch));
-        handleSwitchChange(validIndex);
-    }
 
 
     const getFollowingAccounts = (): IUser[] => {
@@ -169,7 +98,6 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
             return Users.data
         }
     }
-
 
     // Lorsqu'un utilisateur est sélectionné ou désélectionné
     const handlePressUser = (userId: string) => {
@@ -182,16 +110,41 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
         }
     };
 
-
     const handleSignOut = async () => {
         signOut().then(() => {
             setModalVisible(false);
         });
     };
 
+    const visibilitySwitch: ISwitch = {
+        buttons: [
+            {
+                label: 'Discover',
+                class: <Ionicons />,
+                name: 'compass-outline',
+                color: '#0088cc',
+                size: 16,
+            },
+            {
+                label: 'Friends',
+                class: <MaterialIcons />,
+                name: 'group',
+                color: '#DA70D6',
+                size: 16,
+            },
+            {
+                label: 'Favorite',
+                class: <MaterialIcons />,
+                name: 'favorite-outline',
+                color: '#FF7518',
+                size: 16,
+            },
+        ],
+    }
+
 
     return (
-        <View style={styles.container}>
+        <Animated.View key="searchMenu" style={styles.container} entering={SlideInDown.springify().damping(17)} exiting={SlideOutDown.springify().damping(17)}>
             <FlatList
                 data={getFollowingAccounts()}
                 horizontal={true}
@@ -261,38 +214,10 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                 </View>
                 <View style={styles.row}>
                     {/* PanGestureHandler for swipe functionality */}
-                    <PanGestureHandler onGestureEvent={handleGestureEvent} onEnded={handleGestureEnd}>
-                        <Animated.View
-                            style={styles.switchContainer}
-                            onLayout={handleLayout} // Capture the layout when the component is rendered
-                        >
-                            {/* Sliding indicator behind buttons */}
-                            <Animated.View style={[styles.switchIndicator, animatedIndicatorStyle]} />
-
-                            {/* Switch buttons */}
-                            <TouchableOpacity style={styles.switchButton} onPress={() => handleSwitchChange(0)}>
-                                <View style={styles.switchContent}>
-                                    <Ionicons name="compass-outline" size={16} color={category === 0 ? "white" : "#0088cc"} />
-                                    <Animated.Text style={[styles.switchText, { color: category === 0 ? "white" : "#0088cc" }]}>Discover</Animated.Text>
-                                </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.switchButton} onPress={() => handleSwitchChange(1)}>
-                                <View style={styles.switchContent}>
-                                    <Ionicons name="flame-outline" size={16} color={category === 1 ? "white" : "#FF7518"} />
-                                    <Animated.Text style={[styles.switchText, { color: category === 1 ? "white" : "#FF7518" }]}>Trending</Animated.Text>
-                                </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.switchButton} onPress={() => handleSwitchChange(2)}>
-                                <View style={styles.switchContent}>
-                                    <Ionicons name="people-outline" size={16} color={category === 2 ? "white" : "#DA70D6"} />
-                                    <Animated.Text style={[styles.switchText, { color: category === 2 ? "white" : "#DA70D6" }]}>Friends</Animated.Text>
-                                </View>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    </PanGestureHandler>
+                    <Switch props={visibilitySwitch} />
 
                     {/* Input field with search icon on the left */}
-                    <Animated.View style={styles.inputContainer}>
+                    <View style={styles.inputContainer}>
                         <Ionicons name="search-outline" size={20} color="#D3D3D3" style={styles.searchIcon} />
                         <TextInput
                             style={styles.input}
@@ -315,10 +240,10 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                             </TouchableOpacity>
                         </Animated.View>
 
-                    </Animated.View>
+                    </View>
                 </View>
             </View>
-        </View>
+        </Animated.View>
     )
 }
 
@@ -335,10 +260,10 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(0, 0, 0, 0.1)',
         borderWidth: 1,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 10,
     },
     secondRow: {
         flex: 1,
@@ -363,8 +288,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#0088cc',
-        borderColor: 'rgba(0, 0, 0, 0.1)',
     },
     accountIconText: {
         color: 'white',
@@ -372,46 +295,39 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     row: {
-        flex: 1, // This will take the rest of the space in the row
+        flex: 1,
         flexDirection: 'column',
         justifyContent: 'space-between',
     },
     userIconContainer: {
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15, // Space between the user icon and the switch/input
-        flex: 0.2, // Take 10% of the space
-        padding: 2,
-    },
-    userStats: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 5,
+        marginRight: 15,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fond semi-transparent pour le modal
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     modalContent: {
         backgroundColor: 'white',
-        padding: 20, // Augmentation du padding pour plus d'espace
-        borderRadius: 15, // Bordures plus arrondies
-        width: 300, // Largeur augmentée pour un meilleur design
+        padding: 20,
+        borderRadius: 15,
+        width: 300,
         alignItems: 'center',
-        shadowColor: '#000', // Ombre pour un effet flottant
-        shadowOffset: { width: 0, height: 4 }, // Position de l'ombre
-        shadowOpacity: 0.3, // Opacité de l'ombre
-        shadowRadius: 8, // Rayon de l'ombre
-        elevation: 10, // Ombre pour Android
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 10,
     },
     modalTitle: {
-        fontSize: 20, // Augmentation de la taille du texte pour plus de lisibilité
+        fontSize: 20,
         fontWeight: 'bold',
-        color: '#333', // Texte de couleur plus sombre
+        color: '#333',
         marginBottom: 20,
-        textAlign: 'center', // Centrer le texte
+        textAlign: 'center',
     },
     modalButtons: {
         flexDirection: 'row',
@@ -422,53 +338,20 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '45%',
         alignItems: 'center',
-        justifyContent: 'center',  // Centrage vertical
+        justifyContent: 'center',
         paddingVertical: 10,
         borderRadius: 10,
         height: 40
     },
     cancelButton: {
-        backgroundColor: '#ccc', // Bouton d'annulation en gris clair
+        backgroundColor: '#ccc',
     },
     logoutButton: {
-        backgroundColor: '#ff4d4d', // Rouge pour Se déconnecter
+        backgroundColor: '#ff4d4d',
     },
     buttonText: {
         color: 'white',
         fontWeight: 'bold',
-    },
-
-    switchContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        height: 40, // Same height for consistency
-    },
-    switchButton: {
-        flex: 1,
-        paddingVertical: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-    },
-    switchContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    switchText: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginLeft: 5,
-    },
-    switchIndicator: {
-        position: 'absolute',
-        height: '100%',
-        backgroundColor: '#0088cc',
-        borderRadius: 8,
-        zIndex: 0,
     },
     inputContainer: {
         flexDirection: 'row',
@@ -494,7 +377,6 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     animatedIcon: {
-
         padding: 4,
         width: 35,
         height: 35,
@@ -504,5 +386,10 @@ const styles = StyleSheet.create({
     sendButton: {
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    userStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 5,
     },
 });

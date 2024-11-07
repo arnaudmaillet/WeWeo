@@ -12,7 +12,5 @@ export interface ICoordinates {
 
 export interface IMap {
     userLocation: ICoodinatesWithZoom;
-    selectedMarker: IMarker | null;
-    setSelectedMarker: (marker: IMarker | null) => void;
     markers: IMarker[];
 }
