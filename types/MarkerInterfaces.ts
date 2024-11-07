@@ -21,8 +21,11 @@ export interface IFile {
 }
 
 export interface IMessage {
+    __typename?: "Message",
     messageId: string,
     senderInfo: IUser,
+    senderId?: string,
+    user?: IUser,
     markerId: string,
     content: string,
     timestamp: number,
@@ -46,10 +49,13 @@ export interface IMarkerLive extends IMarker {}
 
 
 export interface IMarker {
-    markerId: string;
+    __typename?: "Marker";
     coordinates: ICoordinates;
-    dataType: string;
-    dataId?: string;
-    minZoom: number;
+    createdAt?: number;
+    creatorId?: string;
     label: string;
-}
+    markerId: string;
+    minZoom: number;
+    dataId?: string;
+    dataType?: string;
+  }

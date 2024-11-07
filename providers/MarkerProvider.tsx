@@ -7,6 +7,8 @@ import { useMap } from './MapProvider';
 import { randomUUID } from 'expo-crypto';
 
 import awsConfig from '~/config/awsConfig';
+import { useQuery } from '@apollo/client';
+import { GET_MESSAGES } from '~/services/graphql/Queries';
 
 interface MarkerContextProps {
     message: string;
@@ -38,6 +40,25 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const { user } = useAuth();
     const { selectedMarker } = useMap();
+
+    const markerId = selectedMarker?.markerId;
+
+    const { loading, error, data } = useQuery(GET_MESSAGES, {
+        variables: { markerId },
+    });
+
+    useEffect(() => {
+        // if (data && data.getMessages) {
+        //     setMessages(data.getMessages);
+        //     getParticipants(data.getMessages);
+        // } else if (error) {
+        //     console.error('Error fetching messages:', error.message);
+        //     setMessages([]);
+        // }
+        if (selectedMarker && selectedMarker.markerId) {
+            console.log("error", error, "data", data);
+        }
+    }, [selectedMarker, data, error]);
 
 
     useEffect(() => {
@@ -130,19 +151,19 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     const fetchMessages = async () => {
-        try {
-            const response = await fetch(`https://${awsConfig.apiGateway.restApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}/markers/${selectedMarker?.markerId}/messages`);
-            const data: string = (await response.json()).body;
-            const messages = JSON.parse(data);
-            setMessages(messages);
-            getParticipants(messages);
-        } catch (e) {
-            console.error("Failed to fetch messages.", e);
-        }
+        // try {
+        //     const response = await fetch(`https://${awsConfig.apiGateway.restApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}/markers/${selectedMarker?.markerId}/messages`);
+        //     const data: string = (await response.json()).body;
+        //     const messages = JSON.parse(data);
+        //     setMessages(messages);
+        //     getParticipants(messages);
+        // } catch (e) {
+        //     console.error("Failed to fetch messages.", e);
+        // }
     }
 
     const getParticipants = (messages: IMessage[]) => {
-        const participantsInfo: IUser[] = messages.map((message) => message.senderInfo);
+        const participantsInfo: IUser[] = messages.map((message) => message.senderInfo!);
         const uniqueParticipantsInfo: IUser[] = participantsInfo.filter((obj, index, self) =>
             index === self.findIndex((t) => (t.id === obj.id))
         );

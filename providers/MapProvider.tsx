@@ -1,10 +1,10 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 import { useAuth } from './AuthProvider';
-import { ICoordinates } from '~/types/MapInterfaces';
 import { ChatTypes, IMarker } from '~/types/MarkerInterfaces';
-import awsConfig from '~/config/awsConfig';
 import { randomUUID } from 'expo-crypto';
+import { GET_MARKERS } from '~/services/graphql/Queries';
+import { useQuery } from '@apollo/client';
 
 export interface MapContextProps {
     markers: IMarker[] | null;
@@ -33,6 +33,25 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null); // marker selected by the user
     const [displayMarkersForUser, setDisplayMarkersForUser] = useState<string | null>(null);
     const [category, setCategory] = useState<number>(0);
+
+
+    const { loading, error, data } = useQuery(GET_MARKERS);
+
+    useEffect(() => {
+        if (!user) {
+            setMarkers(null);
+            setCategory(1);
+            setDisplayMarkersForUser(null);
+        } else {
+            if (data && data.getMarkers) {
+                setMarkers(data.getMarkers);
+            } else if (error) {
+                console.error('Error fetching markers:', error.message);
+                setMarkers(null);
+            }
+        }
+    }, [markers, user, data, error]);
+
 
     const addMarker = async (marker: IMarker): Promise<boolean> => {
         if (!user) return false;
@@ -100,38 +119,6 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     //         setByCategory();
     //     }
     // }, [displayMarkersForUser]);
-
-    useEffect(() => {
-        if (!user) {
-            setMarkers(null);
-            setCategory(1);
-            setDisplayMarkersForUser(null);
-        } else {
-            const fetchMarkers = async () => {
-                try {
-                    const url = `https://${awsConfig.apiGateway.restApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}/markers`;
-                    const response = await fetch(url);
-                    const data: string = (await response.json()).body;
-                    const mappedData: IMarker[] = JSON.parse(data).map((item: any) => ({
-                        markerId: item.markerId,
-                        coordinates: {
-                            long: parseFloat(item.coordinate.long),
-                            lat: parseFloat(item.coordinate.lat)
-                        } as ICoordinates,
-                        dataType: item.dataType,
-                        dataId: item.id,
-                        minZoom: parseInt(item.minZoom, 10),
-                        label: item.label
-                    }));
-                    setMarkers(mappedData);
-                } catch (error) {
-                    console.error('Error fetching rooms:', error);
-                }
-            };
-            fetchMarkers();
-            //setMarkers(dummyMarkers);
-        }
-    }, [user]);
 
     return (
         <MapContext.Provider value={{

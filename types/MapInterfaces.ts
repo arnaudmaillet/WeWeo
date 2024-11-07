@@ -6,6 +6,7 @@ export interface ICoodinatesWithZoom extends ICoordinates {
 }
 
 export interface ICoordinates {
+    __typename?: "Coordinates";
     lat: number;
     long: number;
 }

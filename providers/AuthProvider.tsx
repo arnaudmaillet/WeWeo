@@ -21,6 +21,16 @@ interface AuthContextProps {
     signOut: () => Promise<void>;
 }
 
+export const getToken = async () => {
+    try {
+        const token = await AsyncStorage.getItem('@user_token');
+        return token;
+    } catch (e) {
+        console.error('Failed to retrieve token:', e);
+        return null;
+    }
+};
+
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -43,6 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             console.error('Failed to save the user token.', e);
         }
     };
+
 
     const loadUser = async () => {
         try {
