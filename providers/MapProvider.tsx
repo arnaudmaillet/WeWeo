@@ -67,7 +67,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     lat: marker.coordinates.lat,
                     long: marker.coordinates.long,
                     label: marker.label,
-                    creatorId: user.id,
+                    creatorId: user.userId,
                 })
             });
 

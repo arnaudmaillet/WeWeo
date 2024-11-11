@@ -25,7 +25,6 @@ export interface IMessage {
     messageId: string,
     senderInfo: IUser,
     senderId?: string,
-    user?: IUser,
     markerId: string,
     content: string,
     timestamp: number,

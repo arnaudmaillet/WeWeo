@@ -23,8 +23,7 @@ interface AuthContextProps {
 
 export const getToken = async () => {
     try {
-        const token = await AsyncStorage.getItem('@user_token');
-        return token;
+        return await AsyncStorage.getItem('@user_token');
     } catch (e) {
         console.error('Failed to retrieve token:', e);
         return null;
@@ -68,7 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }>(token);
 
                 setUser({
-                    id: userInfo.sub || '',
+                    userId: userInfo.sub || '',
                     username: userInfo.preferred_username,
                     email: userInfo.email,
                     birthdate: userInfo.birthdate,
@@ -99,6 +98,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             cognitoUser.authenticateUser(authenticationDetails, {
                 onSuccess: (result) => {
                     const idToken = result.getIdToken().getJwtToken();
+                    if (!idToken) {
+                        console.error('No token found in the result:', result);
+                        setIsLoading(false);
+                        resolve(false);
+                        return;
+                    }
                     const userInfo = jwtDecode<{
                         sub: string;
                         email: string;
@@ -107,7 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         locale: string;
                     }>(idToken);
                     setUser({
-                        id: userInfo.sub || '',
+                        userId: userInfo.sub || '',
                         username: userInfo.preferred_username,
                         email: userInfo.email,
                         birthdate: userInfo.birthdate,
@@ -116,7 +121,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     });
 
                     // Sauvegarder le jeton dans AsyncStorage
-                    storeUser(idToken);
+                    storeUser(idToken)
                     setIsLoading(false);
                     resolve(true);
                 },
@@ -164,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 } else if (result) {
                     console.log(result);
                     setUserTmp({
-                        id: result?.userSub,
+                        userId: result?.userSub,
                         username: username,
                         email: email,
                         following: [],
@@ -185,7 +190,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const confirmSignUpResult = await new Promise<boolean>((resolve) => {
             const cognitoUser = new CognitoUser({
-                Username: userTmp?.id || '',
+                Username: userTmp?.userId || '',
                 Pool: userPool
             });
 

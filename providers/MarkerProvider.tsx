@@ -7,8 +7,11 @@ import { useMap } from './MapProvider';
 import { randomUUID } from 'expo-crypto';
 
 import awsConfig from '~/config/awsConfig';
-import { useQuery } from '@apollo/client';
+import { useMutation, useQuery, } from '@apollo/client';
+import { useSubscription } from '@apollo/client';
+import { ON_NEW_MESSAGE } from '~/services/graphql/Subscriptions';
 import { GET_MESSAGES } from '~/services/graphql/Queries';
+import { SEND_MESSAGE } from '~/services/graphql/Mutations';
 
 interface MarkerContextProps {
     message: string;
@@ -20,7 +23,6 @@ interface MarkerContextProps {
     setMessages: (messages: IMessage[]) => void;
     setParticipants: (participants: IUser[]) => void;
     setFile: (file: IFile) => void;
-    fetchMessages: () => Promise<void>;
     sendMessage: () => void;
     sendSticker: () => void;
 }
@@ -43,63 +45,126 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const markerId = selectedMarker?.markerId;
 
-    const { loading, error, data } = useQuery(GET_MESSAGES, {
+    // Chargement des messages
+    const { loading, error: queryError, data: queryData, refetch } = useQuery(GET_MESSAGES, {
         variables: { markerId },
+        skip: true, // Évite l'exécution immédiate de la requête
     });
 
     useEffect(() => {
-        // if (data && data.getMessages) {
-        //     setMessages(data.getMessages);
-        //     getParticipants(data.getMessages);
-        // } else if (error) {
-        //     console.error('Error fetching messages:', error.message);
-        //     setMessages([]);
-        // }
-        if (selectedMarker && selectedMarker.markerId) {
-            console.log("error", error, "data", data);
+        if (markerId) {
+            // Exécute la requête à chaque changement de markerId
+            refetch({ markerId }).then(response => {
+                if (response.data) {
+                    setMessages(response.data.getMessages);
+                }
+            }).catch(error => {
+                console.error('Error fetching messages:', error.message);
+            });
         }
-    }, [selectedMarker, data, error]);
+    }, [markerId, refetch]);
+
+
+    // Subscription pour les nouveaux messages en temps réel
+    useSubscription(ON_NEW_MESSAGE, {
+        variables: { markerId },
+        onData: ({ data }) => {
+            if (data && data.data.onNewMessage) {
+                console.log("New message received:", data.data.onNewMessage);
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    data.data.onNewMessage,
+                ]);
+            }
+        },
+        onError: (error) => {
+            console.error('Error fetching messages:', error.message)
+        }
+    });
+
+
+    // Mutation pour envoyer un nouveau message
+    const [sendMessageMutation] = useMutation(SEND_MESSAGE, {
+        onCompleted: (data) => {
+            console.log("Message sent successfully:", data.sendMessage);
+            setMessage(''); // Effacer le champ d’entrée après l’envoi du message
+        },
+        onError: (error) => {
+            console.error("Error sending message:", error);
+        },
+    });
+
+    const sendMessage = () => {
+        if (message.trim() === '') return; // Éviter d'envoyer des messages vides
+
+        if (user) {
+            sendMessageMutation({
+                variables: {
+                    markerId,
+                    content: message,
+                    senderId: user.userId,
+                    type: 'message', // ou 'sticker', selon le type de message
+                },
+            });
+        } else {
+            console.error('User is not authenticated. Unable to send message.');
+        }
+    };
+
+    useEffect(() => {
+        if (selectedMarker && selectedMarker.markerId) {
+            console.log("error", queryError, "data", queryData);
+            if (queryData) {
+                const dataResponse = queryData.getMessages;
+                setMessages(dataResponse);
+                //getParticipants(dataResponse);
+            } else if (queryError) {
+                console.error('Error fetching messages:', queryError.message);
+            }
+        }
+    }, [selectedMarker, queryData, queryError]);
+
 
 
     useEffect(() => {
         // Si l'utilisateur n'est pas connecté ou aucun marqueur n'est sélectionné, ne rien faire
-        if (!user || !selectedMarker) {
-            return;
-        }
+        // if (!user || !selectedMarker) {
+        //     return;
+        // }
 
-        // Initialisation de la connexion WebSocket
-        let url = `wss://${awsConfig.apiGateway.websocketApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}?userId=${user?.id}&markerId=${selectedMarker.markerId}`;
-        console.log("Connecting to WebSocket: ", url);
-        ws.current = new WebSocket(url);
+        // // Initialisation de la connexion WebSocket
+        // let url = `wss://${awsConfig.apiGateway.websocketApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}?userId=${user?.userId}&markerId=${selectedMarker.markerId}`;
+        // console.log("Connecting to WebSocket: ", url);
+        // ws.current = new WebSocket(url);
 
-        // Gérer les messages entrants
-        ws.current.onmessage = (event) => {
-            const receivedMessage = JSON.parse(event.data);
-            console.log("Message received: ", receivedMessage);
+        // // Gérer les messages entrants
+        // ws.current.onmessage = (event) => {
+        //     const receivedMessage = JSON.parse(event.data);
+        //     console.log("Message received: ", receivedMessage);
 
-            if (receivedMessage.markerId === selectedMarker?.markerId && receivedMessage.senderInfo.id === user.id) {
-                setIsLoading(false);
-                console.log("Message confirmed as sent by server:", receivedMessage.content);
-                // Vous pouvez aussi déclencher une mise à jour de l'interface ici pour confirmer l'envoi
-            }
-            setParticipants((prevParticipants) => {
-                if (!prevParticipants.some((participant) => participant.id === receivedMessage.senderInfo.id)) {
-                    return [...prevParticipants, receivedMessage.senderInfo];
-                }
-                return prevParticipants;
-            });
-            setMessages((prevMessages) => [...prevMessages, receivedMessage]);
-        };
+        //     if (receivedMessage.markerId === selectedMarker?.markerId && receivedMessage.senderInfo.id === user.userId) {
+        //         setIsLoading(false);
+        //         console.log("Message confirmed as sent by server:", receivedMessage.content);
+        //         // Vous pouvez aussi déclencher une mise à jour de l'interface ici pour confirmer l'envoi
+        //     }
+        //     setParticipants((prevParticipants) => {
+        //         if (!prevParticipants.some((participant) => participant.userId === receivedMessage.senderInfo.id)) {
+        //             return [...prevParticipants, receivedMessage.senderInfo];
+        //         }
+        //         return prevParticipants;
+        //     });
+        //     setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+        // };
 
-        // Gérer la fermeture de la connexion
-        ws.current.onclose = () => {
-            console.log("WebSocket closed.");
-        };
+        // // Gérer la fermeture de la connexion
+        // ws.current.onclose = () => {
+        //     console.log("WebSocket closed.");
+        // };
 
-        // Fermer la connexion WebSocket à la fin de la session
-        return () => {
-            ws.current?.close();
-        };
+        // // Fermer la connexion WebSocket à la fin de la session
+        // return () => {
+        //     ws.current?.close();
+        // };
     }, [selectedMarker]); // Ajout de selectedMarker dans les dépendances
 
     const sendSticker = () => {
@@ -127,45 +192,33 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 
     // Fonction pour envoyer un message
-    const sendMessage = () => {
-        if (checkIfMessageCanBeSent()) {
-            try {
-                const messageData = {
-                    "action": "sendMessage",
-                    "messageId": randomUUID(),
-                    "content": message,
-                    "senderInfo": user,
-                    "markerId": selectedMarker?.markerId,
-                    "type": "message"
-                };
+    // const sendMessage = () => {
+    // if (checkIfMessageCanBeSent()) {
+    //     try {
+    //         const messageData = {
+    //             "action": "sendMessage",
+    //             "messageId": randomUUID(),
+    //             "content": message,
+    //             "senderInfo": user,
+    //             "markerId": selectedMarker?.markerId,
+    //             "type": "message"
+    //         };
 
-                ws.current!.send(JSON.stringify(messageData));
-                console.log("Message sent: ", messageData);
-                setIsLoading(true);
-                setMessage(""); // Réinitialise le message après envoi
-            } catch (error) {
-                console.error("Failed to send message:", error);
-                setIsLoading(false);
-            }
-        };
-    };
-
-    const fetchMessages = async () => {
-        // try {
-        //     const response = await fetch(`https://${awsConfig.apiGateway.restApi.id}.execute-api.${awsConfig.region}.amazonaws.com/${awsConfig.apiGateway.stage}/markers/${selectedMarker?.markerId}/messages`);
-        //     const data: string = (await response.json()).body;
-        //     const messages = JSON.parse(data);
-        //     setMessages(messages);
-        //     getParticipants(messages);
-        // } catch (e) {
-        //     console.error("Failed to fetch messages.", e);
-        // }
-    }
+    //         ws.current!.send(JSON.stringify(messageData));
+    //         console.log("Message sent: ", messageData);
+    //         setIsLoading(true);
+    //         setMessage(""); // Réinitialise le message après envoi
+    //     } catch (error) {
+    //         console.error("Failed to send message:", error);
+    //         setIsLoading(false);
+    //     }
+    // };
+    // };
 
     const getParticipants = (messages: IMessage[]) => {
         const participantsInfo: IUser[] = messages.map((message) => message.senderInfo!);
         const uniqueParticipantsInfo: IUser[] = participantsInfo.filter((obj, index, self) =>
-            index === self.findIndex((t) => (t.id === obj.id))
+            index === self.findIndex((t) => (t.userId === obj.userId))
         );
         setParticipants(uniqueParticipantsInfo);
     }
@@ -197,7 +250,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 
     return (
-        <MarkerContext.Provider value={{ isLoading, message, setMessage, messages, file, setFile, participants, fetchMessages, sendMessage, setMessages, setParticipants, sendSticker }}>
+        <MarkerContext.Provider value={{ isLoading, message, setMessage, messages, file, setFile, participants, sendMessage, setMessages, setParticipants, sendSticker }}>
             {children}
         </MarkerContext.Provider>
     );

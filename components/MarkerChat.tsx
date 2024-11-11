@@ -20,7 +20,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
 
-    const { isLoading, message, messages, participants, fetchMessages, setMessage, setMessages, setParticipants, sendMessage } = useMarker()
+    const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage } = useMarker()
 
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -33,8 +33,6 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         setParticipants([])
         if (marker.label === '') {
             inputRef.current?.focus()
-        } else {
-            fetchMessages()
         }
     }, [marker])
 
@@ -71,7 +69,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         return (
             <Animated.View
                 entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
-                key={user.id}
+                key={user.userId}
                 style={[
                     styles.userStackIcon,
                     {

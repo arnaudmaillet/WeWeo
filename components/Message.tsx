@@ -15,7 +15,7 @@ interface MessageComponentProps {
 const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
     const { user } = useAuth();
 
-    const isCurrentUser = user?.id === item.senderInfo.id;
+    const isCurrentUser = user?.userId === item.senderInfo.userId;
 
     const renderContent = () => {
         if (item.type === 'sticker') {
@@ -31,7 +31,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
 
     return (
         <View
-            key={`${item.senderInfo.id}-${item.timestamp}-${item.content}`}
+            key={`${item.senderInfo.userId}-${item.timestamp}-${item.content}`}
             style={[
                 styles.messageContainer,
                 isCurrentUser ? styles.currentUserContainer : styles.otherUserContainer,
@@ -39,13 +39,13 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
         >
             {!isCurrentUser ? (
                 <View style={styles.senderInfoContainer}>
-                    {previousSender?.id !== item.senderInfo.id && (
+                    {previousSender?.userId !== item.senderInfo.userId && (
                         <Text style={styles.senderUsername}>
                             {item.senderInfo.username}
                         </Text>
                     )}
                     <View style={styles.messageContentWrapper}>
-                        {previousSender?.id !== item.senderInfo.id && (
+                        {previousSender?.userId !== item.senderInfo.userId && (
                             <Animated.View
                                 style={styles.avatarContainer}
                                 entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}

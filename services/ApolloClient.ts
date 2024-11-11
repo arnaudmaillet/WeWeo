@@ -1,56 +1,55 @@
-import { ApolloClient, InMemoryCache, HttpLink, split } from '@apollo/client';
-import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { createClient } from 'graphql-ws';
-import { getMainDefinition } from '@apollo/client/utilities';
-import { setContext } from '@apollo/client/link/context';
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
+import { onError } from '@apollo/client/link/error';
+import { createAuthLink } from 'aws-appsync-auth-link';
+import { createSubscriptionHandshakeLink } from 'aws-appsync-subscription-link';
 import { getToken } from '~/providers/AuthProvider';
 
+// Votre configuration AppSync
+const HOST = 'o44bzjb5zneszdzsywl4ut5mga.appsync-api.eu-west-3.amazonaws.com';
+const REGION = 'eu-west-3';
+const URL = `https://${HOST}/graphql`;
 
-const httpLink = new HttpLink({
-  uri: 'https://o44bzjb5zneszdzsywl4ut5mga.appsync-api.eu-west-3.amazonaws.com/graphql', // Remplace par l'URL de ton API AppSync
-});
-
-const wsLink = new GraphQLWsLink(
-    createClient({
-      url: 'wss://o44bzjb5zneszdzsywl4ut5mga.appsync-realtime-api.eu-west-3.amazonaws.com/graphql', // Remplace par l'URL de WebSocket de ton API AppSync
-      connectionParams: async () => {
-        const token = await getToken();
-        return {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        };
-      },
-    })
-  );
-
-const authLink = setContext(async (_, { headers }) => {
-  const token = await getToken(); // Récupère le token JWT de Cognito
-  return {
-    headers: {
-      ...headers,
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  };
-});
-
-const splitLink = split(
-  ({ query }) => {
-    const definition = getMainDefinition(query);
-    return (
-      definition.kind === 'OperationDefinition' &&
-      definition.operation === 'subscription'
-    );
+// Configuration de l'authentification pour AppSync
+const auth = {
+  type: "AMAZON_COGNITO_USER_POOLS" as const,
+  jwtToken: async () => {
+    const token = await getToken(); // Récupère le jeton JWT de l'utilisateur authentifié
+    if (!token) {
+      throw new Error("JWT token is null");
+    }
+    return token;
   },
-  wsLink,
-  authLink.concat(httpLink)
-);
+};
 
+// Lien HTTP classique pour les requêtes standards
+const httpLink = new HttpLink({ uri: URL });
+
+// Configuration des liens avec authentification et WebSocket
+const link = ApolloLink.from([
+  createAuthLink({ url: URL, region: REGION, auth }),
+  createSubscriptionHandshakeLink({ url: URL, region: REGION, auth }, httpLink),
+]);
+
+// Lien pour gérer les erreurs
+const errorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    graphQLErrors.forEach(({ message, locations, path }) =>
+      console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
+    );
+  }
+  if (networkError) {
+    console.log(`[Network error]: ${networkError}`);
+    if (networkError && networkError.message && networkError.message.includes("Broken pipe")) {
+      console.log("Attempting to reconnect due to broken pipe...");
+    }
+  }
+});
+
+// Configurer Apollo Client avec les liens et le cache
 const client = new ApolloClient({
-    link: splitLink,
-    cache: new InMemoryCache(),
-  });
-  
-  
+  link: ApolloLink.from([errorLink, link]), // Combine les liens d'erreur, d'authentification, de subscription, et HTTP
+  cache: new InMemoryCache(),
+});
 
 export default client;
+

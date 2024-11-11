@@ -23,7 +23,7 @@ const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: bool
     // Détermine si l'utilisateur actuel suit cet utilisateur
     const isFollowing = () => {
         if (currentUser?.following) {
-            return currentUser.following.includes(user.id);
+            return currentUser.following.includes(user.userId);
         } else {
             return false;
         }
@@ -61,7 +61,7 @@ const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: bool
     return (
         <Animated.View
             entering={ZoomInEasyDown.springify().damping(17).delay(500).randomDelay()}
-            key={user.id}
+            key={user.userId}
         >
             <TouchableOpacity onPress={onPress}>
                 <Animated.View style={[styles.accountIconContainer, animatedStyle]}>
@@ -91,13 +91,13 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     const backgroundColorValue = useSharedValue(category);
 
 
-    const getFollowingAccounts = (): IUser[] => {
-        if (category === 2) {
-            return Users.data.filter((u: IUser) => user?.following.includes(u.id))
-        } else {
-            return Users.data
-        }
-    }
+    // const getFollowingAccounts = (): IUser[] => {
+    //     if (category === 2) {
+    //         return Users.data.filter((u: IUser) => user?.following.includes(u.userId))
+    //     } else {
+    //         return Users.data
+    //     }
+    // }
 
     // Lorsqu'un utilisateur est sélectionné ou désélectionné
     const handlePressUser = (userId: string) => {
@@ -145,22 +145,22 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
     return (
         <Animated.View key="searchMenu" style={styles.container} entering={SlideInDown.springify().damping(17)} exiting={SlideOutDown.springify().damping(17)}>
-            <FlatList
+            {/* <FlatList
                 data={getFollowingAccounts()}
                 horizontal={true}
-                keyExtractor={(user: IUser) => user.id.toString()}
-                key={getFollowingAccounts().flatMap(u => u.id).join('')} // Forcer le remontage de la liste
+                keyExtractor={(user: IUser) => user.userId.toString()}
+                key={getFollowingAccounts().flatMap(u => u.userId).join('')} // Forcer le remontage de la liste
                 showsHorizontalScrollIndicator={false}
                 style={styles.followingAccounts}
                 renderItem={({ item: user }) => (
                     <UserItem
                         user={user}
-                        isSelected={displayMarkersForUser === user.id}
+                        isSelected={displayMarkersForUser === user.userId}
                         isAnySelected={displayMarkersForUser !== undefined}
-                        onPress={() => handlePressUser(user.id)}
+                        onPress={() => handlePressUser(user.userId)}
                     />
                 )}
-            />
+            /> */}
             <View style={styles.secondRow}>
                 {/* Row with user icon and switch container */}
                 <Modal
@@ -188,7 +188,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                                     onPress={handleSignOut} // Déconnexion
                                 >
                                     {
-                                        user?.id && !isLoading ? (
+                                        user?.userId && !isLoading ? (
                                             <Text style={styles.buttonText}>登出</Text>
                                         ) : (
                                             <ActivityIndicator size="small" color="white" />

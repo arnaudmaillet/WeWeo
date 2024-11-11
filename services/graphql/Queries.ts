@@ -8,7 +8,7 @@ export const GET_MESSAGES = gql`
       senderId
       timestamp
       type
-      user {
+      senderInfo {
         userId
         username
         email
