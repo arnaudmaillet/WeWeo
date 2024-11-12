@@ -13,7 +13,7 @@ export interface MapContextProps {
     category: number;
     selectedMarker: IMarker | null;
     displayMarkersForUser: string | null;
-    addMarker: (marker: IMarker) => Promise<boolean>;
+    addMarker: () => Promise<boolean>;
     setNewMarker: (value: IMarker | null) => void;
     setNewMarkerType: (value: ChatTypes | null) => void;
     setCategory: (value: number) => void;
@@ -38,6 +38,12 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { loading, error, data } = useQuery(GET_MARKERS);
 
     useEffect(() => {
+        if (newMarker && newMarker.label !== '') {
+            addMarker();
+        }
+    }, [newMarker]);
+
+    useEffect(() => {
         if (!user) {
             setMarkers(null);
             setCategory(1);
@@ -53,8 +59,10 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [markers, user, data, error]);
 
 
-    const addMarker = async (marker: IMarker): Promise<boolean> => {
+    const addMarker = async (): Promise<boolean> => {
         if (!user) return false;
+        if (!newMarker) return false;
+        if (!newMarker.label) return false;
         try {
             const randomID = randomUUID();
             const response = await fetch(`https://11vcne1jhb.execute-api.eu-west-3.amazonaws.com/dev/markers`, {
@@ -64,9 +72,9 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 },
                 body: JSON.stringify({
                     markerId: randomID,
-                    lat: marker.coordinates.lat,
-                    long: marker.coordinates.long,
-                    label: marker.label,
+                    lat: newMarker.coordinates.lat,
+                    long: newMarker.coordinates.long,
+                    label: newMarker.label,
                     creatorId: user.userId,
                 })
             });
@@ -74,7 +82,9 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             if (!response.ok) {
                 throw new Error(`Erreur HTTP! status: ${response.status}`);
             }
-            setMarkers([...(markers || []), { ...marker, markerId: randomID }]);
+            setNewMarkerType(null);
+            setNewMarker(null);
+            setMarkers([...(markers || []), { ...newMarker, markerId: randomID }]);
             return true;
         } catch (error) {
             console.error('Erreur lors de l’ajout du marker:', error);

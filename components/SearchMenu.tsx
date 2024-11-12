@@ -8,6 +8,7 @@ import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/providers/MapProvider';
 import { ISwitch } from '~/types/SwitchInterface';
 import Switch from './Switch';
+import { THEME } from '~/constants/constants';
 
 interface SearchMenuProps {
     onFocusInput: () => void;
@@ -122,21 +123,27 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                 label: 'Discover',
                 class: <Ionicons />,
                 name: 'compass-outline',
-                color: '#0088cc',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
             {
                 label: 'Friends',
                 class: <MaterialIcons />,
                 name: 'group',
-                color: '#DA70D6',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
             {
                 label: 'Favorite',
                 class: <MaterialIcons />,
                 name: 'favorite-outline',
-                color: '#FF7518',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
         ],
@@ -218,7 +225,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
 
                     {/* Input field with search icon on the left */}
                     <View style={styles.inputContainer}>
-                        <Ionicons name="search-outline" size={20} color="#D3D3D3" style={styles.searchIcon} />
+                        <Ionicons name="search-outline" size={20} color="#B0B0B0" style={styles.searchIcon} />
                         <TextInput
                             style={styles.input}
                             placeholder="Type to search..."
@@ -235,7 +242,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                                 {isTyping ? (
                                     <MaterialIcons name="cancel" size={20} color="rgba(0, 0, 0, 0.25)" />
                                 ) : (
-                                    <FontAwesome6 name="microphone" size={18} color='#D3D3D3' />
+                                    <FontAwesome6 name="microphone" size={18} color='#B0B0B0' />
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
@@ -253,7 +260,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.main,
         paddingVertical: 12,
         paddingHorizontal: 10,
         borderRadius: 20,
@@ -356,18 +363,11 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.darker_x1,
         borderRadius: 10,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        borderWidth: 1,
         paddingHorizontal: 10,
         height: 40,
         marginTop: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 0.5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 3,
     },
     searchIcon: {
         marginRight: 10,

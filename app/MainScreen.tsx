@@ -73,7 +73,6 @@ const MainScreen = () => {
                 const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
                 if (allPoints) {
                     setSelectedMarker(allPoints[previousIndex]);
-                    console.log("Previous point: ", selectedMarker);
                 }
             }
         }

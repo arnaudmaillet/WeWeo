@@ -4,7 +4,8 @@ import Animated, { runOnJS, SlideInDown, SlideOutDown } from 'react-native-reani
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import Switch from './Switch'
 import { ISwitch } from '~/types/SwitchInterface'
-import { INPUT } from '~/constants/constants'
+import { INPUT, THEME } from '~/constants/constants'
+import { useMap } from '~/providers/MapProvider'
 
 
 interface NewMarkerProps {
@@ -16,6 +17,8 @@ const NewMarker: React.FC<NewMarkerProps> = ({ onFocusInput, onBlurInput }) => {
 
     const [inputValue, setInputValue] = React.useState<string>('')
 
+    const { newMarker, setNewMarker, addMarker } = useMap();
+
     const privacySwitch: ISwitch = {
         label: 'Privacy',
         buttons: [
@@ -23,28 +26,35 @@ const NewMarker: React.FC<NewMarkerProps> = ({ onFocusInput, onBlurInput }) => {
                 label: 'Public',
                 class: <Ionicons />,
                 name: 'globe-outline',
-                color: '#0088cc',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
             {
                 label: 'Friends',
                 class: <MaterialIcons />,
                 name: 'group',
-                color: '#DA70D6',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
             {
                 label: 'Private',
                 class: <MaterialIcons />,
                 name: 'lock-outline',
-                color: '#FF7518',
+                color: THEME.colors.primary,
+                textColor: THEME.colors.text.black,
+                iconColorSelected: THEME.colors.accent,
                 size: 16,
             },
         ],
     }
 
+
     return (
-        <Animated.View key="searchMenu" style={styles.container} entering={SlideInDown.springify().damping(17)}>
+        <Animated.View key="newMarker" style={styles.container} entering={SlideInDown.springify().damping(17)}>
             <View style={styles.row}>
                 <Switch props={privacySwitch} />
                 {/* Input field with search icon on the left */}
@@ -52,16 +62,23 @@ const NewMarker: React.FC<NewMarkerProps> = ({ onFocusInput, onBlurInput }) => {
                     <TextInput
                         style={styles.input}
                         maxLength={INPUT.max_length.first_message}
-                        placeholder="Type your first message here"
+                        placeholder="Type something..."
                         value={inputValue}
                         onChangeText={setInputValue}
                         onFocus={onFocusInput}
                         onBlur={onBlurInput}
                         returnKeyType='send'
+                        onSubmitEditing={() => {
+                            if (newMarker && inputValue.length > 0) {
+                                //setNewMarker({ ...newMarker, label: inputValue })
+                                setInputValue('')
+                                runOnJS(onBlurInput)()
+                            }
+                        }}
                     />
 
                     <View style={styles.characterCountContainer}>
-                        <Text style={[styles.characterCountText, { color: inputValue.length < 25 ? '#D3D3D3' : 'rgba(255,87,51,0.5)' }]}>{inputValue.length}/ {INPUT.max_length.first_message}</Text>
+                        <Text style={[styles.characterCountText, { color: inputValue.length < 25 ? '#B0B0B0' : 'rgba(255,87,51,0.5)' }]}>{inputValue.length}/ {INPUT.max_length.first_message}</Text>
                     </View>
                 </Animated.View>
             </View>
@@ -75,7 +92,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.main,
         paddingVertical: 12,
         paddingHorizontal: 10,
         borderRadius: 20,
@@ -95,18 +112,11 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.darker_x1,
         borderRadius: 10,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        borderWidth: 1,
         paddingHorizontal: 10,
         height: 40,
         marginTop: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 0.5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 3,
     },
     input: {
         flex: 1,

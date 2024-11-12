@@ -6,6 +6,7 @@ import { useAuth } from '~/providers/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
 
 import locales from '~/data/locales.json';
+import { THEME } from '~/constants/constants';
 
 interface MessageComponentProps {
     item: IMessage;
@@ -78,7 +79,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
             ) : (
                 <Animated.View
                     entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
-                    style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: '#0088cc' }]}
+                    style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.primary }]}
                 >
                     {renderContent()}
                     {item.type === 'message' && (
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         borderRadius: 18,
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
         maxWidth: '80%',
     },
     currentUserBubble: {
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.accent,
         alignSelf: 'flex-end',
     },
     otherUserBubble: {

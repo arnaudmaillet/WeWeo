@@ -46,7 +46,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const markerId = selectedMarker?.markerId;
 
     // Chargement des messages
-    const { loading, error: queryError, data: queryData, refetch } = useQuery(GET_MESSAGES, {
+    const { refetch } = useQuery(GET_MESSAGES, {
         variables: { markerId },
         skip: true, // Évite l'exécution immédiate de la requête
     });
@@ -57,6 +57,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             refetch({ markerId }).then(response => {
                 if (response.data) {
                     setMessages(response.data.getMessages);
+                    getParticipants(response.data.getMessages);
                 }
             }).catch(error => {
                 console.error('Error fetching messages:', error.message);
@@ -111,18 +112,19 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
     };
 
-    useEffect(() => {
-        if (selectedMarker && selectedMarker.markerId) {
-            console.log("error", queryError, "data", queryData);
-            if (queryData) {
-                const dataResponse = queryData.getMessages;
-                setMessages(dataResponse);
-                //getParticipants(dataResponse);
-            } else if (queryError) {
-                console.error('Error fetching messages:', queryError.message);
-            }
-        }
-    }, [selectedMarker, queryData, queryError]);
+    // useEffect(() => {
+    //     if (selectedMarker && selectedMarker.markerId) {
+    //         console.log("Fetching messages for marker:", queryData);
+    //         if (queryData) {
+    //             const dataResponse = queryData.getMessages;
+    //             console.log("Fetching messages for marker:", dataResponse);
+    //             setMessages(dataResponse);
+    //             getParticipants(dataResponse);
+    //         } else if (queryError) {
+    //             console.error('Error fetching messages:', queryError.message);
+    //         }
+    //     }
+    // }, [selectedMarker, queryData, queryError]);
 
 
 

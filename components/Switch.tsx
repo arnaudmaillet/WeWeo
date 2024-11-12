@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import Animated, { interpolateColor, SharedValue, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import { ISwitch } from '~/types/SwitchInterface';
+import { THEME } from '~/constants/constants';
 
 interface ISwitchProps {
     props: ISwitch;
@@ -93,7 +94,7 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
             <Animated.View style={styles.container} onLayout={handleLayout}>
                 {props.label && (
                     <View style={styles.label}>
-                        <Text style={styles.text}>{props.label} :</Text>
+                        <Text style={styles.text}>{props.label}</Text>
                     </View>
                 )}
 
@@ -107,7 +108,7 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
                             {
                                 width: switchWidth / length,
                                 left: switchWidth / length,
-                                backgroundColor: index === 1 ? "#e0e0e0" : "#f9f9f9",
+                                backgroundColor: index === 1 ? THEME.colors.background.darker_x1 : "#f9f9f9",
                                 zIndex: index === 1 ? -1 : 0,
                                 borderTopLeftRadius: index === 1 ? 0 : 8,
                                 borderBottomLeftRadius: index === 1 ? 0 : 8,
@@ -125,11 +126,11 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
                         <View style={styles.content}>
                             {React.cloneElement(button.class, {
                                 name: button.name,
-                                color: visibility === index ? "white" : button.color,
+                                color: visibility === index ? button.iconColorSelected ? button.iconColorSelected : THEME.colors.text.white : button.iconColor ? button.iconColor : button.color,
                                 size: button.size,
                                 style: styles.icon,
                             })}
-                            <Animated.Text style={[styles.text, { color: visibility === index ? "white" : button.color }]}>{button.label}</Animated.Text>
+                            <Animated.Text style={[styles.text, { color: visibility === index ? button.textColorSelected ? button.textColorSelected : THEME.colors.text.white : button.textColor ? button.textColor : button.color }]}>{button.label}</Animated.Text>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#e0e0e0',
+        backgroundColor: THEME.colors.background.darker_x1,
         borderTopLeftRadius: 8,
         borderBottomLeftRadius: 8,
     },

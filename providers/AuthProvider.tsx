@@ -23,12 +23,69 @@ interface AuthContextProps {
 
 export const getToken = async () => {
     try {
-        return await AsyncStorage.getItem('@user_token');
+        const token = await AsyncStorage.getItem('@user_token');
+        if (token) {
+            const decodedToken = jwtDecode<{ exp: number }>(token);
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            // Vérifiez si le token est expiré
+            if (decodedToken.exp < currentTime) {
+                const newToken = await refreshToken(); // Rafraîchit le token si expiré
+                return newToken;
+            }
+            return token;
+        }
+        return null;
     } catch (e) {
         console.error('Failed to retrieve token:', e);
         return null;
     }
 };
+
+const storeUser = async (email: string, token: string) => {
+    try {
+        await AsyncStorage.setItem('@user_email', email); // Assurez-vous que l'email est stocké
+        await AsyncStorage.setItem('@user_token', token);
+    } catch (e) {
+        console.error('Failed to save the user token.', e);
+    }
+};
+
+const refreshToken = async () => {
+    try {
+        const storedUser = await AsyncStorage.getItem('@user_email');
+        if (!storedUser) {
+            console.error('No stored user email found for refresh.');
+            throw new Error("User not logged in or email not stored.");
+        }
+
+        const userData = {
+            Username: storedUser,
+            Pool: userPool,
+        };
+        const cognitoUser = new CognitoUser(userData);
+
+        return new Promise<string>((resolve, reject) => {
+            const signInUserSession = cognitoUser.getSignInUserSession();
+            if (signInUserSession) {
+                cognitoUser.refreshSession(signInUserSession.getRefreshToken(), (err, session) => {
+                    if (err) {
+                        console.error('Error refreshing token:', err);
+                        reject(null);
+                    } else {
+                        const newToken = session.getIdToken().getJwtToken();
+                        AsyncStorage.setItem('@user_token', newToken); // Met à jour le token
+                        resolve(newToken);
+                    }
+                });
+            }
+        });
+    } catch (e) {
+        console.error('Failed to refresh token:', e);
+        return null;
+    }
+};
+
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -44,15 +101,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const createAttribute = (Name: string, Value: string): CognitoUserAttribute => {
         return new CognitoUserAttribute({ Name, Value });
     }
-
-    const storeUser = async (token: string) => {
-        try {
-            await AsyncStorage.setItem('@user_token', token);
-        } catch (e) {
-            console.error('Failed to save the user token.', e);
-        }
-    };
-
 
     const loadUser = async () => {
         try {
@@ -121,7 +169,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     });
 
                     // Sauvegarder le jeton dans AsyncStorage
-                    storeUser(idToken)
+                    storeUser(email, idToken);
                     setIsLoading(false);
                     resolve(true);
                 },

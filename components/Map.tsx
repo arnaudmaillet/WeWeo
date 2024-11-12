@@ -1,15 +1,15 @@
-import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Animated, Dimensions, StyleSheet, View, Text, TextInput } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
 import { IMap } from '../types/MapInterfaces';
 import { IMarker } from '../types/MarkerInterfaces';
 import { useMap } from '~/providers/MapProvider';
-import NewMarker from './NewMarkerModal';
 import NewMarkerModal from './NewMarkerModal';
 
-const _MIN_MARKER_HEIGHT = 10;
-const _MAX_MARKER_WIDTH = 100;
+import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { THEME } from '~/constants/constants';
 
 const Map: React.FC<IMap> = ({ userLocation }) => {
 
@@ -18,6 +18,8 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
     const { markers, newMarker, selectedMarker, setNewMarker, setSelectedMarker } = useMap();
 
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
+    const newMarkerModalRef = useRef<{ animateMarkersExiting: () => void } | null>(null);
+    const newMarkerInputRef = useRef<TextInput | null>(null); // Référence à l'input du nouveau marqueur
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
     const [selectedMarkerSnap, setSelectedMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
@@ -27,29 +29,6 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
         markers?.map(() => new Animated.Value(0)) || []
     ); // Initialiser les animations de scale
 
-    const pulseAnimation = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        if (selectedMarker) {
-            // Démarrer l'animation de pulsation en boucle
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1.15, // Taille maximale
-                        duration: 500, // Durée de l'expansion
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1, // Retour à la taille initiale
-                        duration: 500, // Durée de la contraction
-                        useNativeDriver: true,
-                    }),
-                ]),
-            ).start();
-        } else {
-            pulseAnimation.setValue(1); // Réinitialiser si aucun point n'est sélectionné
-        }
-    }, [selectedMarker]);
 
     const pitch = 60;
     const [camera, setCamera] = useState<Camera>({
@@ -62,7 +41,25 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
         heading: 0,
     });
 
+    useEffect(() => {
+        if (newMarkerInputRef.current?.focus) {
+            setCamera({
+                center: {
+                    latitude: newMarker!.coordinates.lat,
+                    longitude: newMarker!.coordinates.long,
+                },
+                zoom: 0,
+                pitch: pitch,
+                heading: 0,
+            });
+        }
+    }, [newMarker]);
+
     const handlePressMarker = (point: IMarker) => {
+        if (newMarker) {
+            newMarkerModalRef.current?.animateMarkersExiting();
+        }
+
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
@@ -72,10 +69,12 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
         }
     };
 
-    const handleLongPress = useCallback((event: any) => {
+    const handleLongPress = (event: any) => {
         const { coordinate } = event.nativeEvent;
 
-        const newMarker: IMarker = {
+        impactAsync(ImpactFeedbackStyle.Medium)
+
+        setNewMarker({
             markerId: Math.random().toString(36).substr(2, 9),
             coordinates: {
                 lat: coordinate.latitude,
@@ -84,31 +83,8 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
             dataType: 'message',
             minZoom: 15,
             label: '',
-        };
-        setNewMarker(newMarker); // Définissez le marqueur actuel comme le "nouveau marqueur"
-
-        // // mapRef.current?.animateCamera(
-        // //     {
-        // //         center: {
-        // //             latitude: coordinate.latitude,
-        // //             longitude: coordinate.longitude,
-        // //         }
-        // //     },
-        // //     { duration: 1000 }
-        // // );
-        // // Réinitialiser et lancer l'animation de scaleX
-        // newMarkerScaleX.setValue(0);
-        // Animated.spring(newMarkerScaleX, {
-        //     toValue: 1, // Fin de l'animation (échelle complète)
-        //     friction: 5,
-        //     tension: 40,
-        //     useNativeDriver: true,
-        // })
-        //     .start(() => {
-        //         newMarkerInputRef.current?.focus(); // Focus sur l'input une fois l'animation terminée
-        //     });
-
-    }, []);
+        });
+    };
 
     useEffect(() => {
         if (selectedMarker && mapRef.current) {
@@ -194,7 +170,7 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                 showsPointsOfInterest={false}
                 onLongPress={handleLongPress}
             >
-                {newMarker && <NewMarkerModal />}
+                {newMarker && <NewMarkerModal ref={newMarkerModalRef} />}
 
                 {markers &&
                     markers.map((marker, index) => {
@@ -206,7 +182,6 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                                     latitude: marker.coordinates.lat,
                                     longitude: marker.coordinates.long,
                                 }}
-                                onPress={() => handlePressMarker(marker)}
                             >
                                 <Animated.View
                                     style={[
@@ -224,23 +199,11 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                                         },
                                     ]}
                                 >
-                                    <View style={[styles.pillContainer, { minHeight: _MIN_MARKER_HEIGHT }]}>
+                                    <TouchableOpacity style={styles.pillContainer} onPress={() => handlePressMarker(marker)}>
                                         {displayText ? (
                                             <Text style={styles.pillText}>{displayText}</Text>
                                         ) : null}
-                                    </View>
-                                    <Animated.View
-                                        style={[
-                                            styles.customInnerMarker,
-                                            {
-                                                width: zoomLevel > 12 ? 7 : 5,
-                                                height: zoomLevel > 12 ? 7 : 5,
-                                            },
-                                            selectedMarker?.markerId === marker.markerId && {
-                                                transform: [{ scale: pulseAnimation }],
-                                            },
-                                        ]}
-                                    />
+                                    </TouchableOpacity>
                                 </Animated.View>
                             </Marker>
                         );
@@ -277,40 +240,22 @@ const styles = StyleSheet.create({
     markerContainer: {
         alignItems: 'center', // Centrer le contenu horizontalement
         justifyContent: 'center', // Centrer le contenu verticalement
-        width: 150, // Assurez-vous que la taille est suffisante pour contenir à la fois la pilule et le marqueur
-        height: 30,
-    },
-    customInnerMarker: {
-        borderRadius: 7.5,
-        backgroundColor: '#0088cc', // Le point rouge au centre
-        shadowColor: '#fff', // Bordure blanche simulée par une ombre
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 2,
+        zIndex: 1,
     },
     pillContainer: {
-        position: 'absolute',
-        backgroundColor: 'white',
-        paddingVertical: 2,
+        backgroundColor: THEME.colors.background.main,
         paddingHorizontal: 5,
-        borderRadius: 5,
-        borderWidth: 0.5,
-        borderColor: '#0088cc', // Bordure légère
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        borderRadius: 6,
         elevation: 3,
-        bottom: 15,
-        maxWidth: _MAX_MARKER_WIDTH,
-        minWidth: 30,
+        borderWidth: .5,
+        borderColor: THEME.colors.text.black,
     },
     pillText: {
-        fontSize: 9, // Taille du texte
+        fontSize: 11, // Taille du texte
         fontWeight: 'bold', // Texte en gras
-        color: '#333', // Couleur sombre pour le texte
-        lineHeight: _MIN_MARKER_HEIGHT,
-        paddingVertical: 'auto',
+        color: THEME.colors.text.black, // Couleur du texte
+        paddingTop: 2,
+        paddingBottom: 2,
         textAlign: 'center',
     },
     overlay: {

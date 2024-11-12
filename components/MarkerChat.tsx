@@ -13,6 +13,7 @@ import Message from './Message';
 
 import { useMarker } from '~/providers/MarkerProvider';
 import { IUser } from '~/types/UserInterfaces';
+import { THEME } from '~/constants/constants';
 
 
 const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
@@ -283,7 +284,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         position: 'absolute',
