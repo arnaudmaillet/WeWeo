@@ -1,225 +1,220 @@
-import { Animated, Dimensions, StyleSheet, View, Text } from 'react-native';
+import { Animated, Dimensions, StyleSheet, View, Text, TextInput } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import MapView, { Camera, Marker } from 'react-native-maps';
 
-import { MapProps, PointProps } from '../types/MapInterfaces';
+import { IMap } from '../types/MapInterfaces';
+import { IMarker } from '../types/MarkerInterfaces';
 import { useMap } from '~/providers/MapProvider';
+import NewMarkerModal from './NewMarkerModal';
 
+import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { THEME } from '~/constants/constants';
 
-
-const Map: React.FC<MapProps> = ({ userLocation, selectedPoint, setSelectedPoint, chats }) => {
-    const mapRef = useRef<MapView | null>(null); // Référence à la MapView
-
-    const { markers } = useMap();
-    const previousMarkersRef = useRef<PointProps[]>([]); // Référence pour stocker les anciens marqueurs
-    const [selectedPointSnap, setSelectedPointSnap] = useState<PointProps | null>(null); // to recenter the map on the selected point
-
-    // Créer des animations d'opacité qui seront recréées à chaque changement de markers
-    const [opacityAnimations, setOpacityAnimations] = useState(markers?.map(() => new Animated.Value(0)));
-
-    // Animation de pulsation pour le point sélectionné
-    const pulseAnimation = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        if (selectedPoint) {
-            // Démarrer l'animation de pulsation en boucle
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1.15, // Taille maximale
-                        duration: 500, // Durée de l'expansion
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnimation, {
-                        toValue: 1, // Retour à la taille initiale
-                        duration: 500, // Durée de la contraction
-                        useNativeDriver: true,
-                    }),
-                ]),
-            ).start();
-        } else {
-            pulseAnimation.setValue(1); // Réinitialiser si aucun point n'est sélectionné
-        }
-    }, [selectedPoint]);
-
-    const pitch = 60; // Déclarer la variable pitch
-    const [camera, setCamera] = useState<Camera>({
-        center: {
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-        },
-        zoom: 0,
-        pitch: pitch,
-        heading: 0
-    });
+const Map: React.FC<IMap> = ({ userLocation }) => {
 
     const screenDimensions = Dimensions.get('window');
 
-    const handlePressPoint = (point: PointProps) => {
+    const { markers, newMarker, selectedMarker, setNewMarker, setSelectedMarker } = useMap();
+
+    const mapRef = useRef<MapView | null>(null); // Référence à la MapView
+    const newMarkerModalRef = useRef<{ animateMarkersExiting: () => void } | null>(null);
+    const newMarkerInputRef = useRef<TextInput | null>(null); // Référence à l'input du nouveau marqueur
+    const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
+
+    const [selectedMarkerSnap, setSelectedMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
+    const [zoomLevel, setZoomLevel] = useState(0);
+
+    const [scaleAnimations, setScaleAnimations] = useState<Animated.Value[]>(
+        markers?.map(() => new Animated.Value(0)) || []
+    ); // Initialiser les animations de scale
+
+
+    const pitch = 60;
+    const [camera, setCamera] = useState<Camera>({
+        center: {
+            latitude: userLocation.lat,
+            longitude: userLocation.long,
+        },
+        zoom: 0,
+        pitch: pitch,
+        heading: 0,
+    });
+
+    useEffect(() => {
+        if (newMarkerInputRef.current?.focus) {
+            setCamera({
+                center: {
+                    latitude: newMarker!.coordinates.lat,
+                    longitude: newMarker!.coordinates.long,
+                },
+                zoom: 0,
+                pitch: pitch,
+                heading: 0,
+            });
+        }
+    }, [newMarker]);
+
+    const handlePressMarker = (point: IMarker) => {
+        if (newMarker) {
+            newMarkerModalRef.current?.animateMarkersExiting();
+        }
+
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
-            setSelectedPointSnap(point);
-            setSelectedPoint(point);
+            setSelectedMarkerSnap(point);
+            setSelectedMarker(point);
         }
-    }
+    };
+
+    const handleLongPress = (event: any) => {
+        const { coordinate } = event.nativeEvent;
+
+        impactAsync(ImpactFeedbackStyle.Medium)
+
+        setNewMarker({
+            markerId: Math.random().toString(36).substr(2, 9),
+            coordinates: {
+                lat: coordinate.latitude,
+                long: coordinate.longitude,
+            },
+            dataType: 'message',
+            minZoom: 15,
+            label: '',
+        });
+    };
 
     useEffect(() => {
-        if (selectedPoint && mapRef.current) {
-            setSelectedPointSnap(selectedPoint);
+        if (selectedMarker && mapRef.current) {
+            setSelectedMarkerSnap(selectedMarker);
 
             mapRef.current.animateCamera(
                 {
                     center: {
-                        latitude: selectedPoint.latitude,
-                        longitude: selectedPoint.longitude,
+                        latitude: selectedMarker.coordinates.lat,
+                        longitude: selectedMarker.coordinates.long,
                     },
                 },
-                { duration: 1000 } // Durée de l'animation en millisecondes
+                { duration: 1000 }
             );
         }
 
-        if (!selectedPoint && selectedPointSnap && mapRef.current) {
+        if (!selectedMarker && selectedMarkerSnap && mapRef.current) {
             mapRef.current?.animateCamera({
                 center: {
-                    latitude: selectedPointSnap.latitude,
-                    longitude: selectedPointSnap.longitude,
+                    latitude: selectedMarkerSnap.coordinates.lat,
+                    longitude: selectedMarkerSnap.coordinates.long,
                 },
                 pitch: camera.pitch,
-                heading: camera.heading
+                heading: camera.heading,
             });
         }
-    }, [selectedPoint]);
-
-    const getChat = (id: number) => {
-        return chats.data.find(chat => chat.id === id);
-    }
+    }, [selectedMarker]);
 
     useEffect(() => {
-        // Comparer les nouveaux marqueurs avec les anciens
         const previousMarkers = previousMarkersRef.current;
-        const newMarkers = markers?.filter((marker: PointProps) =>
-            !previousMarkers.some(prevMarker => prevMarker.id === marker.id)
+        const newMarkers = markers?.filter((marker: IMarker) =>
+            !previousMarkers.some(prevMarker => prevMarker.markerId === marker.markerId)
         );
 
-        // Si de nouveaux marqueurs existent, créer de nouvelles animations d'opacité pour eux
         if (newMarkers && newMarkers.length > 0) {
-            const updatedAnimations = markers?.map((marker: PointProps, index: number) => {
-                // Si le marqueur est nouveau, il commence à opacité 0, sinon on garde l'animation existante
-                return newMarkers?.some((newMarker: PointProps) => newMarker.id === marker.id)
+            const updatedAnimations = markers?.map((marker, index) =>
+                newMarkers.some(newMarker => newMarker.markerId === marker.markerId)
                     ? new Animated.Value(0)
-                    : (opacityAnimations?.[index] ?? new Animated.Value(1));
-            });
-            setOpacityAnimations(updatedAnimations);
+                    : scaleAnimations[index] || new Animated.Value(1)
+            );
+            setScaleAnimations(updatedAnimations || []);
         }
 
-        // Mettre à jour la référence des marqueurs précédents
         if (markers) {
             previousMarkersRef.current = markers;
         }
     }, [markers]);
 
-    // Animation d'opacité progressive avec un délai aléatoire
-    useEffect(() => {
-        (opacityAnimations ?? []).forEach((animation: Animated.Value, index: number) => {
-            const randomDelay = Math.random() * 1000; // Délai aléatoire entre 0 et 1 seconde
 
+    useEffect(() => {
+        scaleAnimations.forEach((animation, index) => {
             setTimeout(() => {
-                // Lancer l'animation d'opacité
-                Animated.timing(animation, {
-                    toValue: 1, // L'opacité passe à 1
-                    duration: 1000, // Durée de l'animation d'opacité
+                Animated.spring(animation, {
+                    toValue: 1, // Apparition en zoom
+                    friction: 5, // Réglage pour adoucir l’animation
+                    tension: 40,
                     useNativeDriver: true,
                 }).start();
-            }, randomDelay);
+            }, 0); // Délai aléatoire
         });
-    }, [opacityAnimations, markers]);
+    }, [scaleAnimations, markers]);
+
 
     return (
         <View style={styles.map}>
             <MapView
+                //rotateEnabled={false}
                 ref={mapRef}
                 style={styles.map}
                 showsUserLocation={true}
                 initialRegion={{
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude,
-                    latitudeDelta: userLocation.latitudeDelta,
-                    longitudeDelta: userLocation.longitudeDelta,
+                    latitude: userLocation.lat,
+                    longitude: userLocation.long,
+                    latitudeDelta: userLocation.latDelta,
+                    longitudeDelta: userLocation.longDelta,
                 }}
                 mapPadding={{
                     top: 0,
                     right: screenDimensions.width * 0.05,
-                    bottom: selectedPoint ? screenDimensions.height * 0.78 : 0,
-                    left: screenDimensions.width * 0.05
+                    bottom: selectedMarker ? screenDimensions.height * 0.78 : 0,
+                    left: screenDimensions.width * 0.05,
                 }}
                 showsPointsOfInterest={false}
+                onLongPress={handleLongPress}
             >
-                <Marker
-                    coordinate={{
-                        latitude: userLocation.latitude,
-                        longitude: userLocation.longitude,
-                    }}
-                    title="Vous êtes ici"
-                >
-                    {/* Custom view for the marker */}
-                    <View style={styles.userLocationMaker}>
-                        <View style={styles.inneruserLocationMaker} />
-                    </View>
-                </Marker>
+                {newMarker && <NewMarkerModal ref={newMarkerModalRef} />}
 
-                {markers?.map((point: PointProps, index: number) => {
-                    if (point.type === 1) {
-                        const chat = point.dataId !== undefined ? getChat(point.dataId) : null;
-                        const firstMessageContent = chat?.messages[0]?.content || ''; // Récupérer le contenu du premier message
-                        const displayText = firstMessageContent.slice(0, 10); // Limiter à 10 caractères
-
+                {markers &&
+                    markers.map((marker, index) => {
+                        const displayText = marker?.label?.slice(0, 10);
                         return (
                             <Marker
-                                key={point.id}
+                                key={marker.markerId}
                                 coordinate={{
-                                    latitude: point.latitude,
-                                    longitude: point.longitude,
+                                    latitude: marker.coordinates.lat,
+                                    longitude: marker.coordinates.long,
                                 }}
-                                onPress={() => handlePressPoint(point)}
                             >
-                                {/* Appliquer l'animation de chute et d'opacité */}
                                 <Animated.View
                                     style={[
                                         styles.markerContainer,
                                         {
-                                            opacity: opacityAnimations?.[index] ?? new Animated.Value(1), // Animation d'opacité
+                                            transform: [
+                                                { scale: scaleAnimations[index] || new Animated.Value(1) },
+                                                {
+                                                    translateY: scaleAnimations[index]?.interpolate({
+                                                        inputRange: [0, 1],
+                                                        outputRange: [-20, 0],
+                                                    }) || 0
+                                                },
+                                            ],
                                         },
                                     ]}
                                 >
-                                    {/* La pilule avec le texte */}
-                                    <View style={styles.pillContainer}>
-                                        {displayText ? <Text style={styles.pillText}>{displayText}</Text> : null}
-                                    </View>
-
-                                    {/* Le point rouge au centre de la vue */}
-                                    <Animated.View
-                                        style={[
-                                            styles.customInnerMarker,
-                                            selectedPoint && selectedPoint.id === point.id && {
-                                                transform: [{ scale: pulseAnimation }],
-                                            },
-                                        ]}
-                                    />
+                                    <TouchableOpacity style={styles.pillContainer} onPress={() => handlePressMarker(marker)}>
+                                        {displayText ? (
+                                            <Text style={styles.pillText}>{displayText}</Text>
+                                        ) : null}
+                                    </TouchableOpacity>
                                 </Animated.View>
                             </Marker>
                         );
-                    } else {
-                        return null;
-                    }
-                })}
+                    })}
             </MapView>
         </View>
     );
 };
 
 export default Map;
+
 
 const styles = StyleSheet.create({
     map: {
@@ -245,37 +240,26 @@ const styles = StyleSheet.create({
     markerContainer: {
         alignItems: 'center', // Centrer le contenu horizontalement
         justifyContent: 'center', // Centrer le contenu verticalement
-        width: 150, // Assurez-vous que la taille est suffisante pour contenir à la fois la pilule et le marqueur
-        height: 30,
-    },
-    customInnerMarker: {
-        width: 10,
-        height: 10,
-        borderRadius: 7.5,
-        backgroundColor: 'red', // Le point rouge au centre
-        shadowColor: '#fff', // Bordure blanche simulée par une ombre
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 2,
+        zIndex: 1,
     },
     pillContainer: {
-        position: 'absolute',
-        backgroundColor: 'white', // Fond blanc pour la "carte"
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        borderRadius: 20, // Bordure arrondie pour l'effet "pilule"
-        borderWidth: 1,
-        borderColor: '#ccc', // Bordure légère
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4, // Ombre douce pour donner l'effet de carte
-        elevation: 3, // Pour Android, ajout de l'ombre
-        bottom: 22, // Positionner la pilule en bas du marqueur
+        backgroundColor: THEME.colors.background.main,
+        paddingHorizontal: 5,
+        borderRadius: 6,
+        elevation: 3,
+        borderWidth: .5,
+        borderColor: THEME.colors.text.black,
     },
     pillText: {
-        fontSize: 12, // Taille du texte
+        fontSize: 11, // Taille du texte
         fontWeight: 'bold', // Texte en gras
-        color: '#333', // Couleur sombre pour le texte
+        color: THEME.colors.text.black, // Couleur du texte
+        paddingTop: 2,
+        paddingBottom: 2,
+        textAlign: 'center',
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 1,
     },
 });

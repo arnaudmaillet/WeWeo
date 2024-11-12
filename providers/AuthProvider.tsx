@@ -1,45 +1,266 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import Users from '../data/users.json';
-import { UserProps } from '../types/UserInterfaces';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { IUser } from '~/types/UserInterfaces';
 import { router } from 'expo-router';
 
+import { CognitoUserAttribute, CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
+import { jwtDecode } from 'jwt-decode';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import awsConfig from '~/config/awsConfig';
+
+const userPool = new CognitoUserPool({
+    UserPoolId: awsConfig.cognito.userPoolId,
+    ClientId: awsConfig.cognito.clientId,
+});
+
 interface AuthContextProps {
-    user: UserProps | null;
+    user: IUser | null;
     isLoading: boolean;
-    login: (email: string, password: string) => Promise<boolean>;
-    logout: () => Promise<void>;
+    signUp: (email: string, password: string, username: string, birthdate: string, locale: string) => Promise<boolean>;
+    confirmSignUp: (code: string) => Promise<boolean>;
+    signIn: (email: string, password: string) => Promise<boolean>;
+    signOut: () => Promise<void>;
 }
+
+export const getToken = async () => {
+    try {
+        const token = await AsyncStorage.getItem('@user_token');
+        if (token) {
+            const decodedToken = jwtDecode<{ exp: number }>(token);
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            // Vérifiez si le token est expiré
+            if (decodedToken.exp < currentTime) {
+                const newToken = await refreshToken(); // Rafraîchit le token si expiré
+                return newToken;
+            }
+            return token;
+        }
+        return null;
+    } catch (e) {
+        console.error('Failed to retrieve token:', e);
+        return null;
+    }
+};
+
+const storeUser = async (email: string, token: string) => {
+    try {
+        await AsyncStorage.setItem('@user_email', email); // Assurez-vous que l'email est stocké
+        await AsyncStorage.setItem('@user_token', token);
+    } catch (e) {
+        console.error('Failed to save the user token.', e);
+    }
+};
+
+const refreshToken = async () => {
+    try {
+        const storedUser = await AsyncStorage.getItem('@user_email');
+        if (!storedUser) {
+            console.error('No stored user email found for refresh.');
+            throw new Error("User not logged in or email not stored.");
+        }
+
+        const userData = {
+            Username: storedUser,
+            Pool: userPool,
+        };
+        const cognitoUser = new CognitoUser(userData);
+
+        return new Promise<string>((resolve, reject) => {
+            const signInUserSession = cognitoUser.getSignInUserSession();
+            if (signInUserSession) {
+                cognitoUser.refreshSession(signInUserSession.getRefreshToken(), (err, session) => {
+                    if (err) {
+                        console.error('Error refreshing token:', err);
+                        reject(null);
+                    } else {
+                        const newToken = session.getIdToken().getJwtToken();
+                        AsyncStorage.setItem('@user_token', newToken); // Met à jour le token
+                        resolve(newToken);
+                    }
+                });
+            }
+        });
+    } catch (e) {
+        console.error('Failed to refresh token:', e);
+        return null;
+    }
+};
+
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<UserProps | null>(null)
+    const [user, setUser] = useState<IUser | null>(null)
+    const [userTmp, setUserTmp] = useState<IUser | null>(null)
     const [isLoading, setIsLoading] = useState(false);
 
-    const login = async (email: string, password: string): Promise<boolean> => {
+    useEffect(() => {
+        loadUser();
+    }, []);
 
-        // Simuler un délai pour imiter un appel à une API
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
+    const createAttribute = (Name: string, Value: string): CognitoUserAttribute => {
+        return new CognitoUserAttribute({ Name, Value });
+    }
 
-        setUser(Users.data[0]);
-        return true;
+    const loadUser = async () => {
+        try {
+            const token = await AsyncStorage.getItem('@user_token');
+            if (token) {
+                const userInfo = jwtDecode<{
+                    sub: string;
+                    email: string;
+                    preferred_username: string;
+                    birthdate: string;
+                    locale: string;
+                }>(token);
+
+                setUser({
+                    userId: userInfo.sub || '',
+                    username: userInfo.preferred_username,
+                    email: userInfo.email,
+                    birthdate: userInfo.birthdate,
+                    locale: userInfo.locale,
+                    following: [],
+                });
+            } else {
+                router.push('/LoginScreen');
+            }
+        } catch (e) {
+            console.error('Failed to load the user token.', e);
+        }
     };
 
-    const logout = async () => {
-
-        // Simuler un délai pour imiter une déconnexion API
+    const signIn = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 250));
-        router.push('/LoginScreen');
-        setIsLoading(false);
+        const authenticationDetails = new AuthenticationDetails({
+            Username: email,
+            Password: password,
+        });
+        const userData = {
+            Username: email,
+            Pool: userPool,
+        };
+        const cognitoUser = new CognitoUser(userData);
+
+        return new Promise<boolean>((resolve) => {
+            cognitoUser.authenticateUser(authenticationDetails, {
+                onSuccess: (result) => {
+                    const idToken = result.getIdToken().getJwtToken();
+                    if (!idToken) {
+                        console.error('No token found in the result:', result);
+                        setIsLoading(false);
+                        resolve(false);
+                        return;
+                    }
+                    const userInfo = jwtDecode<{
+                        sub: string;
+                        email: string;
+                        preferred_username: string;
+                        birthdate: string;
+                        locale: string;
+                    }>(idToken);
+                    setUser({
+                        userId: userInfo.sub || '',
+                        username: userInfo.preferred_username,
+                        email: userInfo.email,
+                        birthdate: userInfo.birthdate,
+                        locale: userInfo.locale,
+                        following: [],
+                    });
+
+                    // Sauvegarder le jeton dans AsyncStorage
+                    storeUser(email, idToken);
+                    setIsLoading(false);
+                    resolve(true);
+                },
+                onFailure: (err) => {
+                    console.error('Error signing in:', err.message || JSON.stringify(err));
+                    setIsLoading(false);
+                    resolve(false);
+                },
+            });
+        });
+    };
+
+    const signOut = async () => {
+        setIsLoading(true);
+
+        // Effacer les données utilisateur et le jeton
+        try {
+            await AsyncStorage.removeItem('@user_token');
+        } catch (e) {
+            console.error('Failed to remove the user token.', e);
+        }
 
         setUser(null);
+        router.push('/LoginScreen');
+        setIsLoading(false);
     };
 
+    const signUp = async (email: string, password: string, username: string, birthdate: string, locale: string): Promise<boolean> => {
+        setIsLoading(true);
+
+        const attributeList = [
+            createAttribute('email', email),
+            createAttribute('preferred_username', username),
+            createAttribute('birthdate', birthdate),
+            createAttribute('locale', locale),
+            createAttribute('updated_at', Math.floor(Date.now() / 1000).toString())
+        ];
+
+        const signUpResult = await new Promise<boolean>((resolve) => {
+            userPool.signUp(email, password, attributeList, [], (err, result) => {
+                if (err) {
+                    console.log(err);
+                    setIsLoading(false);
+                    resolve(false);
+                } else if (result) {
+                    console.log(result);
+                    setUserTmp({
+                        userId: result?.userSub,
+                        username: username,
+                        email: email,
+                        following: [],
+                        locale: "",
+                        birthdate: "",
+                    });
+                    setIsLoading(false);
+                    resolve(true);
+                }
+            });
+        });
+
+        return signUpResult;
+    }
+
+    const confirmSignUp = async (code: string): Promise<boolean> => {
+        setIsLoading(true);
+
+        const confirmSignUpResult = await new Promise<boolean>((resolve) => {
+            const cognitoUser = new CognitoUser({
+                Username: userTmp?.userId || '',
+                Pool: userPool
+            });
+
+            cognitoUser.confirmRegistration(code, true, (err, result) => {
+                if (err) {
+                    resolve(false);
+                    console.log(err);
+                    alert("Invalid confirmation code.");
+                } else {
+                    resolve(true);
+                    console.log(result);
+                    router.push('/LoginScreen');
+                }
+            })
+        });
+        setIsLoading(false);
+
+        return confirmSignUpResult;
+    }
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, signUp, confirmSignUp, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,17 +1,24 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
-import Locations from '../data/locations.json';
-import Chats from '../data/chats.json';
 import { useAuth } from './AuthProvider';
-import { ChatProps } from '~/types/ChatInterfaces';
-import { PointProps } from '~/types/MapInterfaces';
+import { ChatTypes, IMarker } from '~/types/MarkerInterfaces';
+import { randomUUID } from 'expo-crypto';
+import { GET_MARKERS } from '~/services/graphql/Queries';
+import { useQuery } from '@apollo/client';
 
 export interface MapContextProps {
-    markers: PointProps[] | null
+    markers: IMarker[] | null;
+    newMarker: IMarker | null;
+    newMarkerType: ChatTypes | null;
     category: number;
+    selectedMarker: IMarker | null;
+    displayMarkersForUser: string | null;
+    addMarker: () => Promise<boolean>;
+    setNewMarker: (value: IMarker | null) => void;
+    setNewMarkerType: (value: ChatTypes | null) => void;
     setCategory: (value: number) => void;
-    displayMarkersForUser: number | null;
-    setDisplayMarkersForUser: (value: number | null) => void;
+    setSelectedMarker: (value: IMarker | null) => void;
+    setDisplayMarkersForUser: (value: string | null) => void;
 }
 
 const MapContext = createContext<MapContextProps | undefined>(undefined);
@@ -20,46 +27,21 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const { user } = useAuth();
 
-    const [markers, setMarkers] = useState<PointProps[] | null>(Locations.points);
-    const [displayMarkersForUser, setDisplayMarkersForUser] = useState<number | null>(null);
-    const [category, setCategory] = useState<number>(1);
+    const [markers, setMarkers] = useState<IMarker[] | null>(null); // markers to display on the map
+    const [newMarker, setNewMarker] = useState<IMarker | null>(null); // marker being created
+    const [newMarkerType, setNewMarkerType] = useState<ChatTypes | null>(null); // type of the new marker
+    const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null); // marker selected by the user
+    const [displayMarkersForUser, setDisplayMarkersForUser] = useState<string | null>(null);
+    const [category, setCategory] = useState<number>(0);
 
-    const setByCategory = () => {
-        if (displayMarkersForUser === null) {
-            if (category === 2) {
-                const chatWhereFriendsIn: ChatProps[] = Chats.data.filter((chat: ChatProps) =>
-                    chat.participantsIds.some((userId: number) => user?.following.includes(userId))
-                );
 
-                const chatMarkers: PointProps[] = Locations.points.filter((point: PointProps) =>
-                    chatWhereFriendsIn.some((chat: ChatProps) => chat.id === point.dataId)
-                );
-
-                setMarkers(chatMarkers);
-            } else {
-                setMarkers(Locations.points);
-            }
-        }
-    }
-
+    const { loading, error, data } = useQuery(GET_MARKERS);
 
     useEffect(() => {
-        setByCategory();
-    }, [category]);
-
-    useEffect(() => {
-        if (displayMarkersForUser) {
-            const chatWhereFriendIn: ChatProps[] = Chats.data.filter((chat: ChatProps) =>
-                chat.participantsIds.some((userId: number) => displayMarkersForUser === userId)
-            );
-            const chatMarkers: PointProps[] = Locations.points.filter((point: PointProps) =>
-                chatWhereFriendIn.some((chat: ChatProps) => chat.id === point.dataId)
-            );
-            setMarkers(chatMarkers);
-        } else {
-            setByCategory();
+        if (newMarker && newMarker.label !== '') {
+            addMarker();
         }
-    }, [displayMarkersForUser]);
+    }, [newMarker]);
 
     useEffect(() => {
         if (!user) {
@@ -67,12 +49,102 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setCategory(1);
             setDisplayMarkersForUser(null);
         } else {
-            setMarkers(Locations.points);
+            if (data && data.getMarkers) {
+                setMarkers(data.getMarkers);
+            } else if (error) {
+                console.error('Error fetching markers:', error.message);
+                setMarkers(null);
+            }
         }
-    }, [user]);
+    }, [markers, user, data, error]);
+
+
+    const addMarker = async (): Promise<boolean> => {
+        if (!user) return false;
+        if (!newMarker) return false;
+        if (!newMarker.label) return false;
+        try {
+            const randomID = randomUUID();
+            const response = await fetch(`https://11vcne1jhb.execute-api.eu-west-3.amazonaws.com/dev/markers`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    markerId: randomID,
+                    lat: newMarker.coordinates.lat,
+                    long: newMarker.coordinates.long,
+                    label: newMarker.label,
+                    creatorId: user.userId,
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP! status: ${response.status}`);
+            }
+            setNewMarkerType(null);
+            setNewMarker(null);
+            setMarkers([...(markers || []), { ...newMarker, markerId: randomID }]);
+            return true;
+        } catch (error) {
+            console.error('Erreur lors de l’ajout du marker:', error);
+            return false;
+        }
+    };
+
+
+    const setByCategory = () => {
+        // if (displayMarkersForUser === null) {
+        //     if (category === 2) {
+        //         const roomWhereFriendsIn: IMarker[] = Rooms.data.filter((room: IMarker) =>
+        //             room.participantsIds.some((userId: string) => user?.following.includes(userId))
+        //         );
+
+        //         const roomMarkers: IMarker[] = Locations.filter((point: IMarker) =>
+        //             roomWhereFriendsIn.some((room: IRoom) => room.id === point.dataId)
+        //         );
+
+        //         setMarkers(roomMarkers);
+        //     } else {
+        //         setMarkers(Locations);
+        //     }
+        // }
+    }
+
+
+    useEffect(() => {
+        setByCategory();
+    }, [category]);
+
+    // useEffect(() => {
+    //     if (displayMarkersForUser) {
+    //         const roomWhereFriendIn: IRoom[] = Rooms.data.filter((room: IRoom) =>
+    //             room.participantsIds.some((userId: string) => displayMarkersForUser === userId)
+    //         );
+    //         const roomMarkers: IMarker[] = Locations.filter((point: IMarker) =>
+    //             roomWhereFriendIn.some((room: IRoom) => room.id === point.dataId)
+    //         );
+    //         setMarkers(roomMarkers);
+    //     } else {
+    //         setByCategory();
+    //     }
+    // }, [displayMarkersForUser]);
 
     return (
-        <MapContext.Provider value={{ markers, category, setCategory, displayMarkersForUser, setDisplayMarkersForUser }}>
+        <MapContext.Provider value={{
+            markers,
+            newMarker,
+            newMarkerType,
+            category,
+            selectedMarker,
+            displayMarkersForUser,
+            setNewMarker,
+            setNewMarkerType,
+            addMarker,
+            setCategory,
+            setSelectedMarker,
+            setDisplayMarkersForUser
+        }}>
             {children}
         </MapContext.Provider>
     );

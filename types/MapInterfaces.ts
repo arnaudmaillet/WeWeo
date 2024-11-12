@@ -1,24 +1,17 @@
-export interface CoordinatesProps {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
+import { IMarker } from "./MarkerInterfaces";
+
+export interface ICoodinatesWithZoom extends ICoordinates {
+    latDelta: number;
+    longDelta: number;
 }
 
-export interface PointProps {
-    id: number;
-    latitude: number;
-    longitude: number;
-    type: number;
-    dataId?: number;
-    minZoom: number;
+export interface ICoordinates {
+    __typename?: "Coordinates";
+    lat: number;
+    long: number;
 }
 
-export interface MapProps {
-    userLocation: CoordinatesProps;
-    selectedPoint: PointProps | null;
-    setSelectedPoint: (point: PointProps | null) => void;
-    chats: {
-        data: any[];
-    }
+export interface IMap {
+    userLocation: ICoodinatesWithZoom;
+    markers: IMarker[];
 }

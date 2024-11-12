@@ -1,31 +1,43 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { BounceIn } from 'react-native-reanimated';
+import { IFile, MimeTypes } from '~/types/MarkerInterfaces';
+import { useMarker } from '~/providers/MarkerProvider';
 
-const stickers = [
-    { id: 1, src: require('~/assets/stickers/sticker1.gif') },
-    { id: 2, src: require('~/assets/stickers/sticker2.gif') },
-    { id: 3, src: require('~/assets/stickers/sticker3.gif') },
-    { id: 4, src: require('~/assets/stickers/sticker4.gif') },
-    { id: 5, src: require('~/assets/stickers/sticker5.gif') },
-    { id: 6, src: require('~/assets/stickers/sticker6.gif') },
-    { id: 7, src: require('~/assets/stickers/sticker7.gif') },
-    { id: 8, src: require('~/assets/stickers/sticker8.gif') },
-    { id: 9, src: require('~/assets/stickers/sticker9.gif') },
-    { id: 10, src: require('~/assets/stickers/sticker10.gif') }
+const stickers: IFile[] = [
+    { name: "sticker1", uri: require('~/assets/stickers/sticker1.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },
+    { name: "sticker2", uri: require('~/assets/stickers/sticker2.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker2.gif", type: MimeTypes.GIF },
+    { name: "sticker3", uri: require('~/assets/stickers/sticker3.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif", type: MimeTypes.GIF },
+    { name: "sticker4", uri: require('~/assets/stickers/sticker4.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker4.gif", type: MimeTypes.GIF },
+    { name: "sticker5", uri: require('~/assets/stickers/sticker5.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker5.gif", type: MimeTypes.GIF },
+    { name: "sticker6", uri: require('~/assets/stickers/sticker6.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker6.gif", type: MimeTypes.GIF },
+    { name: "sticker7", uri: require('~/assets/stickers/sticker7.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker7.gif", type: MimeTypes.GIF },
+    { name: "sticker8", uri: require('~/assets/stickers/sticker8.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker8.gif", type: MimeTypes.GIF },
+    { name: "sticker9", uri: require('~/assets/stickers/sticker9.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker9.gif", type: MimeTypes.GIF },
+    { name: "sticker10", uri: require('~/assets/stickers/sticker10.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker10.gif", type: MimeTypes.GIF },
 ];
 
-interface StickersProps {
-    onStickerSend: (src: any) => void;
-}
 
-const Stickers: React.FC<StickersProps> = ({ onStickerSend }) => {
+const Stickers: React.FC = () => {
 
-    const renderSticker = ({ item }: { item: { id: number, src: any } }) => (
-        <TouchableOpacity onPress={() => onStickerSend(item.src)}>
+    const { file, setFile, sendSticker } = useMarker();
+
+
+    useEffect(() => {
+        if (file) {
+            sendSticker();
+        }
+    }, [file]);
+
+    const handleStickerSend = (sticker: IFile) => {
+        setFile(sticker);
+    }
+
+    const renderSticker = ({ item }: { item: IFile }) => (
+        <TouchableOpacity onPress={() => handleStickerSend(item)}>
             <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
-                <Image source={item.src} style={styles.stickerImage} />
+                <Image source={{ uri: item.url }} style={styles.sticker} />
             </Animated.View>
         </TouchableOpacity>
     );
@@ -34,7 +46,7 @@ const Stickers: React.FC<StickersProps> = ({ onStickerSend }) => {
         <FlatList
             data={stickers}
             renderItem={renderSticker}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.uri.toString()}
             contentContainerStyle={styles.stickerList}
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -46,7 +58,7 @@ const styles = StyleSheet.create({
     stickerList: {
         alignItems: 'center',
     },
-    stickerImage: {
+    sticker: {
         width: 60,
         height: 50,
         margin: 5,

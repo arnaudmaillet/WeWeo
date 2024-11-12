@@ -4,12 +4,12 @@
             "PutRequest": {
                 "Item": {
                     "id": {"N": "1"},
-                    "participantsIds": {"NS": ["1", "2"]},
+                    "participantsIds": {"NS": ["1199d03e-1031-709a-94df-5563ef3f22c3", "2"]},
                     "messages": {
                         "L": [
                             {
                                 "M": {
-                                    "userId": {"N": "1"},
+                                    "userId": {"N": "1199d03e-1031-709a-94df-5563ef3f22c3"},
                                     "content": {"S": "你好，今天怎么样？"},
                                     "date": {"S": "2024-10-08T10:15:00"}
                                 }
@@ -30,7 +30,7 @@
             "PutRequest": {
                 "Item": {
                     "id": {"N": "2"},
-                    "participantsIds": {"NS": ["3", "4", "5"]},
+                    "participantsIds": {"NS": ["1199d03e-1031-709a-94df-5563ef3f22c3", "4", "5"]},
                     "messages": {
                         "L": [
                             {
@@ -42,7 +42,7 @@
                             },
                             {
                                 "M": {
-                                    "userId": {"N": "4"},
+                                    "userId": {"N": "1199d03e-1031-709a-94df-5563ef3f22c3"},
                                     "content": {"S": "我没空，我要工作。"},
                                     "date": {"S": "2024-10-08T11:06:15"}
                                 }

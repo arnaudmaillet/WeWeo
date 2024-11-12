@@ -1,155 +1,1663 @@
-{
-    "points": [
-      { "id": 1, "longitude": -122.4194, "latitude": 37.7749, "type": 1, "dataId": 1, "minZoom": 12 },
-      { "id": 2, "longitude": -122.4313, "latitude": 37.7648, "type": 1, "dataId": 2, "minZoom": 13 },
-      { "id": 3, "longitude": -122.4478, "latitude": 37.7682, "type": 1, "dataId": 3, "minZoom": 14 },
-      { "id": 4, "longitude": -122.4165, "latitude": 37.7797, "type": 1, "dataId": 4, "minZoom": 12 },
-      { "id": 5, "longitude": -122.4041, "latitude": 37.7946, "type": 1, "dataId": 5, "minZoom": 12 },
-      { "id": 6, "longitude": -122.4342, "latitude": 37.7617, "type": 1, "dataId": 6, "minZoom": 13 },
-      { "id": 7, "longitude": -122.4084, "latitude": 37.7899, "type": 1, "dataId": 7, "minZoom": 14 },
-      { "id": 8, "longitude": -122.4020, "latitude": 37.7976, "type": 1, "dataId": 8, "minZoom": 12 },
-      { "id": 9, "longitude": -122.4220, "latitude": 37.7655, "type": 1, "dataId": 9, "minZoom": 13 },
-      { "id": 10, "longitude": -122.4211, "latitude": 37.7769, "type": 1, "dataId": 10, "minZoom": 12 },
-      { "id": 11, "longitude": -122.4375, "latitude": 37.7585, "type": 1, "dataId": 11, "minZoom": 14 },
-      { "id": 12, "longitude": -122.4271, "latitude": 37.7847, "type": 1, "dataId": 12, "minZoom": 12 },
-      { "id": 13, "longitude": -122.4058, "latitude": 37.7893, "type": 1, "dataId": 13, "minZoom": 13 },
-      { "id": 14, "longitude": -122.4191, "latitude": 37.7641, "type": 1, "dataId": 14, "minZoom": 12 },
-      { "id": 15, "longitude": -122.4505, "latitude": 37.7679, "type": 1, "dataId": 15, "minZoom": 12 },
-      { "id": 16, "longitude": -122.4310, "latitude": 37.7732, "type": 1, "dataId": 16, "minZoom": 13 },
-      { "id": 17, "longitude": -122.4109, "latitude": 37.7859, "type": 1, "dataId": 17, "minZoom": 12 },
-      { "id": 18, "longitude": -122.4466, "latitude": 37.7742, "type": 1, "dataId": 18, "minZoom": 14 },
-      { "id": 19, "longitude": -122.4072, "latitude": 37.7989, "type": 1, "dataId": 19, "minZoom": 12 },
-      { "id": 20, "longitude": -122.4305, "latitude": 37.7663, "type": 1, "dataId": 20, "minZoom": 13 },
-      { "id": 21, "longitude": -122.4237, "latitude": 37.7791, "type": 1, "dataId": 21, "minZoom": 12 },
-      { "id": 22, "longitude": -122.4129, "latitude": 37.7876, "type": 1, "dataId": 22, "minZoom": 14 },
-      { "id": 23, "longitude": -122.4382, "latitude": 37.7756, "type": 1, "dataId": 23, "minZoom": 12 },
-      { "id": 24, "longitude": -122.4455, "latitude": 37.7709, "type": 1, "dataId": 24, "minZoom": 13 },
-      { "id": 25, "longitude": -122.4216, "latitude": 37.7738, "type": 1, "dataId": 25, "minZoom": 12 },
-      { "id": 26, "longitude": -122.4332, "latitude": 37.7647, "type": 1, "dataId": 26, "minZoom": 13 },
-      { "id": 27, "longitude": -122.4279, "latitude": 37.7784, "type": 1, "dataId": 27, "minZoom": 14 },
-      { "id": 28, "longitude": -122.4163, "latitude": 37.7851, "type": 1, "dataId": 28, "minZoom": 12 },
-      { "id": 29, "longitude": -122.4377, "latitude": 37.7684, "type": 1, "dataId": 29, "minZoom": 12 },
-      { "id": 30, "longitude": -122.4252, "latitude": 37.7748, "type": 1, "dataId": 30, "minZoom": 12 },
-      { "id": 31, "longitude": -122.4091, "latitude": 37.7867, "type": 1, "dataId": 31, "minZoom": 12 },
-      { "id": 32, "longitude": -122.4055, "latitude": 37.7890, "type": 2, "minZoom": 12 },
-      { "id": 33, "longitude": -122.4311, "latitude": 37.7633, "type": 2, "minZoom": 13 },
-      { "id": 34, "longitude": -122.4172, "latitude": 37.7792, "type": 2, "minZoom": 14 },
-      { "id": 35, "longitude": -122.4487, "latitude": 37.7605, "type": 2, "minZoom": 12 },
-      { "id": 36, "longitude": -122.4105, "latitude": 37.7830, "type": 2, "minZoom": 12 },
-      { "id": 37, "longitude": -122.4578, "latitude": 37.7694, "type": 2, "minZoom": 13 },
-      { "id": 38, "longitude": -122.4204, "latitude": 37.7938, "type": 2, "minZoom": 14 },
-      { "id": 39, "longitude": -122.4359, "latitude": 37.7707, "type": 2, "minZoom": 12 },
-      { "id": 40, "longitude": -122.4415, "latitude": 37.7553, "type": 2, "minZoom": 12 },
-      { "id": 41, "longitude": -122.4101, "latitude": 37.7750, "type": 2, "minZoom": 13 },
-      { "id": 42, "longitude": -122.4193, "latitude": 37.7699, "type": 2, "minZoom": 12 },
-      { "id": 43, "longitude": -122.4040, "latitude": 37.7843, "type": 2, "minZoom": 14 },
-      { "id": 44, "longitude": -122.4352, "latitude": 37.7771, "type": 2, "minZoom": 12 },
-      { "id": 45, "longitude": -122.4562, "latitude": 37.7681, "type": 2, "minZoom": 12 },
-      { "id": 46, "longitude": -122.4288, "latitude": 37.7644, "type": 2, "minZoom": 13 },
-      { "id": 47, "longitude": -122.4157, "latitude": 37.7899, "type": 2, "minZoom": 14 },
-      { "id": 48, "longitude": -122.4399, "latitude": 37.7628, "type": 2, "minZoom": 12 },
-      { "id": 49, "longitude": -122.4188, "latitude": 37.7921, "type": 2, "minZoom": 12 },
-      { "id": 50, "longitude": -122.4094, "latitude": 37.7713, "type": 2, "minZoom": 13 },
-      { "id": 51, "longitude": -122.4371, "latitude": 37.7754, "type": 2, "minZoom": 12 },
-      { "id": 52, "longitude": -122.4243, "latitude": 37.7621, "type": 2, "minZoom": 14 },
-      { "id": 53, "longitude": -122.4002, "latitude": 37.7887, "type": 2, "minZoom": 12 },
-      { "id": 54, "longitude": -122.4463, "latitude": 37.7731, "type": 2, "minZoom": 13 },
-      { "id": 55, "longitude": -122.4325, "latitude": 37.7793, "type": 2, "minZoom": 12 },
-      { "id": 56, "longitude": -122.4114, "latitude": 37.7933, "type": 2, "minZoom": 14 },
-      { "id": 57, "longitude": -122.4277, "latitude": 37.7670, "type": 2, "minZoom": 12 },
-      { "id": 58, "longitude": -122.4120, "latitude": 37.7857, "type": 2, "minZoom": 13 },
-      { "id": 59, "longitude": -122.4501, "latitude": 37.7594, "type": 2, "minZoom": 12 },
-      { "id": 60, "longitude": -122.4190, "latitude": 37.7815, "type": 2, "minZoom": 14 },
-      { "id": 61, "longitude": -122.4306, "latitude": 37.7688, "type": 2, "minZoom": 12 },
-      { "id": 62, "longitude": -122.4249, "latitude": 37.7810, "type": 2, "minZoom": 13 },
-      { "id": 64, "longitude": -122.4087, "latitude": 37.7812, "type": 3, "dataId": 1, "minZoom": 12 },
-      { "id": 65, "longitude": -122.4223, "latitude": 37.7680, "type": 3, "dataId": 2, "minZoom": 13 },
-      { "id": 66, "longitude": -122.4405, "latitude": 37.7840, "type": 3, "dataId": 3, "minZoom": 14 },
-      { "id": 67, "longitude": -122.4069, "latitude": 37.7981, "type": 3, "dataId": 4, "minZoom": 12 },
-      { "id": 68, "longitude": -122.4180, "latitude": 37.7790, "type": 3, "dataId": 5, "minZoom": 12 },
-      { "id": 69, "longitude": -122.4320, "latitude": 37.7718, "type": 3, "dataId": 6, "minZoom": 13 },
-      { "id": 70, "longitude": -122.4534, "latitude": 37.7652, "type": 3, "dataId": 7, "minZoom": 12 },
-      { "id": 71, "longitude": -122.4244, "latitude": 37.7567, "type": 3, "dataId": 8, "minZoom": 12 },
-      { "id": 72, "longitude": -122.4141, "latitude": 37.7838, "type": 3, "dataId": 9, "minZoom": 14 },
-      { "id": 73, "longitude": -122.4344, "latitude": 37.7766, "type": 3, "dataId": 10, "minZoom": 12 },
-      { "id": 74, "longitude": -122.4196, "latitude": 37.7873, "type": 3, "dataId": 11, "minZoom": 12 },
-      { "id": 75, "longitude": -122.4027, "latitude": 37.7821, "type": 3, "dataId": 12, "minZoom": 13 },
-      { "id": 76, "longitude": -122.4457, "latitude": 37.7639, "type": 3, "dataId": 13, "minZoom": 12 },
-      { "id": 77, "longitude": -122.4291, "latitude": 37.7801, "type": 3, "dataId": 14, "minZoom": 14 },
-      { "id": 78, "longitude": -122.4386, "latitude": 37.7727, "type": 3, "dataId": 15, "minZoom": 12 },
-      { "id": 79, "longitude": -122.4021, "latitude": 37.7778, "type": 3, "dataId": 16, "minZoom": 13 },
-      { "id": 80, "longitude": -122.4179, "latitude": 37.7619, "type": 3, "dataId": 17, "minZoom": 12 },
-      { "id": 81, "longitude": -122.4364, "latitude": 37.7741, "type": 3, "dataId": 18, "minZoom": 14 },
-      { "id": 82, "longitude": -122.4235, "latitude": 37.7884, "type": 3, "dataId": 19, "minZoom": 12 },
-      { "id": 83, "longitude": -122.4530, "latitude": 37.7597, "type": 3, "dataId": 20, "minZoom": 13 },
-      { "id": 84, "longitude": -122.4096, "latitude": 37.7645, "type": 3, "dataId": 21, "minZoom": 12 },
-      { "id": 85, "longitude": -122.4282, "latitude": 37.7835, "type": 3, "dataId": 22, "minZoom": 12 },
-      { "id": 86, "longitude": -122.4137, "latitude": 37.7697, "type": 3, "dataId": 23, "minZoom": 13 },
-      { "id": 87, "longitude": -122.4395, "latitude": 37.7659, "type": 3, "dataId": 24, "minZoom": 12 },
-      { "id": 88, "longitude": -122.4098, "latitude": 37.7753, "type": 3, "dataId": 25, "minZoom": 14 },
-      { "id": 89, "longitude": -122.4265, "latitude": 37.7629, "type": 3, "dataId": 26, "minZoom": 12 },
-      { "id": 90, "longitude": -122.4521, "latitude": 37.7649, "type": 4, "minZoom": 12 },
-      { "id": 91, "longitude": -122.4390, "latitude": 37.7695, "type": 4, "minZoom": 13 },
-      { "id": 92, "longitude": -122.4261, "latitude": 37.7736, "type": 4, "minZoom": 14 },
-      { "id": 93, "longitude": -122.4123, "latitude": 37.7788, "type": 4, "minZoom": 12 },
-      { "id": 94, "longitude": -122.4478, "latitude": 37.7673, "type": 4, "minZoom": 12 },
-      { "id": 95, "longitude": -122.4065, "latitude": 37.7891, "type": 4, "minZoom": 13 },
-      { "id": 96, "longitude": -122.4201, "latitude": 37.7636, "type": 4, "minZoom": 12 },
-      { "id": 97, "longitude": -122.4315, "latitude": 37.7759, "type": 4, "minZoom": 12 },
-      { "id": 98, "longitude": -122.4423, "latitude": 37.7833, "type": 4, "minZoom": 14 },
-      { "id": 99, "longitude": -122.4168, "latitude": 37.7721, "type": 4, "minZoom": 12 },
-      { "id": 100, "longitude": -122.4147, "latitude": 37.7802, "type": 4, "minZoom": 13 },
-      { "id": 101, "longitude": -122.4367, "latitude": 37.7676, "type": 4, "minZoom": 12 },
-      { "id": 102, "longitude": -122.4078, "latitude": 37.7903, "type": 4, "minZoom": 14 },
-      { "id": 103, "longitude": -122.4384, "latitude": 37.7640, "type": 4, "minZoom": 12 },
-      { "id": 104, "longitude": -122.4232, "latitude": 37.7783, "type": 4, "minZoom": 13 },
-      { "id": 105, "longitude": -122.4185, "latitude": 37.7839, "type": 4, "minZoom": 12 },
-      { "id": 106, "longitude": -122.4486, "latitude": 37.7592, "type": 4, "minZoom": 14 },
-      { "id": 107, "longitude": -122.4349, "latitude": 37.7762, "type": 4, "minZoom": 12 },
-      { "id": 108, "longitude": -122.4296, "latitude": 37.7854, "type": 4, "minZoom": 13 },
-      { "id": 109, "longitude": -122.4074, "latitude": 37.7685, "type": 4, "minZoom": 12 },
-      { "id": 110, "longitude": -122.4356, "latitude": 37.7630, "type": 4, "minZoom": 12 },
-      { "id": 111, "longitude": -122.4226, "latitude": 37.7747, "type": 4, "minZoom": 12 },
-      { "id": 112, "longitude": -122.4134, "latitude": 37.7712, "type": 4, "minZoom": 13 },
-      { "id": 113, "longitude": -122.4307, "latitude": 37.7799, "type": 4, "minZoom": 14 },
-      { "id": 114, "longitude": -122.4475, "latitude": 37.7601, "type": 4, "minZoom": 12 },
-      { "id": 115, "longitude": -122.4216, "latitude": 37.7654, "type": 4, "minZoom": 12 },
-      { "id": 116, "longitude": -122.4023, "latitude": 37.7912, "type": 4, "minZoom": 13 },
-      { "id": 117, "longitude": -122.4150, "latitude": 37.7768, "type": 4, "minZoom": 12 },
-      { "id": 118, "longitude": -122.4444, "latitude": 37.7725, "type": 4, "minZoom": 14 },
-      { "id": 119, "longitude": -122.4283, "latitude": 37.7583, "type": 4, "minZoom": 12 },
-      { "id": 120, "longitude": -122.4049, "latitude": 37.7841, "type": 4, "minZoom": 12 },
-      { "id": 121, "longitude": -122.4120, "latitude": 37.7900, "type": 5, "minZoom": 12 },
-      { "id": 122, "longitude": -122.4342, "latitude": 37.7637, "type": 5, "minZoom": 13 },
-      { "id": 123, "longitude": -122.4263, "latitude": 37.7683, "type": 5, "minZoom": 14 },
-      { "id": 124, "longitude": -122.4411, "latitude": 37.7820, "type": 5, "minZoom": 12 },
-      { "id": 125, "longitude": -122.4056, "latitude": 37.7734, "type": 5, "minZoom": 12 },
-      { "id": 126, "longitude": -122.4219, "latitude": 37.7798, "type": 5, "minZoom": 13 },
-      { "id": 127, "longitude": -122.4153, "latitude": 37.7648, "type": 5, "minZoom": 14 },
-      { "id": 128, "longitude": -122.4448, "latitude": 37.7609, "type": 5, "minZoom": 12 },
-      { "id": 129, "longitude": -122.4531, "latitude": 37.7674, "type": 5, "minZoom": 12 },
-      { "id": 130, "longitude": -122.4118, "latitude": 37.7786, "type": 5, "minZoom": 14 },
-      { "id": 131, "longitude": -122.4397, "latitude": 37.7559, "type": 5, "minZoom": 12 },
-      { "id": 132, "longitude": -122.4302, "latitude": 37.7794, "type": 5, "minZoom": 13 },
-      { "id": 133, "longitude": -122.4026, "latitude": 37.7892, "type": 5, "minZoom": 14 },
-      { "id": 134, "longitude": -122.4504, "latitude": 37.7635, "type": 5, "minZoom": 12 },
-      { "id": 135, "longitude": -122.4231, "latitude": 37.7702, "type": 5, "minZoom": 12 },
-      { "id": 136, "longitude": -122.4162, "latitude": 37.7848, "type": 5, "minZoom": 12 },
-      { "id": 137, "longitude": -122.4489, "latitude": 37.7705, "type": 5, "minZoom": 13 },
-      { "id": 138, "longitude": -122.4125, "latitude": 37.7927, "type": 5, "minZoom": 14 },
-      { "id": 139, "longitude": -122.4077, "latitude": 37.7615, "type": 5, "minZoom": 12 },
-      { "id": 140, "longitude": -122.4294, "latitude": 37.7656, "type": 5, "minZoom": 13 },
-      { "id": 141, "longitude": -122.4415, "latitude": 37.7739, "type": 5, "minZoom": 14 },
-      { "id": 142, "longitude": -122.4183, "latitude": 37.7827, "type": 5, "minZoom": 12 },
-      { "id": 143, "longitude": -122.4509, "latitude": 37.7661, "type": 5, "minZoom": 12 },
-      { "id": 144, "longitude": -122.4028, "latitude": 37.7859, "type": 5, "minZoom": 14 },
-      { "id": 145, "longitude": -122.4309, "latitude": 37.7819, "type": 5, "minZoom": 12 },
-      { "id": 146, "longitude": -122.4171, "latitude": 37.7716, "type": 5, "minZoom": 12 },
-      { "id": 147, "longitude": -122.4269, "latitude": 37.7733, "type": 5, "minZoom": 13 },
-      { "id": 148, "longitude": -122.4350, "latitude": 37.7642, "type": 5, "minZoom": 12 },
-      { "id": 149, "longitude": -122.4401, "latitude": 37.7775, "type": 5, "minZoom": 13 },
-      { "id": 150, "longitude": -122.4212, "latitude": 37.7593, "type": 5, "minZoom": 12 },
-      { "id": 151, "longitude": -122.4373, "latitude": 37.7687, "type": 5, "minZoom": 14 }
-    ]
+[
+  {
+    "id": "1",
+    "coordinates": {
+      "long": -122.467177,
+      "lat": 37.70508
+    },
+    "dataType": "1",
+    "dataId": "1",
+    "minZoom": 12,
+    "label": "随机标签1"
+  },
+  {
+    "id": "2",
+    "coordinates": {
+      "long": -122.413834,
+      "lat": 37.783388
+    },
+    "dataType": "2",
+    "dataId": "2",
+    "minZoom": 13,
+    "label": "随机标签2"
+  },
+  {
+    "id": "3",
+    "coordinates": {
+      "long": -122.482676,
+      "lat": 37.832353
+    },
+    "dataType": "3",
+    "dataId": "3",
+    "minZoom": 14,
+    "label": "随机标签3"
+  },
+  {
+    "id": "4",
+    "coordinates": {
+      "long": -122.458482,
+      "lat": 37.780967
+    },
+    "dataType": "4",
+    "dataId": "4",
+    "minZoom": 12,
+    "label": "随机标签4"
+  },
+  {
+    "id": "5",
+    "coordinates": {
+      "long": -122.476292,
+      "lat": 37.756743
+    },
+    "dataType": "5",
+    "dataId": "5",
+    "minZoom": 13,
+    "label": "随机标签5"
+  },
+  {
+    "id": "6",
+    "coordinates": {
+      "long": -122.471075,
+      "lat": 37.784978
+    },
+    "dataType": "1",
+    "dataId": "6",
+    "minZoom": 14,
+    "label": "随机标签6"
+  },
+  {
+    "id": "7",
+    "coordinates": {
+      "long": -122.408067,
+      "lat": 37.819173
+    },
+    "dataType": "2",
+    "dataId": "7",
+    "minZoom": 12,
+    "label": "随机标签7"
+  },
+  {
+    "id": "8",
+    "coordinates": {
+      "long": -122.503036,
+      "lat": 37.808352
+    },
+    "dataType": "3",
+    "dataId": "8",
+    "minZoom": 13,
+    "label": "随机标签8"
+  },
+  {
+    "id": "9",
+    "coordinates": {
+      "long": -122.395519,
+      "lat": 37.748926
+    },
+    "dataType": "4",
+    "dataId": "9",
+    "minZoom": 14,
+    "label": "随机标签9"
+  },
+  {
+    "id": "10",
+    "coordinates": {
+      "long": -122.426773,
+      "lat": 37.777368
+    },
+    "dataType": "5",
+    "dataId": "10",
+    "minZoom": 12,
+    "label": "随机标签10"
+  },
+  {
+    "id": "11",
+    "coordinates": {
+      "long": -122.493938,
+      "lat": 37.793382
+    },
+    "dataType": "1",
+    "dataId": "11",
+    "minZoom": 13,
+    "label": "随机标签11"
+  },
+  {
+    "id": "12",
+    "coordinates": {
+      "long": -122.437642,
+      "lat": 37.777831
+    },
+    "dataType": "2",
+    "dataId": "12",
+    "minZoom": 14,
+    "label": "随机标签12"
+  },
+  {
+    "id": "13",
+    "coordinates": {
+      "long": -122.489439,
+      "lat": 37.814952
+    },
+    "dataType": "3",
+    "dataId": "13",
+    "minZoom": 12,
+    "label": "随机标签13"
+  },
+  {
+    "id": "14",
+    "coordinates": {
+      "long": -122.426155,
+      "lat": 37.80916
+    },
+    "dataType": "4",
+    "dataId": "14",
+    "minZoom": 13,
+    "label": "随机标签14"
+  },
+  {
+    "id": "15",
+    "coordinates": {
+      "long": -122.364119,
+      "lat": 37.715258
+    },
+    "dataType": "5",
+    "dataId": "15",
+    "minZoom": 14,
+    "label": "随机标签15"
+  },
+  {
+    "id": "16",
+    "coordinates": {
+      "long": -122.46197,
+      "lat": 37.738081
+    },
+    "dataType": "1",
+    "dataId": "16",
+    "minZoom": 12,
+    "label": "随机标签16"
+  },
+  {
+    "id": "17",
+    "coordinates": {
+      "long": -122.371516,
+      "lat": 37.78226
+    },
+    "dataType": "2",
+    "dataId": "17",
+    "minZoom": 13,
+    "label": "随机标签17"
+  },
+  {
+    "id": "18",
+    "coordinates": {
+      "long": -122.429067,
+      "lat": 37.757071
+    },
+    "dataType": "3",
+    "dataId": "18",
+    "minZoom": 14,
+    "label": "随机标签18"
+  },
+  {
+    "id": "19",
+    "coordinates": {
+      "long": -122.391663,
+      "lat": 37.739213
+    },
+    "dataType": "4",
+    "dataId": "19",
+    "minZoom": 12,
+    "label": "随机标签19"
+  },
+  {
+    "id": "20",
+    "coordinates": {
+      "long": -122.38506,
+      "lat": 37.722804
+    },
+    "dataType": "5",
+    "dataId": "20",
+    "minZoom": 13,
+    "label": "随机标签20"
+  },
+  {
+    "id": "21",
+    "coordinates": {
+      "long": -122.502813,
+      "lat": 37.711148
+    },
+    "dataType": "1",
+    "dataId": "21",
+    "minZoom": 14,
+    "label": "随机标签21"
+  },
+  {
+    "id": "22",
+    "coordinates": {
+      "long": -122.376223,
+      "lat": 37.827406
+    },
+    "dataType": "2",
+    "dataId": "22",
+    "minZoom": 12,
+    "label": "随机标签22"
+  },
+  {
+    "id": "23",
+    "coordinates": {
+      "long": -122.414523,
+      "lat": 37.780314
+    },
+    "dataType": "3",
+    "dataId": "23",
+    "minZoom": 13,
+    "label": "随机标签23"
+  },
+  {
+    "id": "24",
+    "coordinates": {
+      "long": -122.388239,
+      "lat": 37.765781
+    },
+    "dataType": "4",
+    "dataId": "24",
+    "minZoom": 14,
+    "label": "随机标签24"
+  },
+  {
+    "id": "25",
+    "coordinates": {
+      "long": -122.368038,
+      "lat": 37.816097
+    },
+    "dataType": "5",
+    "dataId": "25",
+    "minZoom": 12,
+    "label": "随机标签25"
+  },
+  {
+    "id": "26",
+    "coordinates": {
+      "long": -122.39893,
+      "lat": 37.70895
+    },
+    "dataType": "1",
+    "dataId": "26",
+    "minZoom": 13,
+    "label": "随机标签26"
+  },
+  {
+    "id": "27",
+    "coordinates": {
+      "long": -122.40257,
+      "lat": 37.823115
+    },
+    "dataType": "2",
+    "dataId": "27",
+    "minZoom": 14,
+    "label": "随机标签27"
+  },
+  {
+    "id": "28",
+    "coordinates": {
+      "long": -122.423541,
+      "lat": 37.719732
+    },
+    "dataType": "3",
+    "dataId": "28",
+    "minZoom": 12,
+    "label": "随机标签28"
+  },
+  {
+    "id": "29",
+    "coordinates": {
+      "long": -122.367609,
+      "lat": 37.81723
+    },
+    "dataType": "4",
+    "dataId": "29",
+    "minZoom": 13,
+    "label": "随机标签29"
+  },
+  {
+    "id": "30",
+    "coordinates": {
+      "long": -122.511653,
+      "lat": 37.815262
+    },
+    "dataType": "5",
+    "dataId": "30",
+    "minZoom": 14,
+    "label": "随机标签30"
+  },
+  {
+    "id": "31",
+    "coordinates": {
+      "long": -122.485481,
+      "lat": 37.770435
+    },
+    "dataType": "1",
+    "dataId": "31",
+    "minZoom": 12,
+    "label": "随机标签31"
+  },
+  {
+    "id": "32",
+    "coordinates": {
+      "long": -122.389726,
+      "lat": 37.82143
+    },
+    "dataType": "2",
+    "dataId": "32",
+    "minZoom": 13,
+    "label": "随机标签32"
+  },
+  {
+    "id": "33",
+    "coordinates": {
+      "long": -122.477144,
+      "lat": 37.750394
+    },
+    "dataType": "3",
+    "dataId": "33",
+    "minZoom": 14,
+    "label": "随机标签33"
+  },
+  {
+    "id": "34",
+    "coordinates": {
+      "long": -122.383065,
+      "lat": 37.770844
+    },
+    "dataType": "4",
+    "dataId": "34",
+    "minZoom": 12,
+    "label": "随机标签34"
+  },
+  {
+    "id": "35",
+    "coordinates": {
+      "long": -122.46906,
+      "lat": 37.758627
+    },
+    "dataType": "5",
+    "dataId": "35",
+    "minZoom": 13,
+    "label": "随机标签35"
+  },
+  {
+    "id": "36",
+    "coordinates": {
+      "long": -122.501211,
+      "lat": 37.770794
+    },
+    "dataType": "1",
+    "dataId": "36",
+    "minZoom": 14,
+    "label": "随机标签36"
+  },
+  {
+    "id": "37",
+    "coordinates": {
+      "long": -122.416411,
+      "lat": 37.756602
+    },
+    "dataType": "2",
+    "dataId": "37",
+    "minZoom": 12,
+    "label": "随机标签37"
+  },
+  {
+    "id": "38",
+    "coordinates": {
+      "long": -122.464363,
+      "lat": 37.793597
+    },
+    "dataType": "3",
+    "dataId": "38",
+    "minZoom": 13,
+    "label": "随机标签38"
+  },
+  {
+    "id": "39",
+    "coordinates": {
+      "long": -122.434133,
+      "lat": 37.760584
+    },
+    "dataType": "4",
+    "dataId": "39",
+    "minZoom": 14,
+    "label": "随机标签39"
+  },
+  {
+    "id": "40",
+    "coordinates": {
+      "long": -122.477549,
+      "lat": 37.798558
+    },
+    "dataType": "5",
+    "dataId": "40",
+    "minZoom": 12,
+    "label": "随机标签40"
+  },
+  {
+    "id": "41",
+    "coordinates": {
+      "long": -122.436772,
+      "lat": 37.816918
+    },
+    "dataType": "1",
+    "dataId": "41",
+    "minZoom": 13,
+    "label": "随机标签41"
+  },
+  {
+    "id": "42",
+    "coordinates": {
+      "long": -122.509871,
+      "lat": 37.777039
+    },
+    "dataType": "2",
+    "dataId": "42",
+    "minZoom": 14,
+    "label": "随机标签42"
+  },
+  {
+    "id": "43",
+    "coordinates": {
+      "long": -122.432223,
+      "lat": 37.773559
+    },
+    "dataType": "3",
+    "dataId": "43",
+    "minZoom": 12,
+    "label": "随机标签43"
+  },
+  {
+    "id": "44",
+    "coordinates": {
+      "long": -122.40275,
+      "lat": 37.82249
+    },
+    "dataType": "4",
+    "dataId": "44",
+    "minZoom": 13,
+    "label": "随机标签44"
+  },
+  {
+    "id": "45",
+    "coordinates": {
+      "long": -122.377335,
+      "lat": 37.811246
+    },
+    "dataType": "5",
+    "dataId": "45",
+    "minZoom": 14,
+    "label": "随机标签45"
+  },
+  {
+    "id": "46",
+    "coordinates": {
+      "long": -122.501356,
+      "lat": 37.814218
+    },
+    "dataType": "1",
+    "dataId": "46",
+    "minZoom": 12,
+    "label": "随机标签46"
+  },
+  {
+    "id": "47",
+    "coordinates": {
+      "long": -122.476468,
+      "lat": 37.827732
+    },
+    "dataType": "2",
+    "dataId": "47",
+    "minZoom": 13,
+    "label": "随机标签47"
+  },
+  {
+    "id": "48",
+    "coordinates": {
+      "long": -122.483092,
+      "lat": 37.75053
+    },
+    "dataType": "3",
+    "dataId": "48",
+    "minZoom": 14,
+    "label": "随机标签48"
+  },
+  {
+    "id": "49",
+    "coordinates": {
+      "long": -122.45509,
+      "lat": 37.78218
+    },
+    "dataType": "4",
+    "dataId": "49",
+    "minZoom": 12,
+    "label": "随机标签49"
+  },
+  {
+    "id": "50",
+    "coordinates": {
+      "long": -122.458869,
+      "lat": 37.726999
+    },
+    "dataType": "5",
+    "dataId": "50",
+    "minZoom": 13,
+    "label": "随机标签50"
+  },
+  {
+    "id": "51",
+    "coordinates": {
+      "long": -122.485584,
+      "lat": 37.807731
+    },
+    "dataType": "1",
+    "dataId": "51",
+    "minZoom": 14,
+    "label": "随机标签51"
+  },
+  {
+    "id": "52",
+    "coordinates": {
+      "long": -122.420853,
+      "lat": 37.760338
+    },
+    "dataType": "2",
+    "dataId": "52",
+    "minZoom": 12,
+    "label": "随机标签52"
+  },
+  {
+    "id": "53",
+    "coordinates": {
+      "long": -122.510397,
+      "lat": 37.758706
+    },
+    "dataType": "3",
+    "dataId": "53",
+    "minZoom": 13,
+    "label": "随机标签53"
+  },
+  {
+    "id": "54",
+    "coordinates": {
+      "long": -122.512041,
+      "lat": 37.709567
+    },
+    "dataType": "4",
+    "dataId": "54",
+    "minZoom": 14,
+    "label": "随机标签54"
+  },
+  {
+    "id": "55",
+    "coordinates": {
+      "long": -122.432553,
+      "lat": 37.708329
+    },
+    "dataType": "5",
+    "dataId": "55",
+    "minZoom": 12,
+    "label": "随机标签55"
+  },
+  {
+    "id": "56",
+    "coordinates": {
+      "long": -122.444834,
+      "lat": 37.732906
+    },
+    "dataType": "1",
+    "dataId": "56",
+    "minZoom": 13,
+    "label": "随机标签56"
+  },
+  {
+    "id": "57",
+    "coordinates": {
+      "long": -122.437128,
+      "lat": 37.760712
+    },
+    "dataType": "2",
+    "dataId": "57",
+    "minZoom": 14,
+    "label": "随机标签57"
+  },
+  {
+    "id": "58",
+    "coordinates": {
+      "long": -122.490975,
+      "lat": 37.803905
+    },
+    "dataType": "3",
+    "dataId": "58",
+    "minZoom": 12,
+    "label": "随机标签58"
+  },
+  {
+    "id": "59",
+    "coordinates": {
+      "long": -122.36838,
+      "lat": 37.709614
+    },
+    "dataType": "4",
+    "dataId": "59",
+    "minZoom": 13,
+    "label": "随机标签59"
+  },
+  {
+    "id": "60",
+    "coordinates": {
+      "long": -122.361822,
+      "lat": 37.728121
+    },
+    "dataType": "5",
+    "dataId": "60",
+    "minZoom": 14,
+    "label": "随机标签60"
+  },
+  {
+    "id": "61",
+    "coordinates": {
+      "long": -122.411229,
+      "lat": 37.777462
+    },
+    "dataType": "1",
+    "dataId": "61",
+    "minZoom": 12,
+    "label": "随机标签61"
+  },
+  {
+    "id": "62",
+    "coordinates": {
+      "long": -122.373423,
+      "lat": 37.832362
+    },
+    "dataType": "2",
+    "dataId": "62",
+    "minZoom": 13,
+    "label": "随机标签62"
+  },
+  {
+    "id": "63",
+    "coordinates": {
+      "long": -122.416931,
+      "lat": 37.797117
+    },
+    "dataType": "3",
+    "dataId": "63",
+    "minZoom": 14,
+    "label": "随机标签63"
+  },
+  {
+    "id": "64",
+    "coordinates": {
+      "long": -122.436012,
+      "lat": 37.819626
+    },
+    "dataType": "4",
+    "dataId": "64",
+    "minZoom": 12,
+    "label": "随机标签64"
+  },
+  {
+    "id": "65",
+    "coordinates": {
+      "long": -122.499028,
+      "lat": 37.723713
+    },
+    "dataType": "5",
+    "dataId": "65",
+    "minZoom": 13,
+    "label": "随机标签65"
+  },
+  {
+    "id": "66",
+    "coordinates": {
+      "long": -122.423686,
+      "lat": 37.704816
+    },
+    "dataType": "1",
+    "dataId": "66",
+    "minZoom": 14,
+    "label": "随机标签66"
+  },
+  {
+    "id": "67",
+    "coordinates": {
+      "long": -122.480967,
+      "lat": 37.81561
+    },
+    "dataType": "2",
+    "dataId": "67",
+    "minZoom": 12,
+    "label": "随机标签67"
+  },
+  {
+    "id": "68",
+    "coordinates": {
+      "long": -122.397248,
+      "lat": 37.736269
+    },
+    "dataType": "3",
+    "dataId": "68",
+    "minZoom": 13,
+    "label": "随机标签68"
+  },
+  {
+    "id": "69",
+    "coordinates": {
+      "long": -122.360049,
+      "lat": 37.810731
+    },
+    "dataType": "4",
+    "dataId": "69",
+    "minZoom": 14,
+    "label": "随机标签69"
+  },
+  {
+    "id": "70",
+    "coordinates": {
+      "long": -122.490628,
+      "lat": 37.786211
+    },
+    "dataType": "5",
+    "dataId": "70",
+    "minZoom": 12,
+    "label": "随机标签70"
+  },
+  {
+    "id": "71",
+    "coordinates": {
+      "long": -122.43607,
+      "lat": 37.831056
+    },
+    "dataType": "1",
+    "dataId": "71",
+    "minZoom": 13,
+    "label": "随机标签71"
+  },
+  {
+    "id": "72",
+    "coordinates": {
+      "long": -122.428783,
+      "lat": 37.755304
+    },
+    "dataType": "2",
+    "dataId": "72",
+    "minZoom": 14,
+    "label": "随机标签72"
+  },
+  {
+    "id": "73",
+    "coordinates": {
+      "long": -122.424365,
+      "lat": 37.829025
+    },
+    "dataType": "3",
+    "dataId": "73",
+    "minZoom": 12,
+    "label": "随机标签73"
+  },
+  {
+    "id": "74",
+    "coordinates": {
+      "long": -122.385593,
+      "lat": 37.78727
+    },
+    "dataType": "4",
+    "dataId": "74",
+    "minZoom": 13,
+    "label": "随机标签74"
+  },
+  {
+    "id": "75",
+    "coordinates": {
+      "long": -122.471602,
+      "lat": 37.754719
+    },
+    "dataType": "5",
+    "dataId": "75",
+    "minZoom": 14,
+    "label": "随机标签75"
+  },
+  {
+    "id": "76",
+    "coordinates": {
+      "long": -122.482105,
+      "lat": 37.777422
+    },
+    "dataType": "1",
+    "dataId": "76",
+    "minZoom": 12,
+    "label": "随机标签76"
+  },
+  {
+    "id": "77",
+    "coordinates": {
+      "long": -122.458202,
+      "lat": 37.818306
+    },
+    "dataType": "2",
+    "dataId": "77",
+    "minZoom": 13,
+    "label": "随机标签77"
+  },
+  {
+    "id": "78",
+    "coordinates": {
+      "long": -122.472126,
+      "lat": 37.709199
+    },
+    "dataType": "3",
+    "dataId": "78",
+    "minZoom": 14,
+    "label": "随机标签78"
+  },
+  {
+    "id": "79",
+    "coordinates": {
+      "long": -122.386569,
+      "lat": 37.805167
+    },
+    "dataType": "4",
+    "dataId": "79",
+    "minZoom": 12,
+    "label": "随机标签79"
+  },
+  {
+    "id": "80",
+    "coordinates": {
+      "long": -122.461803,
+      "lat": 37.761721
+    },
+    "dataType": "5",
+    "dataId": "80",
+    "minZoom": 13,
+    "label": "随机标签80"
+  },
+  {
+    "id": "81",
+    "coordinates": {
+      "long": -122.364455,
+      "lat": 37.710514
+    },
+    "dataType": "1",
+    "dataId": "81",
+    "minZoom": 14,
+    "label": "随机标签81"
+  },
+  {
+    "id": "82",
+    "coordinates": {
+      "long": -122.42173,
+      "lat": 37.80344
+    },
+    "dataType": "2",
+    "dataId": "82",
+    "minZoom": 12,
+    "label": "随机标签82"
+  },
+  {
+    "id": "83",
+    "coordinates": {
+      "long": -122.380525,
+      "lat": 37.783326
+    },
+    "dataType": "3",
+    "dataId": "83",
+    "minZoom": 13,
+    "label": "随机标签83"
+  },
+  {
+    "id": "84",
+    "coordinates": {
+      "long": -122.44567,
+      "lat": 37.779209
+    },
+    "dataType": "4",
+    "dataId": "84",
+    "minZoom": 14,
+    "label": "随机标签84"
+  },
+  {
+    "id": "85",
+    "coordinates": {
+      "long": -122.364838,
+      "lat": 37.764085
+    },
+    "dataType": "5",
+    "dataId": "85",
+    "minZoom": 12,
+    "label": "随机标签85"
+  },
+  {
+    "id": "86",
+    "coordinates": {
+      "long": -122.374936,
+      "lat": 37.80218
+    },
+    "dataType": "1",
+    "dataId": "86",
+    "minZoom": 13,
+    "label": "随机标签86"
+  },
+  {
+    "id": "87",
+    "coordinates": {
+      "long": -122.418,
+      "lat": 37.767247
+    },
+    "dataType": "2",
+    "dataId": "87",
+    "minZoom": 14,
+    "label": "随机标签87"
+  },
+  {
+    "id": "88",
+    "coordinates": {
+      "long": -122.438441,
+      "lat": 37.798077
+    },
+    "dataType": "3",
+    "dataId": "88",
+    "minZoom": 12,
+    "label": "随机标签88"
+  },
+  {
+    "id": "89",
+    "coordinates": {
+      "long": -122.434216,
+      "lat": 37.714689
+    },
+    "dataType": "4",
+    "dataId": "89",
+    "minZoom": 13,
+    "label": "随机标签89"
+  },
+  {
+    "id": "90",
+    "coordinates": {
+      "long": -122.450273,
+      "lat": 37.762307
+    },
+    "dataType": "5",
+    "dataId": "90",
+    "minZoom": 14,
+    "label": "随机标签90"
+  },
+  {
+    "id": "91",
+    "coordinates": {
+      "long": -122.452617,
+      "lat": 37.816427
+    },
+    "dataType": "1",
+    "dataId": "91",
+    "minZoom": 12,
+    "label": "随机标签91"
+  },
+  {
+    "id": "92",
+    "coordinates": {
+      "long": -122.500745,
+      "lat": 37.78053
+    },
+    "dataType": "2",
+    "dataId": "92",
+    "minZoom": 13,
+    "label": "随机标签92"
+  },
+  {
+    "id": "93",
+    "coordinates": {
+      "long": -122.363635,
+      "lat": 37.740161
+    },
+    "dataType": "3",
+    "dataId": "93",
+    "minZoom": 14,
+    "label": "随机标签93"
+  },
+  {
+    "id": "94",
+    "coordinates": {
+      "long": -122.476075,
+      "lat": 37.816757
+    },
+    "dataType": "4",
+    "dataId": "94",
+    "minZoom": 12,
+    "label": "随机标签94"
+  },
+  {
+    "id": "95",
+    "coordinates": {
+      "long": -122.51031,
+      "lat": 37.724594
+    },
+    "dataType": "5",
+    "dataId": "95",
+    "minZoom": 13,
+    "label": "随机标签95"
+  },
+  {
+    "id": "96",
+    "coordinates": {
+      "long": -122.503229,
+      "lat": 37.750005
+    },
+    "dataType": "1",
+    "dataId": "96",
+    "minZoom": 14,
+    "label": "随机标签96"
+  },
+  {
+    "id": "97",
+    "coordinates": {
+      "long": -122.472056,
+      "lat": 37.814031
+    },
+    "dataType": "2",
+    "dataId": "97",
+    "minZoom": 12,
+    "label": "随机标签97"
+  },
+  {
+    "id": "98",
+    "coordinates": {
+      "long": -122.491743,
+      "lat": 37.766752
+    },
+    "dataType": "3",
+    "dataId": "98",
+    "minZoom": 13,
+    "label": "随机标签98"
+  },
+  {
+    "id": "99",
+    "coordinates": {
+      "long": -122.45662,
+      "lat": 37.74342
+    },
+    "dataType": "4",
+    "dataId": "99",
+    "minZoom": 14,
+    "label": "随机标签99"
+  },
+  {
+    "id": "100",
+    "coordinates": {
+      "long": -122.499887,
+      "lat": 37.775598
+    },
+    "dataType": "5",
+    "dataId": "100",
+    "minZoom": 12,
+    "label": "随机标签100"
+  },
+  {
+    "id": "101",
+    "coordinates": {
+      "long": -122.368686,
+      "lat": 37.720689
+    },
+    "dataType": "1",
+    "dataId": "101",
+    "minZoom": 13,
+    "label": "随机标签101"
+  },
+  {
+    "id": "102",
+    "coordinates": {
+      "long": -122.371457,
+      "lat": 37.754752
+    },
+    "dataType": "2",
+    "dataId": "102",
+    "minZoom": 14,
+    "label": "随机标签102"
+  },
+  {
+    "id": "103",
+    "coordinates": {
+      "long": -122.490954,
+      "lat": 37.77512
+    },
+    "dataType": "3",
+    "dataId": "103",
+    "minZoom": 12,
+    "label": "随机标签103"
+  },
+  {
+    "id": "104",
+    "coordinates": {
+      "long": -122.503135,
+      "lat": 37.727951
+    },
+    "dataType": "4",
+    "dataId": "104",
+    "minZoom": 13,
+    "label": "随机标签104"
+  },
+  {
+    "id": "105",
+    "coordinates": {
+      "long": -122.503068,
+      "lat": 37.74457
+    },
+    "dataType": "5",
+    "dataId": "105",
+    "minZoom": 14,
+    "label": "随机标签105"
+  },
+  {
+    "id": "106",
+    "coordinates": {
+      "long": -122.420626,
+      "lat": 37.764024
+    },
+    "dataType": "1",
+    "dataId": "106",
+    "minZoom": 12,
+    "label": "随机标签106"
+  },
+  {
+    "id": "107",
+    "coordinates": {
+      "long": -122.471851,
+      "lat": 37.828721
+    },
+    "dataType": "2",
+    "dataId": "107",
+    "minZoom": 13,
+    "label": "随机标签107"
+  },
+  {
+    "id": "108",
+    "coordinates": {
+      "long": -122.44501,
+      "lat": 37.761484
+    },
+    "dataType": "3",
+    "dataId": "108",
+    "minZoom": 14,
+    "label": "随机标签108"
+  },
+  {
+    "id": "109",
+    "coordinates": {
+      "long": -122.396572,
+      "lat": 37.746326
+    },
+    "dataType": "4",
+    "dataId": "109",
+    "minZoom": 12,
+    "label": "随机标签109"
+  },
+  {
+    "id": "110",
+    "coordinates": {
+      "long": -122.433592,
+      "lat": 37.814692
+    },
+    "dataType": "5",
+    "dataId": "110",
+    "minZoom": 13,
+    "label": "随机标签110"
+  },
+  {
+    "id": "111",
+    "coordinates": {
+      "long": -122.452683,
+      "lat": 37.814481
+    },
+    "dataType": "1",
+    "dataId": "111",
+    "minZoom": 14,
+    "label": "随机标签111"
+  },
+  {
+    "id": "112",
+    "coordinates": {
+      "long": -122.478746,
+      "lat": 37.76093
+    },
+    "dataType": "2",
+    "dataId": "112",
+    "minZoom": 12,
+    "label": "随机标签112"
+  },
+  {
+    "id": "113",
+    "coordinates": {
+      "long": -122.388925,
+      "lat": 37.763465
+    },
+    "dataType": "3",
+    "dataId": "113",
+    "minZoom": 13,
+    "label": "随机标签113"
+  },
+  {
+    "id": "114",
+    "coordinates": {
+      "long": -122.489854,
+      "lat": 37.714409
+    },
+    "dataType": "4",
+    "dataId": "114",
+    "minZoom": 14,
+    "label": "随机标签114"
+  },
+  {
+    "id": "115",
+    "coordinates": {
+      "long": -122.469591,
+      "lat": 37.810544
+    },
+    "dataType": "5",
+    "dataId": "115",
+    "minZoom": 12,
+    "label": "随机标签115"
+  },
+  {
+    "id": "116",
+    "coordinates": {
+      "long": -122.357906,
+      "lat": 37.739599
+    },
+    "dataType": "1",
+    "dataId": "116",
+    "minZoom": 13,
+    "label": "随机标签116"
+  },
+  {
+    "id": "117",
+    "coordinates": {
+      "long": -122.501597,
+      "lat": 37.722182
+    },
+    "dataType": "2",
+    "dataId": "117",
+    "minZoom": 14,
+    "label": "随机标签117"
+  },
+  {
+    "id": "118",
+    "coordinates": {
+      "long": -122.39132,
+      "lat": 37.750615
+    },
+    "dataType": "3",
+    "dataId": "118",
+    "minZoom": 12,
+    "label": "随机标签118"
+  },
+  {
+    "id": "119",
+    "coordinates": {
+      "long": -122.365984,
+      "lat": 37.738444
+    },
+    "dataType": "4",
+    "dataId": "119",
+    "minZoom": 13,
+    "label": "随机标签119"
+  },
+  {
+    "id": "120",
+    "coordinates": {
+      "long": -122.378201,
+      "lat": 37.771241
+    },
+    "dataType": "5",
+    "dataId": "120",
+    "minZoom": 14,
+    "label": "随机标签120"
+  },
+  {
+    "id": "121",
+    "coordinates": {
+      "long": -122.378766,
+      "lat": 37.759599
+    },
+    "dataType": "1",
+    "dataId": "121",
+    "minZoom": 12,
+    "label": "随机标签121"
+  },
+  {
+    "id": "122",
+    "coordinates": {
+      "long": -122.404112,
+      "lat": 37.800645
+    },
+    "dataType": "2",
+    "dataId": "122",
+    "minZoom": 13,
+    "label": "随机标签122"
+  },
+  {
+    "id": "123",
+    "coordinates": {
+      "long": -122.501921,
+      "lat": 37.76514
+    },
+    "dataType": "3",
+    "dataId": "123",
+    "minZoom": 14,
+    "label": "随机标签123"
+  },
+  {
+    "id": "124",
+    "coordinates": {
+      "long": -122.413669,
+      "lat": 37.798783
+    },
+    "dataType": "4",
+    "dataId": "124",
+    "minZoom": 12,
+    "label": "随机标签124"
+  },
+  {
+    "id": "125",
+    "coordinates": {
+      "long": -122.364026,
+      "lat": 37.754067
+    },
+    "dataType": "5",
+    "dataId": "125",
+    "minZoom": 13,
+    "label": "随机标签125"
+  },
+  {
+    "id": "126",
+    "coordinates": {
+      "long": -122.359228,
+      "lat": 37.804358
+    },
+    "dataType": "1",
+    "dataId": "126",
+    "minZoom": 14,
+    "label": "随机标签126"
+  },
+  {
+    "id": "127",
+    "coordinates": {
+      "long": -122.491898,
+      "lat": 37.772241
+    },
+    "dataType": "2",
+    "dataId": "127",
+    "minZoom": 12,
+    "label": "随机标签127"
+  },
+  {
+    "id": "128",
+    "coordinates": {
+      "long": -122.451532,
+      "lat": 37.809149
+    },
+    "dataType": "3",
+    "dataId": "128",
+    "minZoom": 13,
+    "label": "随机标签128"
+  },
+  {
+    "id": "129",
+    "coordinates": {
+      "long": -122.37625,
+      "lat": 37.808407
+    },
+    "dataType": "4",
+    "dataId": "129",
+    "minZoom": 14,
+    "label": "随机标签129"
+  },
+  {
+    "id": "130",
+    "coordinates": {
+      "long": -122.460942,
+      "lat": 37.778315
+    },
+    "dataType": "5",
+    "dataId": "130",
+    "minZoom": 12,
+    "label": "随机标签130"
+  },
+  {
+    "id": "131",
+    "coordinates": {
+      "long": -122.358256,
+      "lat": 37.735499
+    },
+    "dataType": "1",
+    "dataId": "131",
+    "minZoom": 13,
+    "label": "随机标签131"
+  },
+  {
+    "id": "132",
+    "coordinates": {
+      "long": -122.404032,
+      "lat": 37.820563
+    },
+    "dataType": "2",
+    "dataId": "132",
+    "minZoom": 14,
+    "label": "随机标签132"
+  },
+  {
+    "id": "133",
+    "coordinates": {
+      "long": -122.501664,
+      "lat": 37.716441
+    },
+    "dataType": "3",
+    "dataId": "133",
+    "minZoom": 12,
+    "label": "随机标签133"
+  },
+  {
+    "id": "134",
+    "coordinates": {
+      "long": -122.447917,
+      "lat": 37.787829
+    },
+    "dataType": "4",
+    "dataId": "134",
+    "minZoom": 13,
+    "label": "随机标签134"
+  },
+  {
+    "id": "135",
+    "coordinates": {
+      "long": -122.498141,
+      "lat": 37.801978
+    },
+    "dataType": "5",
+    "dataId": "135",
+    "minZoom": 14,
+    "label": "随机标签135"
+  },
+  {
+    "id": "136",
+    "coordinates": {
+      "long": -122.359422,
+      "lat": 37.747297
+    },
+    "dataType": "1",
+    "dataId": "136",
+    "minZoom": 12,
+    "label": "随机标签136"
+  },
+  {
+    "id": "137",
+    "coordinates": {
+      "long": -122.431587,
+      "lat": 37.797436
+    },
+    "dataType": "2",
+    "dataId": "137",
+    "minZoom": 13,
+    "label": "随机标签137"
+  },
+  {
+    "id": "138",
+    "coordinates": {
+      "long": -122.364358,
+      "lat": 37.777203
+    },
+    "dataType": "3",
+    "dataId": "138",
+    "minZoom": 14,
+    "label": "随机标签138"
+  },
+  {
+    "id": "139",
+    "coordinates": {
+      "long": -122.419336,
+      "lat": 37.819093
+    },
+    "dataType": "4",
+    "dataId": "139",
+    "minZoom": 12,
+    "label": "随机标签139"
+  },
+  {
+    "id": "140",
+    "coordinates": {
+      "long": -122.513625,
+      "lat": 37.788477
+    },
+    "dataType": "5",
+    "dataId": "140",
+    "minZoom": 13,
+    "label": "随机标签140"
+  },
+  {
+    "id": "141",
+    "coordinates": {
+      "long": -122.442248,
+      "lat": 37.741095
+    },
+    "dataType": "1",
+    "dataId": "141",
+    "minZoom": 14,
+    "label": "随机标签141"
+  },
+  {
+    "id": "142",
+    "coordinates": {
+      "long": -122.453796,
+      "lat": 37.726139
+    },
+    "dataType": "2",
+    "dataId": "142",
+    "minZoom": 12,
+    "label": "随机标签142"
+  },
+  {
+    "id": "143",
+    "coordinates": {
+      "long": -122.39083,
+      "lat": 37.734222
+    },
+    "dataType": "3",
+    "dataId": "143",
+    "minZoom": 13,
+    "label": "随机标签143"
+  },
+  {
+    "id": "144",
+    "coordinates": {
+      "long": -122.431926,
+      "lat": 37.74663
+    },
+    "dataType": "4",
+    "dataId": "144",
+    "minZoom": 14,
+    "label": "随机标签144"
+  },
+  {
+    "id": "145",
+    "coordinates": {
+      "long": -122.403182,
+      "lat": 37.744708
+    },
+    "dataType": "5",
+    "dataId": "145",
+    "minZoom": 12,
+    "label": "随机标签145"
+  },
+  {
+    "id": "146",
+    "coordinates": {
+      "long": -122.407291,
+      "lat": 37.773892
+    },
+    "dataType": "1",
+    "dataId": "146",
+    "minZoom": 13,
+    "label": "随机标签146"
+  },
+  {
+    "id": "147",
+    "coordinates": {
+      "long": -122.385617,
+      "lat": 37.827263
+    },
+    "dataType": "2",
+    "dataId": "147",
+    "minZoom": 14,
+    "label": "随机标签147"
+  },
+  {
+    "id": "148",
+    "coordinates": {
+      "long": -122.489456,
+      "lat": 37.752221
+    },
+    "dataType": "3",
+    "dataId": "148",
+    "minZoom": 12,
+    "label": "随机标签148"
+  },
+  {
+    "id": "149",
+    "coordinates": {
+      "long": -122.484529,
+      "lat": 37.72734
+    },
+    "dataType": "4",
+    "dataId": "149",
+    "minZoom": 13,
+    "label": "随机标签149"
+  },
+  {
+    "id": "150",
+    "coordinates": {
+      "long": -122.371243,
+      "lat": 37.827009
+    },
+    "dataType": "5",
+    "dataId": "150",
+    "minZoom": 14,
+    "label": "随机标签150"
+  },
+  {
+    "id": "151",
+    "coordinates": {
+      "long": -122.412171,
+      "lat": 37.818643
+    },
+    "dataType": "1",
+    "dataId": "151",
+    "minZoom": 12,
+    "label": "随机标签151"
   }
-  
+]

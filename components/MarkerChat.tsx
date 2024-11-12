@@ -1,62 +1,76 @@
-import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard } from 'react-native'
-import Animated, { BounceIn, FadeIn, FadeOut, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
-import users from '~/data/users.json';
+import { useEffect, useState, useRef } from 'react';
+import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard, ActivityIndicator } from 'react-native'
+import Animated, { BounceIn, FadeIn, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { ChatScreenProps } from '~/types/ChatInterfaces';
+import { IMarkerChatScreen } from '~/types/MarkerInterfaces';
 
-import { useEffect, useState } from 'react';
 import Stickers from './Stickers';
 import Message from './Message';
 
+import { useMarker } from '~/providers/MarkerProvider';
+import { IUser } from '~/types/UserInterfaces';
+import { THEME } from '~/constants/constants';
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
 
-    const [newMessageContent, setNewMessageContent] = useState<string>('')
+const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
-    const isTyping = newMessageContent !== '';
+    const flatListRef = useRef<FlatList>(null);
+    const inputRef = useRef<TextInput>(null);
+
+    const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage } = useMarker()
 
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(7);
 
-    // Gérer l'envoi d'un sticker
-    const handleStickerSend = (stickerSrc: any) => {
-        console.log('Sticker sent:', stickerSrc);
-        // Ajoutez la logique pour envoyer le sticker ici
-    };
+    const isTyping = message !== '';
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => {
-                setKeyboardVisible(true); // Le clavier est visible
-            }
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => {
-                setKeyboardVisible(false); // Le clavier est caché
-            }
-        );
+        setMessages([])
+        setParticipants([])
+        if (marker.label === '') {
+            inputRef.current?.focus()
+        }
+    }, [marker])
 
-        // Nettoyage des écouteurs lors du démontage
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardWillShow', (e: any) => {
+            setKeyboardHeight(6.9999); // Récupère la hauteur du clavier
+            setKeyboardVisible(true);
+            flatListRef.current?.scrollToEnd({ animated: true });
+        });
+
+        const keyboardDidHideListener = Keyboard.addListener('keyboardWillHide', () => {
+            setKeyboardVisible(false);
+            setKeyboardHeight(7);
+        });
+
         return () => {
-            keyboardDidHideListener.remove();
             keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
         };
-    }, [])
+    }, []);
 
-    const renderUserIcon = ({ item, index }: { item: number, index: number }) => {
-        const user = users.data.find((user: { id: number }) => user.id === item);
+    const handleShowStickers = () => {
+        setShowStickers(true);
+    }
 
-        // Le premier utilisateur est positionné normalement, les autres sont empilés en arrière-plan
+    const renderUserIcon = ({ user, index }: { user: IUser, index: number }) => {
+        // Récupérer les initiales : 2 lettres si deux mots, sinon une seule lettre
+        const initials = user.username
+            ? user.username.split(' ').length > 1
+                ? user.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
+                : user.username[0].toUpperCase()
+            : '';
+
         return (
             <Animated.View
                 entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
-                key={chat.id}
+                key={user.userId}
                 style={[
                     styles.userStackIcon,
                     {
@@ -66,11 +80,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                 ]}
             >
                 <Animated.Text style={styles.userAvatarText} entering={FadeIn.springify()}>
-                    {user?.username.slice(0, 2).toUpperCase()}
+                    {initials}
                 </Animated.Text>
             </Animated.View>
         );
     };
+
 
     return (
         <View
@@ -82,50 +97,66 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                 exiting={SlideOutDown}
             >
                 {/* Header Bandeau */}
-                <View style={styles.chatHeader}>
+                <View style={styles.markerHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {chat.participantsIds.map((userId: number, index: number) => (
-                                <View key={index}>
-                                    {renderUserIcon({ item: userId, index })}
+                            {marker.label === '' ? (
+                                <TextInput
+                                    style={styles.firstMessageText}
+                                    placeholder="Send your first message here!"
+                                    value={message}
+                                    onChangeText={setMessage}
+                                    editable={false}
+                                />
+                            ) : (
+                                <View>
+                                    {participants && participants.map((user: IUser, index: number) => (
+                                        <View key={index}>
+                                            {renderUserIcon({ user: user, index })}
+                                        </View>
+                                    ))}
+                                    {participants.length > 0 && <Animated.View
+                                        key={marker.markerId}
+                                        entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
+                                        style={[
+                                            styles.userCountBadge,
+                                            { left: participants.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
+                                        ]}>
+                                        <Text style={styles.userCountText}>{participants.length}</Text>
+                                        <FontAwesome6 name="users" size={13} color="gray" />
+                                    </Animated.View>
+                                    }
                                 </View>
-                            ))}
-                            <Animated.View
-                                key={chat.id}
-                                entering={FadeIn.springify().damping(17).delay(chat.participantsIds.length * 15 + 500)}
-                                style={[
-                                    styles.userCountBadge,
-                                    { left: chat.participantsIds.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
-                                ]}>
-                                <Text style={styles.userCountText}>{chat.participantsIds.length}</Text>
-                                <FontAwesome6 name="users" size={13} color="gray" />
-                            </Animated.View>
+                            )}
                         </View>
                     </View>
                     <View style={styles.firstMessageSection}>
                         <Animated.Text
-                            key={chat.id}
+                            key={marker.markerId}
                             entering={FadeIn.springify()}
                             style={styles.firstMessageText}
                             numberOfLines={1}
                         >
-                            {chat.messages[0].content}
+                            {marker.label}
                         </Animated.Text>
                     </View>
                 </View>
 
                 <FlatList
-                    data={chat.messages}
+                    ref={flatListRef}
+                    data={messages}
                     renderItem={({ item, index }) => (
                         <Message
-                            key={index}
+                            key={item.messageId}
                             item={item}
-                            isCurrentUser={item.userId === currentUserId}
-                            currentUserId={currentUserId}
+                            previousSender={index > 0 ? messages[index - 1].senderInfo : null}
                         />
                     )}
-                    keyExtractor={(item, index) => index.toString()}
-                    contentContainerStyle={styles.messageList}
+                    keyExtractor={(_, index) => index.toString()}
+                    contentContainerStyle={[styles.messageList, { paddingBottom: keyboardHeight }]}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                    getItemLayout={(_, index) => ({ length: 100, offset: 100 * index, index })}
+                    showsVerticalScrollIndicator={false}
                 />
                 {
                     showStickers && (
@@ -146,21 +177,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
             </Animated.View>
             <Animated.View
                 style={styles.inputSection}
-                entering={SlideInDown.springify().damping(17)}
+                entering={marker.label !== '' ? SlideInDown.springify().damping(17) : undefined}
                 exiting={SlideOutDown}
                 key={showStickers.toString()}
             >
                 {showStickers ? (
                     <View style={styles.stickerSelector}>
-                        <Stickers onStickerSend={handleStickerSend} />
+                        <Stickers />
                     </View>
                 ) : (
                     <View style={styles.messageInputWrapper}>
                         <TextInput
+                            ref={inputRef}
                             style={styles.messageInput}
                             placeholder="Tapez votre message..."
-                            value={newMessageContent}
-                            onChangeText={setNewMessageContent}
+                            value={message}
+                            onChangeText={setMessage}
                         />
 
                         {/* Bouton pour afficher la liste des stickers */}
@@ -170,7 +202,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                             entering={ZoomIn.springify().damping(17)}
                             exiting={ZoomOut.springify().damping(17).duration(500)}
                         >
-                            <TouchableOpacity onPress={() => setShowStickers(!showStickers)}>
+                            <TouchableOpacity onPress={handleShowStickers}>
                                 {!isKeyboardVisible && (
                                     <MaterialCommunityIcons name="sticker-emoji" size={23} color="#D3D3D3" />
                                 )}
@@ -178,15 +210,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ chat, currentUserId }) => {
                         </Animated.View>
 
                         {/* Bouton d'envoi de message ou micro */}
-                        <TouchableOpacity onPress={() => { }} style={styles.sendMessageButton}>
+                        <TouchableOpacity onPress={sendMessage} style={styles.sendMessageButton}>
                             <Animated.View style={styles.iconWrapper} key={isTyping.toString()} entering={ZoomIn.springify().damping(17).delay(100)}>
-                                {isTyping ? (
-                                    <View style={styles.sendIcon}>
-                                        <Ionicons name="send" size={15} color="white" />
-                                    </View>
-                                ) : (
-                                    <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
-                                )}
+                                {
+                                    isLoading ? (
+                                        <ActivityIndicator size="small" color="#0088cc" />
+                                    ) : (
+                                        isTyping ? (
+                                            <View style={styles.sendIcon}>
+                                                <Ionicons name="send" size={15} color="white" />
+                                            </View>
+                                        ) : (
+                                            <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
+                                        )
+                                    )
+                                }
                             </Animated.View>
                         </TouchableOpacity>
                     </View>
@@ -212,7 +250,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     // Bandeau du haut avec les utilisateurs
-    chatHeader: {
+    markerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
@@ -246,7 +284,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         position: 'absolute',
@@ -305,7 +343,6 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'flex-start',
         paddingHorizontal: 10,
-        paddingBottom: 10,
     },
     // Bouton pour fermer les stickers
     closeStickerButton: {
@@ -384,4 +421,4 @@ const styles = StyleSheet.create({
 
 
 
-export default ChatScreen;
+export default MarkerChat;

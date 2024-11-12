@@ -1,94 +1,147 @@
-// src/components/Message.tsx
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import Animated, { BounceIn } from 'react-native-reanimated';
-import { MessageProps } from '~/types/ChatInterfaces';
-import users from '~/data/users.json';
+import { IMessage } from '~/types/MarkerInterfaces';
+import { useAuth } from '~/providers/AuthProvider';
+import { IUser } from '~/types/UserInterfaces';
+
+import locales from '~/data/locales.json';
+import { THEME } from '~/constants/constants';
 
 interface MessageComponentProps {
-    item: MessageProps;
-    isCurrentUser: boolean;
-    currentUserId: number;
+    item: IMessage;
+    previousSender: IUser | null;
 }
 
-const Message: React.FC<MessageComponentProps> = ({ item, isCurrentUser, currentUserId }) => {
-    const messageUser = users.data.find((user: { id: number }) => user.id === item.userId);
+const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
+    const { user } = useAuth();
+
+    const isCurrentUser = user?.userId === item.senderInfo.userId;
+
+    const renderContent = () => {
+        if (item.type === 'sticker') {
+            return <Image source={{ uri: item.content }} style={styles.sticker} />;
+        } else return <Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText}>{item.content}</Text>;
+    };
+
+    const initials = item.senderInfo.username
+        ? item.senderInfo.username.split(' ').length > 1
+            ? item.senderInfo.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
+            : item.senderInfo.username[0].toUpperCase()
+        : '';
 
     return (
         <View
-            key={`${item.userId}-${item.date}-${item.content}`}
+            key={`${item.senderInfo.userId}-${item.timestamp}-${item.content}`}
             style={[
                 styles.messageContainer,
-                isCurrentUser ? styles.currentUserMessageContainer : styles.otherUserMessageContainer
+                isCurrentUser ? styles.currentUserContainer : styles.otherUserContainer,
             ]}
         >
-            {!isCurrentUser && (
-                <Animated.View
-                    style={styles.profileIconContainer}
-                    entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
-                >
-                    <View style={styles.userAvatar}>
-                        <Text style={styles.userAvatarText}>
-                            {messageUser?.username.slice(0, 2).toUpperCase()}
+            {!isCurrentUser ? (
+                <View style={styles.senderInfoContainer}>
+                    {previousSender?.userId !== item.senderInfo.userId && (
+                        <Text style={styles.senderUsername}>
+                            {item.senderInfo.username}
                         </Text>
+                    )}
+                    <View style={styles.messageContentWrapper}>
+                        {previousSender?.userId !== item.senderInfo.userId && (
+                            <Animated.View
+                                style={styles.avatarContainer}
+                                entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
+                            >
+                                <View style={styles.senderAvatar}>
+                                    <Text style={styles.avatarText}>
+                                        {initials}
+                                    </Text>
+                                    <Text style={styles.flagContainer}>
+                                        {locales.data.find(locale => locale.value === item.senderInfo.locale)?.flag}
+                                    </Text>
+                                </View>
+                            </Animated.View>
+                        )}
+                        <Animated.View
+                            entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
+                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: '#f1f1f1' }]}
+                        >
+                            {renderContent()}
+                            <Text style={styles.messageTimestamp}>
+                                {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                })}
+                            </Text>
+                        </Animated.View>
                     </View>
+                </View>
+            ) : (
+                <Animated.View
+                    entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
+                    style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.primary }]}
+                >
+                    {renderContent()}
+                    {item.type === 'message' && (
+                        <Text style={styles.messageTimestampCurrentUser}>
+                            {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                            })}
+                        </Text>
+                    )}
                 </Animated.View>
             )}
-            <Animated.View
-                entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
-                style={[styles.messageBubble, isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble]}
-            >
-                {!isCurrentUser && (
-                    <Text style={styles.usernameText}>{messageUser?.username}</Text>
-                )}
-                <Text style={[styles.messageContent, { color: currentUserId === item.userId ? 'white' : 'black' }]}>
-                    {item.content}
-                </Text>
-                <Text style={[styles.messageTime, { color: currentUserId === item.userId ? '#D3D3D3' : 'gray' }]}>
-                    {new Date(item.date).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                    })}
-                </Text>
-            </Animated.View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     messageContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
         marginVertical: 5,
+        flexDirection: 'row',
     },
-    currentUserMessageContainer: {
+    currentUserContainer: {
         flexDirection: 'row-reverse',
-        alignItems: 'flex-end',
         marginVertical: 5,
     },
-    otherUserMessageContainer: {
+    otherUserContainer: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
         marginVertical: 5,
     },
-    profileIconContainer: {
-        width: 50,
+    senderInfoContainer: {
+        flex: 1,
+        flexDirection: 'column',
+    },
+    messageContentWrapper: {
+        flex: 1,
+        flexDirection: 'row',
+    },
+    avatarContainer: {
+        width: 30,
         alignSelf: 'center',
         alignItems: 'center',
+        marginRight: 2,
     },
-    userAvatar: {
-        width: 35,
-        height: 35,
+    senderAvatar: {
+        width: 30,
+        height: 30,
         borderRadius: 18,
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    userAvatarText: {
+    avatarText: {
         color: 'white',
         fontWeight: 'bold',
         fontSize: 12,
+    },
+    flagContainer: {
+        fontSize: 14,
+        position: 'absolute',
+        bottom: -5.5,
+        right: -3,
     },
     messageBubble: {
         padding: 5,
@@ -96,27 +149,44 @@ const styles = StyleSheet.create({
         maxWidth: '80%',
     },
     currentUserBubble: {
+        backgroundColor: THEME.colors.accent,
         alignSelf: 'flex-end',
-        backgroundColor: '#0088cc',
     },
     otherUserBubble: {
-        alignSelf: 'flex-start',
         backgroundColor: '#f1f1f1',
+        alignSelf: 'flex-start',
     },
-    usernameText: {
-        fontSize: 12,
+    senderUsername: {
+        fontSize: 10,
         fontWeight: 'bold',
         color: 'gray',
-        margin: 3,
+        marginBottom: 2,
+        marginLeft: 35,
     },
-    messageContent: {
+    messageText: {
         color: 'black',
         margin: 3,
     },
-    messageTime: {
-        fontSize: 10,
+    messageTextCurrentUser: {
+        color: 'white',
+        margin: 3,
+    },
+    messageTimestamp: {
+        fontSize: 9,
+        color: 'gray',
         alignSelf: 'flex-end',
     },
+    messageTimestampCurrentUser: {
+        fontSize: 9,
+        color: '#D3D3D3',
+        alignSelf: 'flex-end',
+    },
+    sticker: {
+        width: 70,
+        height: 70,
+        borderRadius: 10,
+        resizeMode: 'contain',
+    }
 });
 
 export default Message;
