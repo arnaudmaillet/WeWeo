@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import Animated, { BounceIn } from 'react-native-reanimated';
 import { IMessage } from '~/types/MarkerInterfaces';
 import { useAuth } from '~/providers/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
+import { firestore } from '~/firebase';
+import { doc, getDoc } from "firebase/firestore";
 
 import locales from '~/data/locales.json';
 import { THEME } from '~/constants/constants';
@@ -15,24 +17,34 @@ interface MessageComponentProps {
 
 const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
     const { user } = useAuth();
+    const [senderInfo, setSenderInfo] = useState<IUser | null>(null);
 
-    const isCurrentUser = user?.userId === item.senderInfo.userId;
+    const isCurrentUser = user?.userId === item.senderId;
+
+    // Récupère les informations de l'utilisateur en fonction de senderId
+    useEffect(() => {
+        const fetchsenderInfo = async () => {
+            const userDoc = await getDoc(doc(firestore, "users", item.senderId));
+            if (userDoc.exists()) {
+                setSenderInfo(userDoc.data() as IUser);
+            }
+        };
+        fetchsenderInfo();
+    }, [item.senderId]);
 
     const renderContent = () => {
         if (item.type === 'sticker') {
             return <Image source={{ uri: item.content }} style={styles.sticker} />;
-        } else return <Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText}>{item.content}</Text>;
+        } else {
+            return <Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText}>{item.content}</Text>;
+        }
     };
 
-    const initials = item.senderInfo.username
-        ? item.senderInfo.username.split(' ').length > 1
-            ? item.senderInfo.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
-            : item.senderInfo.username[0].toUpperCase()
-        : '';
+    const initials = senderInfo?.username.split(' ').map((n: string) => n[0]).join('');
 
     return (
         <View
-            key={`${item.senderInfo.userId}-${item.timestamp}-${item.content}`}
+            key={`${item.senderId}-${item.createdAt}-${item.content}`}
             style={[
                 styles.messageContainer,
                 isCurrentUser ? styles.currentUserContainer : styles.otherUserContainer,
@@ -40,13 +52,13 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
         >
             {!isCurrentUser ? (
                 <View style={styles.senderInfoContainer}>
-                    {previousSender?.userId !== item.senderInfo.userId && (
+                    {previousSender?.userId !== item.senderId && (
                         <Text style={styles.senderUsername}>
-                            {item.senderInfo.username}
+                            {senderInfo?.username}
                         </Text>
                     )}
                     <View style={styles.messageContentWrapper}>
-                        {previousSender?.userId !== item.senderInfo.userId && (
+                        {previousSender?.userId !== item.senderId && (
                             <Animated.View
                                 style={styles.avatarContainer}
                                 entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
@@ -56,23 +68,16 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
                                         {initials}
                                     </Text>
                                     <Text style={styles.flagContainer}>
-                                        {locales.data.find(locale => locale.value === item.senderInfo.locale)?.flag}
+                                        {locales.data.find(locale => locale.value === senderInfo?.locale)?.flag}
                                     </Text>
                                 </View>
                             </Animated.View>
                         )}
                         <Animated.View
                             entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
-                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: '#f1f1f1' }]}
+                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.background.darker_x1 }]}
                         >
                             {renderContent()}
-                            <Text style={styles.messageTimestamp}>
-                                {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                })}
-                            </Text>
                         </Animated.View>
                     </View>
                 </View>
@@ -82,15 +87,6 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
                     style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.primary }]}
                 >
                     {renderContent()}
-                    {item.type === 'message' && (
-                        <Text style={styles.messageTimestampCurrentUser}>
-                            {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}
-                        </Text>
-                    )}
                 </Animated.View>
             )}
         </View>
@@ -170,16 +166,6 @@ const styles = StyleSheet.create({
     messageTextCurrentUser: {
         color: 'white',
         margin: 3,
-    },
-    messageTimestamp: {
-        fontSize: 9,
-        color: 'gray',
-        alignSelf: 'flex-end',
-    },
-    messageTimestampCurrentUser: {
-        fontSize: 9,
-        color: '#D3D3D3',
-        alignSelf: 'flex-end',
     },
     sticker: {
         width: 70,

@@ -1,9 +1,8 @@
-import { FlatList, Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
+import { Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown } from 'react-native-reanimated'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useAuth } from '~/providers/AuthProvider';
-import Users from '~/data/users.json';
 import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/providers/MapProvider';
 import { ISwitch } from '~/types/SwitchInterface';

@@ -10,19 +10,18 @@ import NewMarkerModal from './NewMarkerModal';
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { THEME } from '~/constants/constants';
+import { fakeUserLocation } from '~/providers/AuthProvider';
 
-const Map: React.FC<IMap> = ({ userLocation }) => {
+const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
 
-    const { markers, newMarker, selectedMarker, setNewMarker, setSelectedMarker } = useMap();
+    const { mapRef, markers, newMarker, marker, setNewMarker, setMarker, setCamera } = useMap();
 
-    const mapRef = useRef<MapView | null>(null); // Référence à la MapView
     const newMarkerModalRef = useRef<{ animateMarkersExiting: () => void } | null>(null);
-    const newMarkerInputRef = useRef<TextInput | null>(null); // Référence à l'input du nouveau marqueur
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
-    const [selectedMarkerSnap, setSelectedMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
+    const [markerSnap, setMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
     const [zoomLevel, setZoomLevel] = useState(0);
 
     const [scaleAnimations, setScaleAnimations] = useState<Animated.Value[]>(
@@ -30,30 +29,6 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
     ); // Initialiser les animations de scale
 
 
-    const pitch = 60;
-    const [camera, setCamera] = useState<Camera>({
-        center: {
-            latitude: userLocation.lat,
-            longitude: userLocation.long,
-        },
-        zoom: 0,
-        pitch: pitch,
-        heading: 0,
-    });
-
-    useEffect(() => {
-        if (newMarkerInputRef.current?.focus) {
-            setCamera({
-                center: {
-                    latitude: newMarker!.coordinates.lat,
-                    longitude: newMarker!.coordinates.long,
-                },
-                zoom: 0,
-                pitch: pitch,
-                heading: 0,
-            });
-        }
-    }, [newMarker]);
 
     const handlePressMarker = (point: IMarker) => {
         if (newMarker) {
@@ -64,8 +39,8 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
-            setSelectedMarkerSnap(point);
-            setSelectedMarker(point);
+            setMarkerSnap(point);
+            setMarker(point);
         }
     };
 
@@ -80,6 +55,8 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                 lat: coordinate.latitude,
                 long: coordinate.longitude,
             },
+            subscribedUserIds: [],
+            connectedUserIds: [],
             dataType: 'message',
             minZoom: 15,
             label: '',
@@ -87,31 +64,34 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
     };
 
     useEffect(() => {
-        if (selectedMarker && mapRef.current) {
-            setSelectedMarkerSnap(selectedMarker);
+        if (marker && mapRef.current) {
+            setMarkerSnap(marker);
 
             mapRef.current.animateCamera(
                 {
                     center: {
-                        latitude: selectedMarker.coordinates.lat,
-                        longitude: selectedMarker.coordinates.long,
+                        latitude: marker.coordinates.lat,
+                        longitude: marker.coordinates.long,
                     },
                 },
                 { duration: 1000 }
             );
         }
 
-        if (!selectedMarker && selectedMarkerSnap && mapRef.current) {
-            mapRef.current?.animateCamera({
-                center: {
-                    latitude: selectedMarkerSnap.coordinates.lat,
-                    longitude: selectedMarkerSnap.coordinates.long,
+        if (!marker && markerSnap && mapRef.current) {
+
+            mapRef.current.animateCamera(
+                {
+                    center: {
+                        latitude: markerSnap.coordinates.lat,
+                        longitude: markerSnap.coordinates.long,
+                    },
                 },
-                pitch: camera.pitch,
-                heading: camera.heading,
-            });
+                { duration: 1000 }
+            );
+            setMarkerSnap(null);
         }
-    }, [selectedMarker]);
+    }, [marker]);
 
     useEffect(() => {
         const previousMarkers = previousMarkersRef.current;
@@ -156,25 +136,24 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                 style={styles.map}
                 showsUserLocation={true}
                 initialRegion={{
-                    latitude: userLocation.lat,
-                    longitude: userLocation.long,
-                    latitudeDelta: userLocation.latDelta,
-                    longitudeDelta: userLocation.longDelta,
+                    latitude: fakeUserLocation.lat,
+                    longitude: fakeUserLocation.long,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
                 }}
                 mapPadding={{
                     top: 0,
                     right: screenDimensions.width * 0.05,
-                    bottom: selectedMarker ? screenDimensions.height * 0.78 : 0,
+                    bottom: marker ? screenDimensions.height * 0.78 : 0,
                     left: screenDimensions.width * 0.05,
                 }}
                 showsPointsOfInterest={false}
                 onLongPress={handleLongPress}
             >
-                {newMarker && <NewMarkerModal ref={newMarkerModalRef} />}
+                <NewMarkerModal ref={newMarkerModalRef} />
 
                 {markers &&
                     markers.map((marker, index) => {
-                        const displayText = marker?.label?.slice(0, 10);
                         return (
                             <Marker
                                 key={marker.markerId}
@@ -185,7 +164,6 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                             >
                                 <Animated.View
                                     style={[
-                                        styles.markerContainer,
                                         {
                                             transform: [
                                                 { scale: scaleAnimations[index] || new Animated.Value(1) },
@@ -200,9 +178,7 @@ const Map: React.FC<IMap> = ({ userLocation }) => {
                                     ]}
                                 >
                                     <TouchableOpacity style={styles.pillContainer} onPress={() => handlePressMarker(marker)}>
-                                        {displayText ? (
-                                            <Text style={styles.pillText}>{displayText}</Text>
-                                        ) : null}
+                                        <Text style={styles.pillText}>{marker?.label}</Text>
                                     </TouchableOpacity>
                                 </Animated.View>
                             </Marker>
@@ -237,29 +213,24 @@ const styles = StyleSheet.create({
         borderRadius: 7.5,
         backgroundColor: '#007AFF', // Solid blue
     },
-    markerContainer: {
+    pillContainer: {
         alignItems: 'center', // Centrer le contenu horizontalement
         justifyContent: 'center', // Centrer le contenu verticalement
-        zIndex: 1,
-    },
-    pillContainer: {
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.primary,
         paddingHorizontal: 5,
         borderRadius: 6,
         elevation: 3,
-        borderWidth: .5,
-        borderColor: THEME.colors.text.black,
+        minWidth: 30, // Largeur minimale pour afficher les courts textes
+        maxWidth: 100, // Largeur maximale pour limiter l'expansion
+        zIndex: 1,
     },
     pillText: {
+        width: '100%',
         fontSize: 11, // Taille du texte
         fontWeight: 'bold', // Texte en gras
-        color: THEME.colors.text.black, // Couleur du texte
-        paddingTop: 2,
-        paddingBottom: 2,
+        color: THEME.colors.text.white, // Couleur du texte
+        paddingTop: 3,
+        paddingBottom: 3,
         textAlign: 'center',
-    },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 1,
     },
 });

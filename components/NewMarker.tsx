@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native'
 import React from 'react'
-import Animated, { runOnJS, SlideInDown, SlideOutDown } from 'react-native-reanimated'
+import Animated, { runOnJS, SlideInDown } from 'react-native-reanimated'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import Switch from './Switch'
 import { ISwitch } from '~/types/SwitchInterface'
@@ -52,6 +52,11 @@ const NewMarker: React.FC<NewMarkerProps> = ({ onFocusInput, onBlurInput }) => {
         ],
     }
 
+    const handleInputValue = (text: string) => {
+        setInputValue(text)
+        newMarker && setNewMarker({ ...newMarker, label: text })
+    }
+
 
     return (
         <Animated.View key="newMarker" style={styles.container} entering={SlideInDown.springify().damping(17)}>
@@ -64,13 +69,13 @@ const NewMarker: React.FC<NewMarkerProps> = ({ onFocusInput, onBlurInput }) => {
                         maxLength={INPUT.max_length.first_message}
                         placeholder="Type something..."
                         value={inputValue}
-                        onChangeText={setInputValue}
+                        onChangeText={handleInputValue}
                         onFocus={onFocusInput}
                         onBlur={onBlurInput}
                         returnKeyType='send'
                         onSubmitEditing={() => {
                             if (newMarker && inputValue.length > 0) {
-                                //setNewMarker({ ...newMarker, label: inputValue })
+                                addMarker()
                                 setInputValue('')
                                 runOnJS(onBlurInput)()
                             }

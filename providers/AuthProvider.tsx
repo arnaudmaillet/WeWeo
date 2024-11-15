@@ -1,266 +1,176 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { IUser } from '~/types/UserInterfaces';
+import { ICurrentUser, IUser } from '~/types/UserInterfaces';
 import { router } from 'expo-router';
-
-import { CognitoUserAttribute, CognitoUser, AuthenticationDetails, CognitoUserPool } from 'amazon-cognito-identity-js';
-import { jwtDecode } from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import awsConfig from '~/config/awsConfig';
-
-const userPool = new CognitoUserPool({
-    UserPoolId: awsConfig.cognito.userPoolId,
-    ClientId: awsConfig.cognito.clientId,
-});
+import { auth, firestore } from '~/firebase';
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged, updateProfile } from "firebase/auth";
 
 interface AuthContextProps {
-    user: IUser | null;
+    user: ICurrentUser | null;
     isLoading: boolean;
     signUp: (email: string, password: string, username: string, birthdate: string, locale: string) => Promise<boolean>;
-    confirmSignUp: (code: string) => Promise<boolean>;
     signIn: (email: string, password: string) => Promise<boolean>;
     signOut: () => Promise<void>;
 }
 
-export const getToken = async () => {
-    try {
-        const token = await AsyncStorage.getItem('@user_token');
-        if (token) {
-            const decodedToken = jwtDecode<{ exp: number }>(token);
-            const currentTime = Math.floor(Date.now() / 1000);
-
-            // Vérifiez si le token est expiré
-            if (decodedToken.exp < currentTime) {
-                const newToken = await refreshToken(); // Rafraîchit le token si expiré
-                return newToken;
-            }
-            return token;
-        }
-        return null;
-    } catch (e) {
-        console.error('Failed to retrieve token:', e);
-        return null;
-    }
-};
-
-const storeUser = async (email: string, token: string) => {
-    try {
-        await AsyncStorage.setItem('@user_email', email); // Assurez-vous que l'email est stocké
-        await AsyncStorage.setItem('@user_token', token);
-    } catch (e) {
-        console.error('Failed to save the user token.', e);
-    }
-};
-
-const refreshToken = async () => {
-    try {
-        const storedUser = await AsyncStorage.getItem('@user_email');
-        if (!storedUser) {
-            console.error('No stored user email found for refresh.');
-            throw new Error("User not logged in or email not stored.");
-        }
-
-        const userData = {
-            Username: storedUser,
-            Pool: userPool,
-        };
-        const cognitoUser = new CognitoUser(userData);
-
-        return new Promise<string>((resolve, reject) => {
-            const signInUserSession = cognitoUser.getSignInUserSession();
-            if (signInUserSession) {
-                cognitoUser.refreshSession(signInUserSession.getRefreshToken(), (err, session) => {
-                    if (err) {
-                        console.error('Error refreshing token:', err);
-                        reject(null);
-                    } else {
-                        const newToken = session.getIdToken().getJwtToken();
-                        AsyncStorage.setItem('@user_token', newToken); // Met à jour le token
-                        resolve(newToken);
-                    }
-                });
-            }
-        });
-    } catch (e) {
-        console.error('Failed to refresh token:', e);
-        return null;
-    }
-};
+export const fakeUserLocation = {
+    lat: 37.7749,
+    long: -122.4194,
+    latDelta: 0.0922,
+    longDelta: 0.0421,
+}
 
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<IUser | null>(null)
-    const [userTmp, setUserTmp] = useState<IUser | null>(null)
+    const [user, setUser] = useState<ICurrentUser | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        loadUser();
-    }, []);
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                const token = await firebaseUser.getIdToken();
+                storeUser(firebaseUser.email || '', token);
 
-    const createAttribute = (Name: string, Value: string): CognitoUserAttribute => {
-        return new CognitoUserAttribute({ Name, Value });
-    }
+                console.log('User', firebaseUser.uid);
+                // Récupérer les informations utilisateur depuis Firestore
+                const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data() as IUser;
+                    setUser({
+                        userId: firebaseUser.uid,
+                        email: userData.email,
+                        username: userData.username,
+                        birthdate: userData.birthdate,
+                        locale: userData.locale,
+                        following: userData.following,
+                        subscribedTo: userData.subscribedTo,
+                        location: {
+                            lat: fakeUserLocation.lat,
+                            long: fakeUserLocation.long,
+                            latDelta: fakeUserLocation.latDelta,
+                            longDelta: fakeUserLocation.longDelta,
+                        }
+                    });
+                } else {
+                    console.error('User document not found in Firestore');
+                    router.push('/LoginScreen');
+                }
 
-    const loadUser = async () => {
-        try {
-            const token = await AsyncStorage.getItem('@user_token');
-            if (token) {
-                const userInfo = jwtDecode<{
-                    sub: string;
-                    email: string;
-                    preferred_username: string;
-                    birthdate: string;
-                    locale: string;
-                }>(token);
-
-                setUser({
-                    userId: userInfo.sub || '',
-                    username: userInfo.preferred_username,
-                    email: userInfo.email,
-                    birthdate: userInfo.birthdate,
-                    locale: userInfo.locale,
-                    following: [],
-                });
             } else {
+                setUser(null);
                 router.push('/LoginScreen');
             }
+        });
+        97
+        return () => unsubscribe();
+    }, []);
+
+    const storeUser = async (email: string, token: string) => {
+        try {
+            await AsyncStorage.setItem('@user_email', email);
+            await AsyncStorage.setItem('@user_token', token);
         } catch (e) {
-            console.error('Failed to load the user token.', e);
+            console.error('Failed to save the user token.', e);
+        }
+    };
+
+    const signUp = async (email: string, password: string, username: string, birthdate: string, locale: string): Promise<boolean> => {
+        setIsLoading(true);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+            const userData: ICurrentUser = {
+                userId: firebaseUser.uid,
+                username,
+                email,
+                birthdate,
+                locale,
+                following: [],
+                subscribedTo: [],
+                location: {
+                    lat: fakeUserLocation.lat,
+                    long: fakeUserLocation.long,
+                    latDelta: fakeUserLocation.latDelta,
+                    longDelta: fakeUserLocation.longDelta,
+                }
+            };
+
+            await updateProfile(firebaseUser, {
+                displayName: username,
+            });
+
+            await setDoc(doc(firestore, "users", firebaseUser.uid), userData);
+            await storeUser(email, await firebaseUser.getIdToken());
+
+            setUser(userData);
+            setIsLoading(false);
+
+            return true;
+        } catch (error) {
+            console.error('Error signing up:', error);
+            setIsLoading(false);
+            return false;
         }
     };
 
     const signIn = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
-        const authenticationDetails = new AuthenticationDetails({
-            Username: email,
-            Password: password,
-        });
-        const userData = {
-            Username: email,
-            Pool: userPool,
-        };
-        const cognitoUser = new CognitoUser(userData);
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const firebaseUser = userCredential.user;
+            const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
 
-        return new Promise<boolean>((resolve) => {
-            cognitoUser.authenticateUser(authenticationDetails, {
-                onSuccess: (result) => {
-                    const idToken = result.getIdToken().getJwtToken();
-                    if (!idToken) {
-                        console.error('No token found in the result:', result);
-                        setIsLoading(false);
-                        resolve(false);
-                        return;
+            if (userDoc.exists()) {
+                const userData = userDoc.data() as IUser;
+                setUser({
+                    userId: firebaseUser.uid,
+                    email: userData.email,
+                    username: userData.username,
+                    birthdate: userData.birthdate,
+                    locale: userData.locale,
+                    following: userData.following,
+                    subscribedTo: userData.subscribedTo,
+                    location: {
+                        lat: fakeUserLocation.lat,
+                        long: fakeUserLocation.long,
+                        latDelta: fakeUserLocation.latDelta,
+                        longDelta: fakeUserLocation.longDelta,
                     }
-                    const userInfo = jwtDecode<{
-                        sub: string;
-                        email: string;
-                        preferred_username: string;
-                        birthdate: string;
-                        locale: string;
-                    }>(idToken);
-                    setUser({
-                        userId: userInfo.sub || '',
-                        username: userInfo.preferred_username,
-                        email: userInfo.email,
-                        birthdate: userInfo.birthdate,
-                        locale: userInfo.locale,
-                        following: [],
-                    });
+                });
+                console.log('User signed in:', userData);
+            } else {
+                console.error('User document not found in Firestore');
+            }
 
-                    // Sauvegarder le jeton dans AsyncStorage
-                    storeUser(email, idToken);
-                    setIsLoading(false);
-                    resolve(true);
-                },
-                onFailure: (err) => {
-                    console.error('Error signing in:', err.message || JSON.stringify(err));
-                    setIsLoading(false);
-                    resolve(false);
-                },
-            });
-        });
+            await storeUser(email, await firebaseUser.getIdToken());
+            setIsLoading(false);
+            return true;
+        } catch (error) {
+            console.error('Error signing in:', error);
+            setIsLoading(false);
+            return false;
+        }
     };
 
     const signOut = async () => {
         setIsLoading(true);
-
-        // Effacer les données utilisateur et le jeton
         try {
+            await firebaseSignOut(auth);
             await AsyncStorage.removeItem('@user_token');
-        } catch (e) {
-            console.error('Failed to remove the user token.', e);
+            setUser(null);
+            router.push('/LoginScreen');
+        } catch (error) {
+            console.error('Failed to sign out:', error);
+        } finally {
+            setIsLoading(false);
         }
-
-        setUser(null);
-        router.push('/LoginScreen');
-        setIsLoading(false);
     };
 
-    const signUp = async (email: string, password: string, username: string, birthdate: string, locale: string): Promise<boolean> => {
-        setIsLoading(true);
-
-        const attributeList = [
-            createAttribute('email', email),
-            createAttribute('preferred_username', username),
-            createAttribute('birthdate', birthdate),
-            createAttribute('locale', locale),
-            createAttribute('updated_at', Math.floor(Date.now() / 1000).toString())
-        ];
-
-        const signUpResult = await new Promise<boolean>((resolve) => {
-            userPool.signUp(email, password, attributeList, [], (err, result) => {
-                if (err) {
-                    console.log(err);
-                    setIsLoading(false);
-                    resolve(false);
-                } else if (result) {
-                    console.log(result);
-                    setUserTmp({
-                        userId: result?.userSub,
-                        username: username,
-                        email: email,
-                        following: [],
-                        locale: "",
-                        birthdate: "",
-                    });
-                    setIsLoading(false);
-                    resolve(true);
-                }
-            });
-        });
-
-        return signUpResult;
-    }
-
-    const confirmSignUp = async (code: string): Promise<boolean> => {
-        setIsLoading(true);
-
-        const confirmSignUpResult = await new Promise<boolean>((resolve) => {
-            const cognitoUser = new CognitoUser({
-                Username: userTmp?.userId || '',
-                Pool: userPool
-            });
-
-            cognitoUser.confirmRegistration(code, true, (err, result) => {
-                if (err) {
-                    resolve(false);
-                    console.log(err);
-                    alert("Invalid confirmation code.");
-                } else {
-                    resolve(true);
-                    console.log(result);
-                    router.push('/LoginScreen');
-                }
-            })
-        });
-        setIsLoading(false);
-
-        return confirmSignUpResult;
-    }
-
     return (
-        <AuthContext.Provider value={{ user, isLoading, signUp, confirmSignUp, signIn, signOut }}>
+        <AuthContext.Provider value={{ user, isLoading, signUp, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     );

@@ -12,7 +12,7 @@ interface NewMarkerModalProps {
 }
 
 const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
-    const { newMarker, setNewMarker, newMarkerType, setNewMarkerType, addMarker } = useMap();
+    const { newMarker, setNewMarker, newMarkerType, setNewMarkerType } = useMap();
     const [columns, setColumns] = useState(2);
 
     const [dotAnimation] = useState(new Animated.Value(0));
@@ -21,25 +21,20 @@ const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
     const [channelAnimation] = useState(new Animated.Value(0));
     const [closeAnimation] = useState(new Animated.Value(0));
 
+    useImperativeHandle(ref, () => ({
+        animateMarkersExiting,
+    }));
+
     useEffect(() => {
         const totalButtons = 4;
         setColumns(Math.ceil(Math.sqrt(totalButtons)));
     }, []);
 
     useEffect(() => {
-        if (newMarker) {
-            dotAnimation.setValue(0);
-            chatAnimation.setValue(0);
-            groupAnimation.setValue(0);
-            channelAnimation.setValue(0);
-            closeAnimation.setValue(0);
-        }
+        resetAnimations();
         animateMarkersEntering();
     }, [newMarker?.markerId]);
 
-    useImperativeHandle(ref, () => ({
-        animateMarkersExiting,
-    }));
 
     const animateMarkersEntering = async () => {
         if (newMarker) {
@@ -54,17 +49,19 @@ const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
     };
 
     const animateMarkersExiting = async () => {
+        resetAnimations();
         setNewMarkerType(null);
-        Animated.stagger(50, [
-            Animated.spring(dotAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(chatAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(groupAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(channelAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(closeAnimation, { toValue: 0, useNativeDriver: true })
-        ]).start(() => {
-            setNewMarker(null);
-        });
+        setNewMarker(null);
     }
+
+    const resetAnimations = () => {
+        dotAnimation.setValue(0);
+        chatAnimation.setValue(0);
+        groupAnimation.setValue(0);
+        channelAnimation.setValue(0);
+        closeAnimation.setValue(0);
+    }
+
 
     const handleButtonPress = (type: ChatTypes) => {
         if (newMarkerType === type) {
@@ -75,7 +72,7 @@ const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
     };
 
     return (
-        <Marker coordinate={{ latitude: newMarker!.coordinates.lat, longitude: newMarker!.coordinates.long }}>
+        <Marker coordinate={{ latitude: newMarker?.coordinates.lat || 0, longitude: newMarker?.coordinates.long || 0 }}>
             <View style={[styles.container, { width: columns * 60 - 10 }]}>
                 <Animated.View style={[styles.centerDot, { opacity: dotAnimation, transform: [{ translateX: -6 }] }]} />
                 <Animated.View style={{ opacity: chatAnimation, transform: [{ scale: chatAnimation }] }}>

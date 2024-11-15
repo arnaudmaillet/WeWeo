@@ -28,7 +28,7 @@ export const GET_MARKERS = gql`
         lat
       }
       createdAt
-      creatorId
+      senderId
       label
       minZoom
     }

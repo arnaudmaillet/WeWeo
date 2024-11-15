@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard, ActivityIndicator } from 'react-native'
-import Animated, { BounceIn, FadeIn, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import Animated, { BounceIn, FadeIn, FadeInRight, FadeOut, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomInEasyDown, ZoomOut, ZoomOutEasyDown } from 'react-native-reanimated'
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
@@ -12,8 +12,12 @@ import Stickers from './Stickers';
 import Message from './Message';
 
 import { useMarker } from '~/providers/MarkerProvider';
-import { IUser } from '~/types/UserInterfaces';
 import { THEME } from '~/constants/constants';
+import { MaterialIcons } from '@expo/vector-icons';
+
+
+const MAX_ICONS_PER_ROW = 5;
+const ICON_BASE_SIZE = 38;
 
 
 const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
@@ -21,7 +25,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
 
-    const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage } = useMarker()
+    const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage, subscribe, isSubscribed } = useMarker();
 
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -59,29 +63,36 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         setShowStickers(true);
     }
 
-    const renderUserIcon = ({ user, index }: { user: IUser, index: number }) => {
-        // Récupérer les initiales : 2 lettres si deux mots, sinon une seule lettre
-        const initials = user.username
-            ? user.username.split(' ').length > 1
-                ? user.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
-                : user.username[0].toUpperCase()
-            : '';
+    const renderUserIcons = () => {
+        const totalParticipants = participants.length;
+        let iconSize = ICON_BASE_SIZE;
+
+        const totalWidth = Math.min(totalParticipants * (iconSize), ICON_BASE_SIZE * MAX_ICONS_PER_ROW);
+
+        // Diviser la taille des icônes si le nombre dépasse la limite
+        if (totalParticipants > MAX_ICONS_PER_ROW) {
+            iconSize = ICON_BASE_SIZE / 2 - 2;
+        }
 
         return (
-            <Animated.View
-                entering={SlideInLeft.springify().stiffness(150).damping(100).delay(index * 100)}
-                key={user.userId}
-                style={[
-                    styles.userStackIcon,
-                    {
-                        left: index === 0 ? 0 : index * 15, // Décaler les autres icônes vers la gauche
-                        zIndex: index === 0 ? 10 : 10 - index, // Le premier a le zIndex le plus grand
-                    },
-                ]}
-            >
-                <Animated.Text style={styles.userAvatarText} entering={FadeIn.springify()}>
-                    {initials}
-                </Animated.Text>
+            <Animated.View style={[styles.userStackIconContainer, { width: totalWidth + 5 }]} entering={FadeIn.springify().damping(17)} exiting={FadeOut.springify().damping(17)}>
+                {participants.map((user, index) => (
+                    <Animated.View
+                        key={user.userId}
+                        entering={ZoomIn.springify().damping(17).randomDelay().delay(500)}
+                        exiting={ZoomOut}
+                        style={[
+                            styles.userStackIcon,
+                            { width: iconSize, height: iconSize },
+                        ]}
+                    >
+                        <View style={[styles.userIconContainer, { borderRadius: iconSize / 2 }]}>
+                            <Text style={[styles.userAvatarText, { fontSize: iconSize * 0.4 }]}>
+                                {user.username.charAt(0)}
+                            </Text>
+                        </View>
+                    </Animated.View>
+                ))}
             </Animated.View>
         );
     };
@@ -100,46 +111,37 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                 <View style={styles.markerHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {marker.label === '' ? (
-                                <TextInput
-                                    style={styles.firstMessageText}
-                                    placeholder="Send your first message here!"
-                                    value={message}
-                                    onChangeText={setMessage}
-                                    editable={false}
-                                />
-                            ) : (
-                                <View>
-                                    {participants && participants.map((user: IUser, index: number) => (
-                                        <View key={index}>
-                                            {renderUserIcon({ user: user, index })}
-                                        </View>
-                                    ))}
-                                    {participants.length > 0 && <Animated.View
-                                        key={marker.markerId}
-                                        entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
-                                        style={[
-                                            styles.userCountBadge,
-                                            { left: participants.length * 15 + 40 }, // Ajuster pour positionner à gauche du dernier icône
-                                        ]}>
-                                        <Text style={styles.userCountText}>{participants.length}</Text>
-                                        <FontAwesome6 name="users" size={13} color="gray" />
-                                    </Animated.View>
-                                    }
-                                </View>
-                            )}
+                            {participants.length > 0 && renderUserIcons()}
+                            {participants.length > 0 && <Animated.View
+                                key={marker.markerId}
+                                entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
+                                style={styles.userCountBadge}>
+                                <Text style={styles.userCountText}>{participants.length}</Text>
+                                <FontAwesome6 name="users" size={13} color="gray" />
+                            </Animated.View>
+                            }
                         </View>
                     </View>
-                    <View style={styles.firstMessageSection}>
-                        <Animated.Text
-                            key={marker.markerId}
-                            entering={FadeIn.springify()}
-                            style={styles.firstMessageText}
-                            numberOfLines={1}
-                        >
-                            {marker.label}
-                        </Animated.Text>
-                    </View>
+                    <Animated.View
+                        style={{ flex: 2 }}
+                        entering={FadeInRight.springify().damping(20)}
+                        key={isSubscribed.toString()}
+                    >
+                        <TouchableOpacity style={styles.subscribeContainer} onPress={subscribe}>
+                            <View style={[
+                                styles.subscribeIcon,
+                                { backgroundColor: isSubscribed ? THEME.colors.primary : 'transparent' },
+                            ]}>
+                                {
+                                    isSubscribed ? (
+                                        <MaterialIcons name='favorite' size={18} color={THEME.colors.accent} />
+                                    ) : (
+                                        <Text style={styles.subscribeButton}>{'Subscribe'}</Text>
+                                    )
+                                }
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </View>
 
                 <FlatList
@@ -241,8 +243,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         alignItems: 'center',
         width: '100%',
-        borderWidth: 0.5,
-        borderColor: 'rgba(0, 0, 0, 0.01)',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -253,57 +253,71 @@ const styles = StyleSheet.create({
     markerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
         padding: 10,
-        backgroundColor: '#f1f1f1',
-        borderRadius: 10,
-        margin: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.025)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
         overflow: 'hidden',
+        borderBottomWidth: 0.5,
+        borderColor: THEME.colors.background.darker_x1,
+        backgroundColor: THEME.colors.background.darker_x1,
+        borderTopLeftRadius: 15,
+        borderTopRightRadius: 15,
     },
     // Conteneur pour l'empilement d'icônes d'utilisateurs
     userStackContainer: {
-        flex: 4,
+        flex: 6,
         flexDirection: 'row',
         alignItems: 'center',
-    },
-    // Style pour l'empilement des utilisateurs
-    userStack: {
-        flexDirection: 'row',
         height: 40,
         width: '100%',
     },
+    userStack: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        maxWidth: '80%',
+    },
+
     // Icônes empilées des utilisateurs
+    userStackIconContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        backgroundColor: THEME.colors.background.main,
+        borderWidth: .5,
+        borderColor: 'gray',
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        minHeight: ICON_BASE_SIZE,
+        paddingHorizontal: 2,
+        maxHeight: '100%',
+        maxWidth: '100%',
+    },
     userStackIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'absolute',
-        borderWidth: 2,
-        borderColor: 'white',
+        height: ICON_BASE_SIZE,
+    },
+    // Icône d'utilisateur
+    userIconContainer: {
+        backgroundColor: THEME.colors.primary,
+        borderRadius: 20,
+        width: '90%',
+        height: '90%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     // Texte à l'intérieur de l'avatar
     userAvatarText: {
+        textAlign: 'center',
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 12,
     },
     // Badge pour le nombre d'utilisateurs
     userCountBadge: {
-        position: 'absolute',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         height: 40,
+        marginLeft: 10,
         zIndex: 1,
     },
     // Texte du nombre d'utilisateurs
@@ -313,22 +327,27 @@ const styles = StyleSheet.create({
         color: 'gray',
         marginRight: 5,
     },
-    // Section affichant le premier message
-    firstMessageSection: {
-        flex: 4,
-        overflow: 'hidden',
+    // Bouton d'abonnement
+    subscribeContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingHorizontal: 3,
     },
-    // Texte du premier message
-    firstMessageText: {
-        fontSize: 14,
+    subscribeIcon: {
+        padding: 7,
+        borderRadius: 20,
+    },
+    subscribeButton: {
         color: 'gray',
-        textAlign: 'right',
+        textAlign: 'left',
     },
     // Section des messages
     messageSection: {
         flex: 10,
         width: '100%',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
         borderWidth: 0.5,
@@ -364,7 +383,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
         borderWidth: 1,
@@ -374,7 +393,7 @@ const styles = StyleSheet.create({
     // Zone d'entrée de texte
     messageInput: {
         flex: 1,
-        backgroundColor: 'white',
+        backgroundColor: THEME.colors.background.main,
     },
     // Bouton pour afficher les stickers
     toggleStickerButton: {

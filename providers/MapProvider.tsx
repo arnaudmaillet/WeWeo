@@ -1,24 +1,26 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useRef } from 'react';
 
 import { useAuth } from './AuthProvider';
 import { ChatTypes, IMarker } from '~/types/MarkerInterfaces';
-import { randomUUID } from 'expo-crypto';
-import { GET_MARKERS } from '~/services/graphql/Queries';
-import { useQuery } from '@apollo/client';
+import { collection, addDoc, onSnapshot, GeoPoint } from "firebase/firestore";
+import { firestore } from '~/firebase';
+import MapView, { Camera } from 'react-native-maps';
 
 export interface MapContextProps {
+    mapRef: React.MutableRefObject<MapView | null>;
     markers: IMarker[] | null;
     newMarker: IMarker | null;
     newMarkerType: ChatTypes | null;
     category: number;
-    selectedMarker: IMarker | null;
+    marker: IMarker | null;
     displayMarkersForUser: string | null;
     addMarker: () => Promise<boolean>;
     setNewMarker: (value: IMarker | null) => void;
     setNewMarkerType: (value: ChatTypes | null) => void;
     setCategory: (value: number) => void;
-    setSelectedMarker: (value: IMarker | null) => void;
+    setMarker: (value: IMarker | null) => void;
     setDisplayMarkersForUser: (value: string | null) => void;
+    setCamera: (value: Camera) => void;
 }
 
 const MapContext = createContext<MapContextProps | undefined>(undefined);
@@ -27,64 +29,87 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const { user } = useAuth();
 
+    const mapRef = useRef<MapView | null>(null); // Référence à la MapView
     const [markers, setMarkers] = useState<IMarker[] | null>(null); // markers to display on the map
     const [newMarker, setNewMarker] = useState<IMarker | null>(null); // marker being created
     const [newMarkerType, setNewMarkerType] = useState<ChatTypes | null>(null); // type of the new marker
-    const [selectedMarker, setSelectedMarker] = useState<IMarker | null>(null); // marker selected by the user
+    const [marker, setMarker] = useState<IMarker | null>(null); // marker selected by the user
     const [displayMarkersForUser, setDisplayMarkersForUser] = useState<string | null>(null);
     const [category, setCategory] = useState<number>(0);
 
 
-    const { loading, error, data } = useQuery(GET_MARKERS);
+    const [camera, setCamera] = useState<Camera>({
+        center: {
+            latitude: user?.location.lat || 0,
+            longitude: user?.location.long || 0,
+        },
+        zoom: 0,
+        pitch: 60,
+        heading: 0,
+    });
 
     useEffect(() => {
-        if (newMarker && newMarker.label !== '') {
-            addMarker();
-        }
-    }, [newMarker]);
+        if (user) {
+            const unsubscribe = fetchMarkers();
 
-    useEffect(() => {
-        if (!user) {
+            // Arrêter l'observation lorsque le composant est démonté
+            return () => unsubscribe();
+        } else {
             setMarkers(null);
             setCategory(1);
             setDisplayMarkersForUser(null);
-        } else {
-            if (data && data.getMarkers) {
-                setMarkers(data.getMarkers);
-            } else if (error) {
-                console.error('Error fetching markers:', error.message);
-                setMarkers(null);
-            }
         }
-    }, [markers, user, data, error]);
+    }, [user]);
+
+    const fetchMarkers = () => {
+        const markersCollection = collection(firestore, "markers");
+
+        // Utiliser onSnapshot pour écouter les changements en temps réel dans la collection "markers"
+        const unsubscribe = onSnapshot(markersCollection, (snapshot) => {
+            const updatedMarkers = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const coordinates = data.coordinates;
+
+                return {
+                    markerId: doc.id,
+                    ...data,
+                    coordinates: {
+                        lat: coordinates.latitude,
+                        long: coordinates.longitude,
+                    },
+                } as IMarker;
+            });
+            setMarkers(updatedMarkers);
+        }, (error) => {
+            console.error("Error fetching markers in real-time:", error);
+            setMarkers(null);
+        });
+
+        // Retourner la fonction de désinscription pour arrêter l'écoute
+        return unsubscribe;
+    };
+
 
 
     const addMarker = async (): Promise<boolean> => {
-        if (!user) return false;
-        if (!newMarker) return false;
-        if (!newMarker.label) return false;
+        if (!user || !newMarker || !newMarker.label) return false;
         try {
-            const randomID = randomUUID();
-            const response = await fetch(`https://11vcne1jhb.execute-api.eu-west-3.amazonaws.com/dev/markers`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    markerId: randomID,
-                    lat: newMarker.coordinates.lat,
-                    long: newMarker.coordinates.long,
-                    label: newMarker.label,
-                    creatorId: user.userId,
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP! status: ${response.status}`);
+            const markerData = {
+                coordinates: new GeoPoint(newMarker.coordinates.lat, newMarker.coordinates.long),
+                label: newMarker.label,
+                creatorId: user.userId,
+                subscribedUserIds: [user.userId],
+                connectedUserIds: [],
+                minZoom: 15,
+                dataType: 'message',
+                createdAt: new Date().getTime(),
             }
+
             setNewMarkerType(null);
             setNewMarker(null);
-            setMarkers([...(markers || []), { ...newMarker, markerId: randomID }]);
+
+            await addDoc(collection(firestore, "markers"), markerData);
+
             return true;
         } catch (error) {
             console.error('Erreur lors de l’ajout du marker:', error);
@@ -132,18 +157,20 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     return (
         <MapContext.Provider value={{
+            mapRef,
             markers,
             newMarker,
             newMarkerType,
             category,
-            selectedMarker,
+            marker,
             displayMarkersForUser,
             setNewMarker,
             setNewMarkerType,
             addMarker,
             setCategory,
-            setSelectedMarker,
-            setDisplayMarkersForUser
+            setMarker,
+            setDisplayMarkersForUser,
+            setCamera
         }}>
             {children}
         </MapContext.Provider>

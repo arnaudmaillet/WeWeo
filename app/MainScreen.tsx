@@ -15,14 +15,8 @@ import NewMarker from '~/components/NewMarker'
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-    const { selectedMarker, markers, setSelectedMarker, newMarker, newMarkerType } = useMap();
+    const { marker, markers, setMarker, newMarkerType, mapRef } = useMap();
 
-    const fakeUserLocation = {
-        lat: 37.7749,
-        long: -122.4194,
-        latDelta: 0.0922,
-        longDelta: 0.0421,
-    }
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
@@ -47,19 +41,19 @@ const MainScreen = () => {
     });
 
     const runOnJSSetSelectedMarker = (point: IMarker | null) => {
-        setSelectedMarker(point);
+        setMarker(point);
     }
 
     const allPoints = markers;
 
     // Fonction pour aller au point suivant
     const goToNextPoint = () => {
-        if (selectedMarker) {
+        if (marker) {
             if (allPoints) {
-                const currentIndex = allPoints.findIndex((point: IMarker) => point.markerId === selectedMarker.markerId);
+                const currentIndex = allPoints.findIndex((point: IMarker) => point.markerId === marker.markerId);
                 if (currentIndex !== undefined && currentIndex !== -1) {
                     const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
-                    setSelectedMarker(allPoints[nextIndex]);
+                    setMarker(allPoints[nextIndex]);
                 }
             }
         }
@@ -67,12 +61,12 @@ const MainScreen = () => {
 
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
-        if (selectedMarker) {
-            const currentIndex = allPoints?.findIndex((point: IMarker) => point.markerId === selectedMarker.markerId);
+        if (marker) {
+            const currentIndex = allPoints?.findIndex((point: IMarker) => point.markerId === marker.markerId);
             if (currentIndex !== undefined && currentIndex !== -1) {
                 const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
                 if (allPoints) {
-                    setSelectedMarker(allPoints[previousIndex]);
+                    setMarker(allPoints[previousIndex]);
                 }
             }
         }
@@ -95,7 +89,7 @@ const MainScreen = () => {
                     offset.value = withSpring(0);
                 } else {
                     offset.value = withTiming(1000, {}, (finished) => {
-                        if (finished && selectedMarker) {
+                        if (finished && marker) {
                             runOnJS(runOnJSSetSelectedMarker)(null);
                         }
                     });
@@ -114,7 +108,7 @@ const MainScreen = () => {
 
     useEffect(() => {
         offset.value = 0;
-    }, [selectedMarker])
+    }, [marker])
 
 
     useEffect(() => {
@@ -151,11 +145,11 @@ const MainScreen = () => {
                     </KeyboardAvoidingView>
                 </Animated.View>
             </>}
-            {sheetToRender === SheetToRender.MARKER && selectedMarker && <>
+            {sheetToRender === SheetToRender.MARKER && marker && <>
                 <AnimatedPressable
                     style={styles.backdrop}
                     onPress={() => {
-                        setSelectedMarker(null);
+                        setMarker(null);
                         dismissKeyboard();
                     }}
                 />
@@ -166,7 +160,7 @@ const MainScreen = () => {
                             keyboardVerticalOffset={170}
                             style={styles.keyboardAvoidingView}
                         >
-                            <MarkerChat marker={selectedMarker} />
+                            <MarkerChat marker={marker} />
                         </KeyboardAvoidingView>
                     </Animated.View>
                 </GestureDetector>
@@ -193,13 +187,13 @@ const MainScreen = () => {
                     </KeyboardAvoidingView>
                 </Animated.View>
             </>} */}
-            {selectedMarker ? (
+            {marker ? (
                 <>
                     <AnimatedPressable
                         style={styles.backdrop}
                         onPress={() => {
-                            setSelectedMarker(null);
                             dismissKeyboard();
+                            //setMarker(null);
                         }}
                     />
                     <GestureDetector gesture={panGesture}>
@@ -209,7 +203,7 @@ const MainScreen = () => {
                                 keyboardVerticalOffset={170}
                                 style={styles.keyboardAvoidingView}
                             >
-                                <MarkerChat marker={selectedMarker} />
+                                <MarkerChat marker={marker} />
                             </KeyboardAvoidingView>
                         </Animated.View>
                     </GestureDetector>
@@ -259,10 +253,7 @@ const MainScreen = () => {
                     </Animated.View>
                 </>
             )}
-            <Map
-                userLocation={fakeUserLocation}
-                markers={markers && markers ? markers : []}
-            />
+            <Map />
         </View>
     )
 }

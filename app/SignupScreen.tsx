@@ -28,7 +28,7 @@ const SignupScreen = () => {
     const [step, setStep] = useState(1); // Étape 1, 2 ou 3
 
     const router = useRouter();
-    const { isLoading, signUp, confirmSignUp } = useAuth();
+    const { isLoading, signUp } = useAuth();
 
     const dotScale = useSharedValue(1); // Valeur partagée pour l'animation de l'échelle
     const inputsRefs = Array(6).fill(null).map(() => useRef<TextInput>(null)); // Références pour les inputs
@@ -65,7 +65,7 @@ const SignupScreen = () => {
         signUp(email, password, username, birthdate, locale.value)
             .then(() => {
                 // Passer à l'étape 3 uniquement si signUp réussit
-                setStep(3);
+                // setStep(3);
             })
             .catch(error => {
                 alert(error.message); // Afficher l'erreur si signUp échoue
@@ -76,7 +76,7 @@ const SignupScreen = () => {
 
     const handleConfirmSignUp = () => {
         const code = confirmationCode.join(''); // Concaténer les 6 inputs pour obtenir le code complet
-        confirmSignUp(code)
+        //confirmSignUp(code)
     };
 
     const onChangeDate = (_: any, selectedDate?: Date | undefined) => {
