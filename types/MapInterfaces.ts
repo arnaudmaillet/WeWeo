@@ -6,12 +6,8 @@ export interface ICoodinatesWithZoom extends ICoordinates {
 }
 
 export interface ICoordinates {
-    __typename?: "Coordinates";
     lat: number;
     long: number;
 }
 
-export interface IMap {
-    userLocation: ICoodinatesWithZoom;
-    markers: IMarker[];
-}
+export interface IMap {}

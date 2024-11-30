@@ -1,33 +1,31 @@
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
-import MarkerChat from '~/components/MarkerChat'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import SearchMenu from '~/components/SearchMenu'
-import { useKeyboard } from '~/providers/KeyboardProvider'
-import { useMap } from '~/providers/MapProvider'
+import { useKeyboard } from '~/contexts/KeyboardProvider'
+import { useMap } from '~/contexts/MapProvider'
+import { useWindow } from '~/contexts/window/Context'
 
 import { IMarker } from '~/types/MarkerInterfaces'
 import NewMarker from '~/components/NewMarker'
+import { WindowType } from '~/contexts/window/types'
+import { useNewMarker } from '~/contexts/NewMarkerProvider'
 
+const _MAX_GESTURE_VERTICAL_OFFSET = -20
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-    const { selectedMarker, markers, setSelectedMarker, newMarker, newMarkerType } = useMap();
-
-    const fakeUserLocation = {
-        lat: 37.7749,
-        long: -122.4194,
-        latDelta: 0.0922,
-        longDelta: 0.0421,
-    }
+    const { marker, markers, newMarker, setMarker } = useMap();
+    const { animateMarkersExiting } = useNewMarker()
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
 
     const { keyboardProps } = useKeyboard();
+    const { state, setActiveWindow } = useWindow()
 
 
     const dismissKeyboard = () => {
@@ -47,19 +45,40 @@ const MainScreen = () => {
     });
 
     const runOnJSSetSelectedMarker = (point: IMarker | null) => {
-        setSelectedMarker(point);
+        setMarker(point);
+        !point && setActiveWindow(WindowType.DEFAULT);
     }
+
+    const pan = Gesture.Pan()
+        .onChange((event) => {
+            const Xcurrent = event.translationY;
+            offset.value = Xcurrent > 0 ? Xcurrent : withSpring(Math.max(_MAX_GESTURE_VERTICAL_OFFSET, Xcurrent));
+        })
+        .onFinalize(() => {
+            if (offset.value > 30) {
+                offset.value = withSpring(0, {}, () => {
+                    runOnJS(animateMarkersExiting)(WindowType.DEFAULT)
+                })
+            }
+            offset.value = withSpring(0);
+        });
+
+    const customAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: offset.value }
+        ]
+    }))
 
     const allPoints = markers;
 
     // Fonction pour aller au point suivant
     const goToNextPoint = () => {
-        if (selectedMarker) {
+        if (marker) {
             if (allPoints) {
-                const currentIndex = allPoints.findIndex((point: IMarker) => point.markerId === selectedMarker.markerId);
+                const currentIndex = allPoints.findIndex((point: IMarker) => point.markerId === marker.markerId);
                 if (currentIndex !== undefined && currentIndex !== -1) {
                     const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
-                    setSelectedMarker(allPoints[nextIndex]);
+                    setMarker(allPoints[nextIndex]);
                 }
             }
         }
@@ -67,12 +86,12 @@ const MainScreen = () => {
 
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
-        if (selectedMarker) {
-            const currentIndex = allPoints?.findIndex((point: IMarker) => point.markerId === selectedMarker.markerId);
+        if (marker) {
+            const currentIndex = allPoints?.findIndex((point: IMarker) => point.markerId === marker.markerId);
             if (currentIndex !== undefined && currentIndex !== -1) {
                 const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
                 if (allPoints) {
-                    setSelectedMarker(allPoints[previousIndex]);
+                    setMarker(allPoints[previousIndex]);
                 }
             }
         }
@@ -95,7 +114,7 @@ const MainScreen = () => {
                     offset.value = withSpring(0);
                 } else {
                     offset.value = withTiming(1000, {}, (finished) => {
-                        if (finished && selectedMarker) {
+                        if (finished && marker) {
                             runOnJS(runOnJSSetSelectedMarker)(null);
                         }
                     });
@@ -114,7 +133,7 @@ const MainScreen = () => {
 
     useEffect(() => {
         offset.value = 0;
-    }, [selectedMarker])
+    }, [marker?.markerId])
 
 
     useEffect(() => {
@@ -126,143 +145,94 @@ const MainScreen = () => {
     }, [isInputFocused])
 
 
+    const renderWindow = () => {
+        switch (state.activeWindow) {
+            case WindowType.CHAT:
+                return (
+                    marker && (
+                        <>
+                            {/* <AnimatedPressable
+                                style={styles.backdrop}
+                                onPress={() => {
+                                    dismissKeyboard();
+                                    //setMarker(null);
+                                    //setWindowToDisplay(WindowType.DEFAULT);
+                                }}
+                            />
+                            <GestureDetector gesture={panGesture}>
+                                <Animated.View style={[styles.sheet, translateSheetY]}>
+                                    <KeyboardAvoidingView
+                                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                        keyboardVerticalOffset={170}
+                                        style={styles.keyboardAvoidingView}
+                                    >
+                                        <MarkerChat marker={marker} />
+                                    </KeyboardAvoidingView>
+                                </Animated.View>
+                            </GestureDetector> */}
+                        </>
+                    )
+                )
+            case WindowType.NEW_MARKER:
+                return (
+                    <>
+                        {isInputFocused && (
+                            <AnimatedPressable
+                                style={styles.backdrop}
+                                onPress={() => {
+                                    setIsInputFocused(false);
+                                    dismissKeyboard();
+                                }}
+                            />
+                        )}
+                        <GestureDetector gesture={pan}>
+                            <Animated.View
+                                style={[styles.bottomSheet, customAnimatedStyle]}
+                            >
+                                <KeyboardAvoidingView
+                                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                    keyboardVerticalOffset={380}
+                                    style={styles.keyboardAvoidingView}
+                                >
+                                    <NewMarker onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                                </KeyboardAvoidingView>
+                            </Animated.View>
+                        </GestureDetector>
+                    </>
+                )
+            default:
+                return (
+                    <>
+                        {isInputFocused && (
+                            <AnimatedPressable
+                                style={styles.backdrop}
+                                onPress={() => {
+                                    setIsInputFocused(false);
+                                    dismissKeyboard();
+                                }}
+                            />
+                        )}
+                        <Animated.View
+                            style={[styles.bottomSheet, translateSearchMenuY]}
+                        >
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                keyboardVerticalOffset={380}
+                                style={styles.keyboardAvoidingView}
+                            >
+                                <SearchMenu onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                            </KeyboardAvoidingView>
+                        </Animated.View>
+                    </>
+                )
+        }
+    }
+
 
     return (
         <View>
-            {/* {sheetToRender === SheetToRender.SEARCH_MENU && <>
-                {isInputFocused && (
-                    <AnimatedPressable
-                        style={styles.backdrop}
-                        onPress={() => {
-                            setIsInputFocused(false);
-                            dismissKeyboard();
-                        }}
-                    />
-                )}
-                <Animated.View
-                    style={[styles.bottomSheet, translateSearchMenuY]}
-                >
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={380}
-                        style={styles.keyboardAvoidingView}
-                    >
-                        <SearchMenu onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
-                    </KeyboardAvoidingView>
-                </Animated.View>
-            </>}
-            {sheetToRender === SheetToRender.MARKER && selectedMarker && <>
-                <AnimatedPressable
-                    style={styles.backdrop}
-                    onPress={() => {
-                        setSelectedMarker(null);
-                        dismissKeyboard();
-                    }}
-                />
-                <GestureDetector gesture={panGesture}>
-                    <Animated.View style={[styles.sheet, translateSheetY]}>
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                            keyboardVerticalOffset={170}
-                            style={styles.keyboardAvoidingView}
-                        >
-                            <MarkerChat marker={selectedMarker} />
-                        </KeyboardAvoidingView>
-                    </Animated.View>
-                </GestureDetector>
-            </>}
-            {sheetToRender === SheetToRender.NEW_MARKER && <>
-                {isInputFocused && (
-                    <AnimatedPressable
-                        style={styles.backdrop}
-                        onPress={() => {
-                            setIsInputFocused(false);
-                            dismissKeyboard();
-                        }}
-                    />
-                )}
-                <Animated.View
-                    style={[styles.bottomSheet, translateSearchMenuY]}
-                >
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={380}
-                        style={styles.keyboardAvoidingView}
-                    >
-                        <NewMarker onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
-                    </KeyboardAvoidingView>
-                </Animated.View>
-            </>} */}
-            {selectedMarker ? (
-                <>
-                    <AnimatedPressable
-                        style={styles.backdrop}
-                        onPress={() => {
-                            setSelectedMarker(null);
-                            dismissKeyboard();
-                        }}
-                    />
-                    <GestureDetector gesture={panGesture}>
-                        <Animated.View style={[styles.sheet, translateSheetY]}>
-                            <KeyboardAvoidingView
-                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                keyboardVerticalOffset={170}
-                                style={styles.keyboardAvoidingView}
-                            >
-                                <MarkerChat marker={selectedMarker} />
-                            </KeyboardAvoidingView>
-                        </Animated.View>
-                    </GestureDetector>
-                </>
-            ) : newMarkerType ? (<>
-                {isInputFocused && (
-                    <AnimatedPressable
-                        style={styles.backdrop}
-                        onPress={() => {
-                            setIsInputFocused(false);
-                            dismissKeyboard();
-                        }}
-                    />
-                )}
-                <Animated.View
-                    style={[styles.bottomSheet, translateSearchMenuY]}
-                >
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={380}
-                        style={styles.keyboardAvoidingView}
-                    >
-                        <NewMarker onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
-                    </KeyboardAvoidingView>
-                </Animated.View>
-            </>) : (
-                <>
-                    {isInputFocused && (
-                        <AnimatedPressable
-                            style={styles.backdrop}
-                            onPress={() => {
-                                setIsInputFocused(false);
-                                dismissKeyboard();
-                            }}
-                        />
-                    )}
-                    <Animated.View
-                        style={[styles.bottomSheet, translateSearchMenuY]}
-                    >
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                            keyboardVerticalOffset={380}
-                            style={styles.keyboardAvoidingView}
-                        >
-                            <SearchMenu onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
-                        </KeyboardAvoidingView>
-                    </Animated.View>
-                </>
-            )}
-            <Map
-                userLocation={fakeUserLocation}
-                markers={markers && markers ? markers : []}
-            />
+            {renderWindow()}
+            <Map />
         </View>
     )
 }

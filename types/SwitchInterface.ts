@@ -1,18 +1,29 @@
 import { ReactElement } from "react";
 
-interface IButton {
-    label: string;              // label of the button
-    class: ReactElement;        // class of the icon (e.g. <Ionicons/>)
-    name: string;               // name of the icon (e.g. 'globe-outline')
-    color: string;              // overall main color
-    size: number;               // size of the icon
-    textColor?: string;         // text color
-    textColorSelected?: string; // text color when selected
-    iconColor?: string;         // icon color
-    iconColorSelected?: string; // icon color when selected
+export interface IButtonColor {
+    default: string,         // Couleur par défaut (non sélectionnée)
+    active: string           // Couleur active (sélectionnée)
 }
 
-export interface ISwitch{
-    label?: string;             // if label is not provided, label container will not be rendered
-    buttons: IButton[];
+export interface IButtonText extends IButtonChild {}
+
+export interface IButtonIcon extends IButtonChild {
+    size: number,            // Taille de l'icône
+    component: ReactElement; // Composant de l'icône (exemple : <Ionicons/>)
+}
+
+export interface IButtonChild {
+    label: string;           // Texte ou nom de l'icône (exemple : 'globe-outline')
+    color: IButtonColor      // Couleurs associées
+}
+
+export interface IButton {
+    text: IButtonText;       // Configuration du texte du bouton
+    icon: IButtonIcon;       // Configuration de l'icône du bouton
+    background: IButtonColor // Couleurs d'arrière-plan (non sélectionné/sélectionné)
+}
+
+export interface ISwitch {
+    label?: string;          // Label optionnel pour le switch (non rendu si non fourni)
+    buttons: IButton[];      // Liste des boutons du switch
 }

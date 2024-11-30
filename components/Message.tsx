@@ -1,38 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import Animated, { BounceIn } from 'react-native-reanimated';
+import Animated, { BounceIn, FadeIn } from 'react-native-reanimated';
 import { IMessage } from '~/types/MarkerInterfaces';
-import { useAuth } from '~/providers/AuthProvider';
+import { useAuth } from '~/contexts/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
+import { firestore } from '~/firebase';
+import { doc, getDoc } from "firebase/firestore";
 
 import locales from '~/data/locales.json';
 import { THEME } from '~/constants/constants';
 
 interface MessageComponentProps {
     item: IMessage;
-    previousSender: IUser | null;
+    previousMessage: IMessage | null;
 }
 
-const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
+const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => {
     const { user } = useAuth();
+    const [senderInfo, setSenderInfo] = useState<IUser | null>(null);
 
-    const isCurrentUser = user?.userId === item.senderInfo.userId;
+    const isCurrentUser = user?.userId === item.senderId;
+
+    // Fetch sender information
+    useEffect(() => {
+        const fetchSenderInfo = async () => {
+            const userDoc = await getDoc(doc(firestore, "users", item.senderId));
+            if (userDoc.exists()) {
+                setSenderInfo(userDoc.data() as IUser);
+            }
+        };
+        fetchSenderInfo();
+    }, [item.senderId]);
 
     const renderContent = () => {
         if (item.type === 'sticker') {
             return <Image source={{ uri: item.content }} style={styles.sticker} />;
-        } else return <Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText}>{item.content}</Text>;
+        } else {
+            // Append current message content to the previous message content if it's the same sender
+            const combinedContent = previousMessage && previousMessage.senderId === item.senderId
+                ? `${previousMessage.content}\n${item.content}`
+                : item.content;
+
+            return (
+                <Animated.Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText} entering={FadeIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}>
+                    {combinedContent}
+                </Animated.Text>
+            );
+        }
     };
 
-    const initials = item.senderInfo.username
-        ? item.senderInfo.username.split(' ').length > 1
-            ? item.senderInfo.username.split(' ').slice(0, 2).map(word => word[0].toUpperCase()).join('')
-            : item.senderInfo.username[0].toUpperCase()
-        : '';
+    const initials = senderInfo?.username.split(' ').map((n: string) => n[0]).join('');
 
     return (
         <View
-            key={`${item.senderInfo.userId}-${item.timestamp}-${item.content}`}
+            key={`${item.senderId}-${item.createdAt}-${item.content}`}
             style={[
                 styles.messageContainer,
                 isCurrentUser ? styles.currentUserContainer : styles.otherUserContainer,
@@ -40,39 +61,28 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
         >
             {!isCurrentUser ? (
                 <View style={styles.senderInfoContainer}>
-                    {previousSender?.userId !== item.senderInfo.userId && (
-                        <Text style={styles.senderUsername}>
-                            {item.senderInfo.username}
-                        </Text>
-                    )}
+                    <Text style={styles.senderUsername}>
+                        {senderInfo?.username}
+                    </Text>
                     <View style={styles.messageContentWrapper}>
-                        {previousSender?.userId !== item.senderInfo.userId && (
-                            <Animated.View
-                                style={styles.avatarContainer}
-                                entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
-                            >
-                                <View style={styles.senderAvatar}>
-                                    <Text style={styles.avatarText}>
-                                        {initials}
-                                    </Text>
-                                    <Text style={styles.flagContainer}>
-                                        {locales.data.find(locale => locale.value === item.senderInfo.locale)?.flag}
-                                    </Text>
-                                </View>
-                            </Animated.View>
-                        )}
+                        <Animated.View
+                            style={styles.avatarContainer}
+                            entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
+                        >
+                            <View style={styles.senderAvatar}>
+                                <Text style={styles.avatarText}>
+                                    {initials}
+                                </Text>
+                                <Text style={styles.flagContainer}>
+                                    {locales.data.find(locale => locale.value === senderInfo?.locale)?.flag}
+                                </Text>
+                            </View>
+                        </Animated.View>
                         <Animated.View
                             entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
-                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: '#f1f1f1' }]}
+                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.grayscale.darker_x1 }]}
                         >
                             {renderContent()}
-                            <Text style={styles.messageTimestamp}>
-                                {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                })}
-                            </Text>
                         </Animated.View>
                     </View>
                 </View>
@@ -82,15 +92,6 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
                     style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.primary }]}
                 >
                     {renderContent()}
-                    {item.type === 'message' && (
-                        <Text style={styles.messageTimestampCurrentUser}>
-                            {new Date(item.timestamp * 1000).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true,
-                            })}
-                        </Text>
-                    )}
                 </Animated.View>
             )}
         </View>
@@ -99,16 +100,16 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousSender }) => {
 
 const styles = StyleSheet.create({
     messageContainer: {
-        marginVertical: 5,
+        marginVertical: 2,
         flexDirection: 'row',
     },
     currentUserContainer: {
         flexDirection: 'row-reverse',
-        marginVertical: 5,
+        marginVertical: 2,
     },
     otherUserContainer: {
         flexDirection: 'row',
-        marginVertical: 5,
+        marginVertical: 2,
     },
     senderInfoContainer: {
         flex: 1,
@@ -120,13 +121,14 @@ const styles = StyleSheet.create({
     },
     avatarContainer: {
         width: 30,
-        alignSelf: 'center',
+        alignSelf: 'flex-end',
         alignItems: 'center',
         marginRight: 2,
+        marginBottom: 1
     },
     senderAvatar: {
-        width: 30,
-        height: 30,
+        width: 20,
+        height: 20,
         borderRadius: 18,
         backgroundColor: THEME.colors.primary,
         justifyContent: 'center',
@@ -135,17 +137,17 @@ const styles = StyleSheet.create({
     avatarText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 12,
+        fontSize: 10,
     },
     flagContainer: {
-        fontSize: 14,
+        fontSize: 12,
         position: 'absolute',
         bottom: -5.5,
         right: -3,
     },
     messageBubble: {
-        padding: 5,
-        borderRadius: 10,
+        padding: 2,
+        borderRadius: 7,
         maxWidth: '80%',
     },
     currentUserBubble: {
@@ -166,20 +168,12 @@ const styles = StyleSheet.create({
     messageText: {
         color: 'black',
         margin: 3,
+        fontSize: 12,
     },
     messageTextCurrentUser: {
         color: 'white',
         margin: 3,
-    },
-    messageTimestamp: {
-        fontSize: 9,
-        color: 'gray',
-        alignSelf: 'flex-end',
-    },
-    messageTimestampCurrentUser: {
-        fontSize: 9,
-        color: '#D3D3D3',
-        alignSelf: 'flex-end',
+        fontSize: 12,
     },
     sticker: {
         width: 70,

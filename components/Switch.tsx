@@ -36,7 +36,7 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
             backgroundColor: interpolateColor(
                 colorValue.value,
                 props.buttons.map((_, index) => index),
-                props.buttons.map((button) => button.color),
+                props.buttons.map(_ => _.icon.color.default),
             ),
         };
     });
@@ -108,7 +108,7 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
                             {
                                 width: switchWidth / length,
                                 left: switchWidth / length,
-                                backgroundColor: index === 1 ? THEME.colors.background.darker_x1 : "#f9f9f9",
+                                backgroundColor: index === 1 ? THEME.colors.grayscale.darker_x1 : "#f9f9f9",
                                 zIndex: index === 1 ? -1 : 0,
                                 borderTopLeftRadius: index === 1 ? 0 : 8,
                                 borderBottomLeftRadius: index === 1 ? 0 : 8,
@@ -121,16 +121,16 @@ const Switch: React.FC<ISwitchProps> = ({ props }) => {
                 <Animated.View style={[styles.indicator, animatedIndicatorStyle]} />
 
                 {/* Switch buttons */}
-                {props.buttons.map((button, index) => (
+                {props.buttons.map((_, index) => (
                     <TouchableOpacity key={index} style={styles.button} onPress={() => handleSwitchChange(index)}>
                         <View style={styles.content}>
-                            {React.cloneElement(button.class, {
-                                name: button.name,
-                                color: visibility === index ? button.iconColorSelected ? button.iconColorSelected : THEME.colors.text.white : button.iconColor ? button.iconColor : button.color,
-                                size: button.size,
+                            {React.cloneElement(_.icon.component, {
+                                name: _.icon.label,
+                                color: visibility === index ? _.icon.color.active : _.icon.color.default,
+                                size: _.icon.size,
                                 style: styles.icon,
                             })}
-                            <Animated.Text style={[styles.text, { color: visibility === index ? button.textColorSelected ? button.textColorSelected : THEME.colors.text.white : button.textColor ? button.textColor : button.color }]}>{button.label}</Animated.Text>
+                            <Animated.Text style={[styles.text, { color: visibility === index ? _.text.color.active : _.text.color.default }]}>{_.text.label}</Animated.Text>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#f9f9f9',
+        backgroundColor: THEME.colors.grayscale.lighter_x1,
         borderRadius: 8,
         height: 40,
     },
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: THEME.colors.background.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_x1,
         borderTopLeftRadius: 8,
         borderBottomLeftRadius: 8,
     },

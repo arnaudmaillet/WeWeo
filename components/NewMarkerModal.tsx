@@ -1,25 +1,27 @@
-import React, { useImperativeHandle, forwardRef, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Animated, View, StyleSheet, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { useMap } from '~/providers/MapProvider';
-import { ChatTypes } from '~/types/MarkerInterfaces';
-import { Fontisto, FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { useMap } from '~/contexts/MapProvider';
+import { INewMarker, MarkerType } from '~/types/MarkerInterfaces';
+import { FontAwesome } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { THEME } from '~/constants/constants';
+import { WindowType } from '~/contexts/window/types';
+import { useNewMarker } from '~/contexts/NewMarkerProvider';
+import { useWindow } from '~/contexts/window/Context';
 
-interface NewMarkerModalProps {
-}
-
-const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
-    const { newMarker, setNewMarker, newMarkerType, setNewMarkerType, addMarker } = useMap();
+const NewMarkerModal = () => {
+    const { newMarker, setNewMarker } = useMap();
+    const {
+        dotAnimation,
+        closeAnimation,
+        newMarkerButtons,
+        animateMarkersEntering,
+        animateMarkersExiting,
+    } = useNewMarker();
+    const { setActiveWindow } = useWindow()
     const [columns, setColumns] = useState(2);
-
-    const [dotAnimation] = useState(new Animated.Value(0));
-    const [chatAnimation] = useState(new Animated.Value(0));
-    const [groupAnimation] = useState(new Animated.Value(0));
-    const [channelAnimation] = useState(new Animated.Value(0));
-    const [closeAnimation] = useState(new Animated.Value(0));
 
     useEffect(() => {
         const totalButtons = 4;
@@ -27,105 +29,162 @@ const NewMarkerModal = forwardRef((_: NewMarkerModalProps, ref) => {
     }, []);
 
     useEffect(() => {
-        if (newMarker) {
-            dotAnimation.setValue(0);
-            chatAnimation.setValue(0);
-            groupAnimation.setValue(0);
-            channelAnimation.setValue(0);
-            closeAnimation.setValue(0);
-        }
         animateMarkersEntering();
-    }, [newMarker?.markerId]);
+    }, [newMarker?.coordinates]);
 
-    useImperativeHandle(ref, () => ({
-        animateMarkersExiting,
-    }));
-
-    const animateMarkersEntering = async () => {
-        if (newMarker) {
-            Animated.stagger(50, [
-                Animated.spring(dotAnimation, { toValue: 1, useNativeDriver: true }),
-                Animated.spring(chatAnimation, { toValue: 1, useNativeDriver: true }),
-                Animated.spring(groupAnimation, { toValue: 1, useNativeDriver: true }),
-                Animated.spring(channelAnimation, { toValue: 1, useNativeDriver: true }),
-                Animated.spring(closeAnimation, { toValue: 1, useNativeDriver: true })
-            ]).start();
-        }
-    };
-
-    const animateMarkersExiting = async () => {
-        setNewMarkerType(null);
-        Animated.stagger(50, [
-            Animated.spring(dotAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(chatAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(groupAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(channelAnimation, { toValue: 0, useNativeDriver: true }),
-            Animated.spring(closeAnimation, { toValue: 0, useNativeDriver: true })
-        ]).start(() => {
-            setNewMarker(null);
-        });
-    }
-
-    const handleButtonPress = (type: ChatTypes) => {
-        if (newMarkerType === type) {
-            setNewMarkerType(null);
-        } else {
-            setNewMarkerType(type);
-        }
-    };
+    const handleButtonPress = useCallback(
+        (type: MarkerType) => {
+            if (newMarker?.dataType === type) {
+                setNewMarker({
+                    ...newMarker,
+                    dataType: MarkerType.DEFAULT,
+                });
+                setActiveWindow(WindowType.DEFAULT)
+            } else {
+                setNewMarker({
+                    ...newMarker,
+                    dataType: type,
+                } as INewMarker);
+                setActiveWindow(WindowType.NEW_MARKER)
+            }
+        },
+        [newMarker, setNewMarker]
+    );
 
     return (
-        <Marker coordinate={{ latitude: newMarker!.coordinates.lat, longitude: newMarker!.coordinates.long }}>
+        <Marker
+            coordinate={{
+                latitude: newMarker?.coordinates.lat || 0,
+                longitude: newMarker?.coordinates.long || 0,
+            }}
+        >
             <View style={[styles.container, { width: columns * 60 - 10 }]}>
-                <Animated.View style={[styles.centerDot, { opacity: dotAnimation, transform: [{ translateX: -6 }] }]} />
-                <Animated.View style={{ opacity: chatAnimation, transform: [{ scale: chatAnimation }] }}>
+                <Animated.View
+                    style={[
+                        styles.centerDot,
+                        { opacity: dotAnimation, transform: [{ translateX: -4 }] },
+                    ]}
+                />
+                {
+                    newMarkerButtons.map(_ => {
+                        return (
+                            <Animated.View style={{ opacity: _.animation, transform: [{ scale: _.animation }] }} key={_.text.label}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.button,
+                                        newMarker?.dataType === MarkerType.CHAT && styles.activeBackground,
+                                    ]}
+                                    onPress={() => handleButtonPress(MarkerType.CHAT)}
+                                >
+                                    {React.cloneElement(_.icon.component, {
+                                        name: _.icon.label,
+                                        color: newMarker?.dataType === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
+                                        size: _.icon.size,
+                                        style: styles.buttonIcon,
+                                    })}
+                                    <Text
+                                        style={[
+                                            styles.buttonText,
+                                            newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
+                                        ]}
+                                    >
+                                        Chat
+                                    </Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )
+                    })
+                }
+                {/* <Animated.View style={{ opacity: chatAnimation, transform: [{ scale: chatAnimation }] }}>
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            newMarkerType === ChatTypes.Chat && styles.selectedBackground,
+                            newMarker?.dataType === MarkerType.CHAT && styles.activeBackground,
                         ]}
-                        onPress={() => handleButtonPress(ChatTypes.Chat)}
+                        onPress={() => handleButtonPress(MarkerType.CHAT)}
                     >
-                        <Fontisto name="hipchat" size={10} style={[
-                            styles.buttonIcon,
-                            newMarkerType === ChatTypes.Chat && styles.selectedColor,
-                        ]} />
-                        <Text style={[styles.buttonText, newMarkerType === ChatTypes.Chat && styles.selectedColor]}>Chat</Text>
+                        <Fontisto
+                            name="hipchat"
+                            size={10}
+                            style={[
+                                styles.buttonIcon,
+                                newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
+                            ]}
+                        />
+                        <Text
+                            style={[
+                                styles.buttonText,
+                                newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
+                            ]}
+                        >
+                            Chat
+                        </Text>
                     </TouchableOpacity>
-                </Animated.View>
+                </Animated.View> */}
                 <Animated.View style={{ opacity: closeAnimation, transform: [{ scale: closeAnimation }] }}>
-                    <TouchableOpacity style={[styles.closeButton]} onPress={animateMarkersExiting}>
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={() => animateMarkersExiting(WindowType.DEFAULT)}
+                    >
                         <FontAwesome name="times" size={15} style={styles.closeIcon} />
                     </TouchableOpacity>
                 </Animated.View>
-                <Animated.View style={{ opacity: groupAnimation, transform: [{ scale: groupAnimation }] }}>
+                {/* <Animated.View style={{ opacity: groupAnimation, transform: [{ scale: groupAnimation }] }}>
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            newMarkerType === ChatTypes.Group && styles.selectedBackground,
+                            newMarker?.dataType === MarkerType.GROUP && styles.activeBackground,
                         ]}
-                        onPress={() => handleButtonPress(ChatTypes.Group)}
+                        onPress={() => handleButtonPress(MarkerType.GROUP)}
                     >
-                        <FontAwesome6 name="people-group" size={10} style={[styles.buttonIcon, newMarkerType === ChatTypes.Group && styles.selectedColor]} />
-                        <Text style={[styles.buttonText, newMarkerType === ChatTypes.Group && styles.selectedColor]}>Group</Text>
+                        <FontAwesome6
+                            name="people-group"
+                            size={10}
+                            style={[
+                                styles.buttonIcon,
+                                newMarker?.dataType === MarkerType.GROUP && styles.activeColor,
+                            ]}
+                        />
+                        <Text
+                            style={[
+                                styles.buttonText,
+                                newMarker?.dataType === MarkerType.GROUP && styles.activeColor,
+                            ]}
+                        >
+                            Group
+                        </Text>
                     </TouchableOpacity>
                 </Animated.View>
                 <Animated.View style={{ opacity: channelAnimation, transform: [{ scale: channelAnimation }] }}>
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            newMarkerType === ChatTypes.Channel && styles.selectedBackground,
+                            newMarker?.dataType === MarkerType.CHANNEL && styles.activeBackground,
                         ]}
-                        onPress={() => handleButtonPress(ChatTypes.Channel)}
+                        onPress={() => handleButtonPress(MarkerType.CHANNEL)}
                     >
-                        <FontAwesome name="comments-o" size={12} style={[styles.buttonIconChannel, newMarkerType === ChatTypes.Channel && styles.selectedColor]} />
-                        <Text style={[styles.buttonText, newMarkerType === ChatTypes.Channel && styles.selectedColor]}>Channel</Text>
+                        <FontAwesome
+                            name="comments-o"
+                            size={12}
+                            style={[
+                                styles.buttonIconChannel,
+                                newMarker?.dataType === MarkerType.CHANNEL && styles.activeColor,
+                            ]}
+                        />
+                        <Text
+                            style={[
+                                styles.buttonText,
+                                newMarker?.dataType === MarkerType.CHANNEL && styles.activeColor,
+                            ]}
+                        >
+                            Channel
+                        </Text>
                     </TouchableOpacity>
-                </Animated.View>
+                </Animated.View> */}
             </View>
         </Marker>
     );
-});
+};
 
 export default NewMarkerModal;
 
@@ -136,15 +195,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        zIndex: 10
+        zIndex: 10,
     },
     centerDot: {
         position: 'absolute',
-        width: 12,
-        height: 12,
+        width: 8,
+        height: 8,
         borderRadius: 5,
-        backgroundColor: THEME.colors.accent,
-        zIndex: 1, // S'assure que le point rouge est au-dessus des boutons
+        backgroundColor: THEME.colors.primary,
+        zIndex: 1,
         left: '50%',
         borderColor: THEME.colors.text.black,
     },
@@ -157,7 +216,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 40,
         borderRadius: 10,
-        borderBottomLeftRadius: 3,
         borderColor: THEME.colors.text.black,
         marginVertical: 5,
         shadowColor: '#000',
@@ -168,13 +226,13 @@ const styles = StyleSheet.create({
     },
     closeIcon: {
         alignSelf: 'center',
-        color: THEME.colors.primary
+        color: THEME.colors.primary,
     },
     button: {
         display: 'flex',
         justifyContent: 'center',
         padding: 3,
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
         marginVertical: 5,
         borderRadius: 10,
         height: 40,
@@ -188,12 +246,11 @@ const styles = StyleSheet.create({
     buttonIcon: {
         alignSelf: 'center',
         marginBottom: 3,
-        color: THEME.colors.primary
     },
     buttonIconChannel: {
         alignSelf: 'center',
         marginBottom: 2,
-        color: THEME.colors.primary
+        color: THEME.colors.primary,
     },
     buttonText: {
         fontSize: 9,
@@ -201,10 +258,10 @@ const styles = StyleSheet.create({
         color: THEME.colors.text.black,
         textAlign: 'center',
     },
-    selectedBackground: {
+    activeBackground: {
         backgroundColor: THEME.colors.primary,
     },
-    selectedColor: {
+    activeColor: {
         color: THEME.colors.text.white,
     },
 });

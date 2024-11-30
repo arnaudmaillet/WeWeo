@@ -1,10 +1,9 @@
 import { ICoordinates } from "./MapInterfaces";
 import { IUser } from "./UserInterfaces";
 
-export enum ChatTypes {
-    Chat = 'chat',
-    Group = 'group',
-    Channel = 'channel'
+export enum MarkerType {
+    DEFAULT = 'init',
+    CHAT = 'chat',
 }
 
 export enum MimeTypes {
@@ -20,15 +19,20 @@ export interface IFile {
     type: MimeTypes
 }
 
+export interface IPolicy {
+    isPrivate: boolean,
+    show: string[]
+}
+
 export interface IMessage {
-    __typename?: "Message",
     messageId: string,
+    senderId: string,
     senderInfo: IUser,
-    senderId?: string,
     markerId: string,
     content: string,
-    timestamp: number,
-    type: string
+    createdAt: number,
+    type: string,
+    combinedKey?: string
 }
 
 export interface IRoom {
@@ -37,24 +41,27 @@ export interface IRoom {
     participantsIds: string[]
 }
 
-export interface IMarkerChatScreen {
-    marker: IMarker
+
+export interface INewMarker {
+    coordinates: ICoordinates;
+    dataType: MarkerType;
 }
 
 export interface IMarkerChat extends IMarker {}
 export interface IMarkerVideo extends IMarker {}
 export interface IMarkerPhoto extends IMarker {}
 export interface IMarkerLive extends IMarker {}
-
-
-export interface IMarker {
-    __typename?: "Marker";
-    coordinates: ICoordinates;
-    createdAt?: number;
-    creatorId?: string;
-    label: string;
+export interface IMarker extends INewMarker {
     markerId: string;
+    createdAt: number;
+    senderId: string;
+    label: string;
     minZoom: number;
-    dataId?: string;
-    dataType?: string;
-  }
+    subscribedUserIds: string[];
+    connectedUserIds: string[];
+    policy: IPolicy;
+}
+
+export interface IMarkerChatScreen {
+    marker: IMarker
+}
