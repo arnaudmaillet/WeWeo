@@ -11,7 +11,7 @@ import { useWindow } from '~/contexts/window/Context'
 import { IMarker } from '~/types/MarkerInterfaces'
 import NewMarker from '~/components/NewMarker'
 import { WindowType } from '~/contexts/window/types'
-import { useNewMarker } from '~/contexts/NewMarkerProvider'
+import { useNewMarker } from '~/contexts/marker/Context'
 
 const _MAX_GESTURE_VERTICAL_OFFSET = -20
 
@@ -19,7 +19,7 @@ const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
     const { marker, markers, newMarker, setMarker } = useMap();
-    const { animateMarkersExiting } = useNewMarker()
+    const { exitingAnimation: exitingNewMarkerAnimation } = useNewMarker()
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
@@ -57,7 +57,7 @@ const MainScreen = () => {
         .onFinalize(() => {
             if (offset.value > 30) {
                 offset.value = withSpring(0, {}, () => {
-                    runOnJS(animateMarkersExiting)(WindowType.DEFAULT)
+                    runOnJS(exitingNewMarkerAnimation)(WindowType.DEFAULT)
                 })
             }
             offset.value = withSpring(0);

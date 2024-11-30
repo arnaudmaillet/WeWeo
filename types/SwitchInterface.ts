@@ -1,4 +1,5 @@
 import { ReactElement } from "react";
+import { Animated } from "react-native";
 
 export interface IButtonColor {
     default: string,         // Couleur par défaut (non sélectionnée)
@@ -17,6 +18,9 @@ export interface IButtonChild {
     color: IButtonColor      // Couleurs associées
 }
 
+export interface IAnimatedButton extends IButton {
+    animation: Animated.Value
+}
 export interface IButton {
     text: IButtonText;       // Configuration du texte du bouton
     icon: IButtonIcon;       // Configuration de l'icône du bouton

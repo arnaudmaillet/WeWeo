@@ -17,15 +17,15 @@ import { useWindow } from '~/contexts/window/Context';
 import { WindowType } from '~/contexts/window/types';
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useNewMarker } from '~/contexts/NewMarkerProvider';
+import { useNewMarker } from '~/contexts/marker/Context'
 
 const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
 
     const { mapRef, markers, newMarker, marker, setNewMarker, setMarker, setCamera } = useMap();
-    const { setActiveWindow } = useWindow()
-    const { animateMarkersExiting } = useNewMarker()
+    const { setActive: setActiveWindow } = useWindow()
+    const { exitingAnimation: exitingNewMarkerAnimation } = useNewMarker()
 
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
@@ -143,7 +143,7 @@ const Map: React.FC<IMap> = () => {
             setMarkerSnap(point);
             setMarker(point);
             if (newMarker) {
-                animateMarkersExiting(WindowType.CHAT);
+                exitingNewMarkerAnimation(WindowType.CHAT);
             } else {
                 setActiveWindow(WindowType.CHAT)
             }

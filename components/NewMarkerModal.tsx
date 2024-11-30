@@ -8,7 +8,7 @@ import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { THEME } from '~/constants/constants';
 import { WindowType } from '~/contexts/window/types';
-import { useNewMarker } from '~/contexts/NewMarkerProvider';
+import { useNewMarker } from '~/contexts/marker/Context'
 import { useWindow } from '~/contexts/window/Context';
 
 const NewMarkerModal = () => {
@@ -17,8 +17,8 @@ const NewMarkerModal = () => {
         dotAnimation,
         closeAnimation,
         newMarkerButtons,
-        animateMarkersEntering,
-        animateMarkersExiting,
+        enteringAnimation: enteringNewMarkerAnimation,
+        exitingAnimation: exitingNewMarkerAnimation
     } = useNewMarker();
     const { setActive: setActiveWindow } = useWindow()
     const [columns, setColumns] = useState(2);
@@ -29,7 +29,7 @@ const NewMarkerModal = () => {
     }, []);
 
     useEffect(() => {
-        animateMarkersEntering();
+        enteringNewMarkerAnimation();
     }, [newMarker?.coordinates]);
 
     const handleButtonPress = useCallback(
@@ -124,7 +124,7 @@ const NewMarkerModal = () => {
                 <Animated.View style={{ opacity: closeAnimation, transform: [{ scale: closeAnimation }] }}>
                     <TouchableOpacity
                         style={styles.closeButton}
-                        onPress={() => animateMarkersExiting(WindowType.DEFAULT)}
+                        onPress={() => exitingNewMarkerAnimation(WindowType.DEFAULT)}
                     >
                         <FontAwesome name="times" size={15} style={styles.closeIcon} />
                     </TouchableOpacity>

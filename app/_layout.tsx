@@ -7,7 +7,7 @@ import { KeyboardProvider } from '~/contexts/KeyboardProvider';
 import { WindowProvider } from '~/contexts/window/Context';
 import { MapProvider } from '~/contexts/MapProvider';
 import { MarkerProvider } from '~/contexts/MarkerProvider';
-import { NewMarkerProvider } from '~/contexts/NewMarkerProvider'
+import { NewMarkerProvider } from '~/contexts/marker/Context';
 
 export default function Layout() {
   return (
