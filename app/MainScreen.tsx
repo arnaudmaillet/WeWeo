@@ -11,15 +11,15 @@ import { useWindow } from '~/contexts/window/Context'
 import { IMarker } from '~/types/MarkerInterfaces'
 import NewMarker from '~/components/NewMarker'
 import { WindowType } from '~/contexts/window/types'
-import { useNewMarker } from '~/contexts/marker/Context'
+import { useMarker } from '~/contexts/marker/Context'
 
 const _MAX_GESTURE_VERTICAL_OFFSET = -20
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-    const { marker, markers, newMarker, setMarker } = useMap();
-    const { exitingAnimation: exitingNewMarkerAnimation } = useNewMarker()
+    const { marker, markers, setMarker } = useMap();
+    const { exitingAnimation: exitingNewMarkerAnimation } = useMarker()
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
@@ -194,7 +194,7 @@ const MainScreen = () => {
                                     keyboardVerticalOffset={380}
                                     style={styles.keyboardAvoidingView}
                                 >
-                                    <NewMarker onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                                    <NewMarker />
                                 </KeyboardAvoidingView>
                             </Animated.View>
                         </GestureDetector>

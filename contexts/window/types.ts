@@ -16,4 +16,4 @@ export enum WindowActionType {
 
 export type WindowAction =
     | { type: WindowActionType.SET_ACTIVE; payload: WindowType }
-    | { type: WindowActionType.SET_LOADED; payload: boolean };
+    | { type: WindowActionType.SET_LOADED; payload: boolean }

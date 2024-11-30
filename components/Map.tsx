@@ -5,7 +5,7 @@ import MapView, { Marker } from 'react-native-maps';
 import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
-import { IMarker, INewMarker, MarkerType } from '../types/MarkerInterfaces';
+import { IMarker } from '../types/MarkerInterfaces';
 import { useMap } from '~/contexts/MapProvider';
 import NewMarkerModal from './NewMarkerModal';
 
@@ -17,15 +17,16 @@ import { useWindow } from '~/contexts/window/Context';
 import { WindowType } from '~/contexts/window/types';
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useNewMarker } from '~/contexts/marker/Context'
+import { useMarker } from '~/contexts/marker/Context'
+import { MarkerType } from '~/contexts/marker/types';
 
 const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
 
-    const { mapRef, markers, newMarker, marker, setNewMarker, setMarker, setCamera } = useMap();
+    const { mapRef, markers, marker, setMarker, setCamera } = useMap();
     const { setActive: setActiveWindow } = useWindow()
-    const { exitingAnimation: exitingNewMarkerAnimation } = useNewMarker()
+    const { state: markerState, exitingAnimation: exitingNewMarkerAnimation, setNew: setNewMarker } = useMarker()
 
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
@@ -142,7 +143,7 @@ const Map: React.FC<IMap> = () => {
             });
             setMarkerSnap(point);
             setMarker(point);
-            if (newMarker) {
+            if (markerState.newMarker) {
                 exitingNewMarkerAnimation(WindowType.CHAT);
             } else {
                 setActiveWindow(WindowType.CHAT)
@@ -160,8 +161,8 @@ const Map: React.FC<IMap> = () => {
                 lat: coordinate.latitude,
                 long: coordinate.longitude,
             },
-            dataType: MarkerType.DEFAULT
-        } as INewMarker);
+            type: MarkerType.DEFAULT
+        });
     };
 
     useEffect(() => {

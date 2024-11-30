@@ -1,25 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Animated, View, StyleSheet, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { useMap } from '~/contexts/MapProvider';
-import { INewMarker, MarkerType } from '~/types/MarkerInterfaces';
 import { FontAwesome } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { THEME } from '~/constants/constants';
 import { WindowType } from '~/contexts/window/types';
-import { useNewMarker } from '~/contexts/marker/Context'
+import { useMarker } from '~/contexts/marker/Context'
 import { useWindow } from '~/contexts/window/Context';
+import { MarkerType } from '~/contexts/marker/types';
 
 const NewMarkerModal = () => {
-    const { newMarker, setNewMarker } = useMap();
+    const { state: markerState, updateNew: updateNewMarker } = useMarker()
     const {
         dotAnimation,
         closeAnimation,
         newMarkerButtons,
         enteringAnimation: enteringNewMarkerAnimation,
         exitingAnimation: exitingNewMarkerAnimation
-    } = useNewMarker();
+    } = useMarker();
     const { setActive: setActiveWindow } = useWindow()
     const [columns, setColumns] = useState(2);
 
@@ -30,32 +29,27 @@ const NewMarkerModal = () => {
 
     useEffect(() => {
         enteringNewMarkerAnimation();
-    }, [newMarker?.coordinates]);
+    }, [markerState.newMarker?.coordinates]);
 
     const handleButtonPress = useCallback(
         (type: MarkerType) => {
-            if (newMarker?.dataType === type) {
-                setNewMarker({
-                    ...newMarker,
-                    dataType: MarkerType.DEFAULT,
-                });
+
+            if (markerState.newMarker?.type === type) {
+                updateNewMarker({ type: MarkerType.DEFAULT });
                 setActiveWindow(WindowType.DEFAULT)
             } else {
-                setNewMarker({
-                    ...newMarker,
-                    dataType: type,
-                } as INewMarker);
+                updateNewMarker({ type: type });
                 setActiveWindow(WindowType.NEW_MARKER)
             }
         },
-        [newMarker, setNewMarker]
+        [markerState.newMarker, updateNewMarker]
     );
 
     return (
         <Marker
             coordinate={{
-                latitude: newMarker?.coordinates.lat || 0,
-                longitude: newMarker?.coordinates.long || 0,
+                latitude: markerState.newMarker?.coordinates.lat || 0,
+                longitude: markerState.newMarker?.coordinates.long || 0,
             }}
         >
             <View style={[styles.container, { width: columns * 60 - 10 }]}>
@@ -72,20 +66,20 @@ const NewMarkerModal = () => {
                                 <TouchableOpacity
                                     style={[
                                         styles.button,
-                                        newMarker?.dataType === MarkerType.CHAT && styles.activeBackground,
+                                        markerState.newMarker?.type === MarkerType.CHAT && styles.activeBackground,
                                     ]}
                                     onPress={() => handleButtonPress(MarkerType.CHAT)}
                                 >
                                     {React.cloneElement(_.icon.component, {
                                         name: _.icon.label,
-                                        color: newMarker?.dataType === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
+                                        color: markerState.newMarker?.type === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
                                         size: _.icon.size,
                                         style: styles.buttonIcon,
                                     })}
                                     <Text
                                         style={[
                                             styles.buttonText,
-                                            newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
+                                            markerState.newMarker?.type === MarkerType.CHAT && styles.activeColor,
                                         ]}
                                     >
                                         Chat

@@ -6,8 +6,8 @@ import { AuthProvider } from '~/contexts/AuthProvider';
 import { KeyboardProvider } from '~/contexts/KeyboardProvider';
 import { WindowProvider } from '~/contexts/window/Context';
 import { MapProvider } from '~/contexts/MapProvider';
-import { MarkerProvider } from '~/contexts/MarkerProvider';
-import { NewMarkerProvider } from '~/contexts/marker/Context';
+import { MarkerProvider as Deprecated } from '~/contexts/MarkerProvider';
+import { MarkerProvider } from '~/contexts/marker/Context'
 
 export default function Layout() {
   return (
@@ -17,15 +17,15 @@ export default function Layout() {
           <AuthProvider>
             <WindowProvider>
               <MapProvider>
-                <MarkerProvider>
-                  <NewMarkerProvider>
+                <Deprecated>
+                  <MarkerProvider>
                     <Stack>
                       <Stack.Screen name="LoginScreen" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
                       <Stack.Screen name="SignupScreen" options={{ title: 'Signup', headerShown: false }} />
                       <Stack.Screen name="MainScreen" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
                     </Stack>
-                  </NewMarkerProvider>
-                </MarkerProvider>
+                  </MarkerProvider>
+                </Deprecated>
               </MapProvider>
             </WindowProvider>
           </AuthProvider>

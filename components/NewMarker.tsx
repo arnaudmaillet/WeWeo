@@ -9,16 +9,14 @@ import { IUser } from '~/types/UserInterfaces'
 import { useAuth } from '~/contexts/AuthProvider'
 import { IMarker } from '~/types/MarkerInterfaces'
 import { useWindow } from '~/contexts/window/Context'
+import { useMarker } from '~/contexts/marker/Context'
 
 enum Selector {
     EVERYONE = 'everyone',
     FRIENDS = 'friends',
 }
 
-interface NewMarkerProps {
-    onFocusInput: () => void;
-    onBlurInput: () => void;
-}
+interface NewMarkerProps { }
 
 
 const NewMarker: React.FC<NewMarkerProps> = () => {
@@ -28,9 +26,10 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
     const [damplingValue, setDamplingValue] = useState<number>(100);
 
-    const { newMarker, addMarker } = useMap();
+    const { addMarker } = useMap();
     const { user } = useAuth();
     const { state: windowState, setLoaded: setWindowLoaded } = useWindow()
+    const { state: markerState } = useMarker()
 
     const friendsContainer = useSharedValue(0)
     const [heightContainer, setHeightContainer] = useState(0)
@@ -57,25 +56,25 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
 
 
     const submitMarker = async () => {
-        if (newMarker) {
-            await addMarker({
-                ...newMarker,
-                label: inputValue,
-                minZoom: 15,
-                policy: {
-                    isPrivate: selectedOption === Selector.EVERYONE ? false : true,
-                    show: selectedOption === Selector.EVERYONE
-                        ? []
-                        : (selectedFriends.length > 0 ? [...selectedFriends, user?.userId!] : [])
-                },
-                subscribedUserIds: [],
-                connectedUserIds: [],
-                createdAt: new Date().getTime(),
-                senderId: user?.userId!,
-            } as IMarker);
-            setInputValue('');
-            setSelectedFriends([]);
-        }
+        // if (markerState.newMarker) {
+        //     await addMarker({
+        //         ...newMarker,
+        //         label: inputValue,
+        //         minZoom: 15,
+        //         policy: {
+        //             isPrivate: selectedOption === Selector.EVERYONE ? false : true,
+        //             show: selectedOption === Selector.EVERYONE
+        //                 ? []
+        //                 : (selectedFriends.length > 0 ? [...selectedFriends, user?.userId!] : [])
+        //         },
+        //         subscribedUserIds: [],
+        //         connectedUserIds: [],
+        //         createdAt: new Date().getTime(),
+        //         senderId: user?.userId!,
+        //     } as IMarker);
+        //     setInputValue('');
+        //     setSelectedFriends([]);
+        // }
     };
 
     const UserItem: React.FC<{ user: IUser }> = ({ user }) => {

@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useMemo, useRef } from "react";
+import { createContext, ReactNode, useContext, useMemo, useReducer, useRef } from "react";
 import { Animated } from "react-native";
 import { WindowType } from "~/contexts/window/types";
 import { IAnimatedButton } from "~/types/SwitchInterface";
@@ -6,21 +6,32 @@ import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
 import { useMap } from "~/contexts/MapProvider";
 import { useWindow } from "~/contexts/window/Context"
+import { useAuth } from "../AuthProvider";
+import { initialMarkerState, markerReducer } from "./reducer";
+import MapView from "react-native-maps";
+import { IMarker, INewMarker, MarkerActionType, MarkerState } from "./types";
 
-const NewMarkerContext = createContext({});
+const MarkerContext = createContext({});
 
-export interface NewMarkerContextProps {
-    enteringAnimation: () => Promise<void>
-    exitingAnimation: (setActiveWindow: WindowType) => Promise<void>
+export interface MarkerContextProps {
+    state: MarkerState
     dotAnimation: Animated.Value
     closeAnimation: Animated.Value
     newMarkerButtons: IAnimatedButton[]
+    enteringAnimation: () => Promise<void>
+    exitingAnimation: (setActiveWindow: WindowType) => Promise<void>
+    setNew: (marker: INewMarker | IMarker | null) => void
+    updateNew: (updatedFields: Partial<INewMarker | IMarker>) => void
 }
 
-export const NewMarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { newMarker } = useMap();
+    const { user } = useAuth();
     const { setActive: setActiveWindow } = useWindow()
+
+    const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
+
+    const mapRef = useRef<MapView | null>(null);
 
     const dotAnimation = useRef(new Animated.Value(0)).current;
     const closeAnimation = useRef(new Animated.Value(0)).current;
@@ -34,55 +45,60 @@ export const NewMarkerProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
     ], []);
 
+    const startAnimation = async (duration: number, toValue: number, callback?: () => void) => {
+        Animated.stagger(duration, [
+            Animated.spring(dotAnimation, { toValue: toValue, useNativeDriver: true }),
+            ...newMarkerButtons.map(button =>
+                Animated.spring(button.animation, { toValue: toValue, useNativeDriver: true })
+            ),
+            Animated.spring(closeAnimation, { toValue: toValue, useNativeDriver: true }),
+        ]).start(() => callback && callback());
+    }
+
     const resetAnimation = () => {
         dotAnimation.setValue(0);
         closeAnimation.setValue(0);
         newMarkerButtons.forEach(button => button.animation.setValue(0));
     };
 
-    const enteringAnimation = () => {
+    const enteringAnimation = async () => {
         resetAnimation();
-        if (newMarker) {
-            Animated.stagger(100, [
-                Animated.spring(dotAnimation, { toValue: 1, useNativeDriver: true }),
-                ...newMarkerButtons.map(button =>
-                    Animated.spring(button.animation, { toValue: 1, useNativeDriver: true })
-                ),
-                Animated.spring(closeAnimation, { toValue: 1, useNativeDriver: true }),
-            ]).start();
-        }
+        state.newMarker && startAnimation(100, 1)
     };
 
-    const exitingAnimation = async (windowToDisplayWhenFinished: WindowType) => {
-        setActiveWindow(windowToDisplayWhenFinished)
-        Animated.stagger(100, [
-            Animated.spring(dotAnimation, { toValue: 0, useNativeDriver: true }),
-            ...newMarkerButtons.map(button =>
-                Animated.spring(button.animation, { toValue: 0, useNativeDriver: true })
-            ),
-            Animated.spring(closeAnimation, { toValue: 0, useNativeDriver: true }),
-        ]).start(() => {
-            resetAnimation();
-        });
+    const exitingAnimation = async (window: WindowType) => {
+        setActiveWindow(window)
+        await startAnimation(100, 0, () => resetAnimation())
+    };
+
+    const setNew = (marker: INewMarker | IMarker | null) => {
+        dispatch({ type: MarkerActionType.SET_NEW, payload: marker });
+    };
+
+    const updateNew = (updatedFields: Partial<INewMarker | IMarker>) => {
+        dispatch({ type: MarkerActionType.UPDATE_NEW, payload: updatedFields });
     };
 
     return (
-        <NewMarkerContext.Provider value={{
-            enteringAnimation,
-            exitingAnimation,
+        <MarkerContext.Provider value={{
+            state,
             dotAnimation,
             closeAnimation,
-            newMarkerButtons
+            newMarkerButtons,
+            enteringAnimation,
+            exitingAnimation,
+            setNew,
+            updateNew,
         }}>
             {children}
-        </NewMarkerContext.Provider>
+        </MarkerContext.Provider>
     );
 }
 
-export const useNewMarker = () => {
-    const context = useContext(NewMarkerContext);
+export const useMarker = () => {
+    const context = useContext(MarkerContext);
     if (context === undefined) {
         throw new Error('useNewMarker must be used within a MarkerProvider');
     }
-    return context as NewMarkerContextProps;
+    return context as MarkerContextProps;
 }
