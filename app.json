@@ -17,7 +17,7 @@
       "tsconfigPaths": true
     },
     "orientation": "portrait",
-    "icon": "./assets/logo.jpg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -37,6 +37,14 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.WeWeo"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "a6a30040-419a-4bdd-91b7-93b541312342"
+      }
     }
   }
 }

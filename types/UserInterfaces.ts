@@ -10,5 +10,5 @@ export interface IUser {
     locale: string,
     birthdate: string,
     subscribedTo: string[],
-    following: string[],
+    friends: IUser[],
 }

@@ -1,71 +1,173 @@
-import { Animated, Dimensions, StyleSheet, View, Text, TextInput } from 'react-native';
+import { Animated, Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
-import MapView, { Camera, Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
+//import { useClusterer } from 'react-native-clusterer';
+import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
-import { IMarker } from '../types/MarkerInterfaces';
-import { useMap } from '~/providers/MapProvider';
+import { IMarker, INewMarker, MarkerType } from '../types/MarkerInterfaces';
+import { useMap } from '~/contexts/MapProvider';
 import NewMarkerModal from './NewMarkerModal';
 
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { THEME } from '~/constants/constants';
-import { fakeUserLocation } from '~/providers/AuthProvider';
+import { fakeUserLocation } from '~/contexts/AuthProvider';
+import { useWindow } from '~/contexts/window/Context';
+import { WindowType } from '~/contexts/window/types';
+
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { useNewMarker } from '~/contexts/NewMarkerProvider';
 
 const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
 
     const { mapRef, markers, newMarker, marker, setNewMarker, setMarker, setCamera } = useMap();
+    const { setActiveWindow } = useWindow()
+    const { animateMarkersExiting } = useNewMarker()
 
-    const newMarkerModalRef = useRef<{ animateMarkersExiting: () => void } | null>(null);
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
+    const [region, setRegion] = useState({
+        lat: fakeUserLocation.lat,
+        long: fakeUserLocation.long,
+        latDelta: 0.0922,
+        longDelta: 0.0421,
+    });
     const [markerSnap, setMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
+    const [closestMarker, setClosestMarker] = useState<IMarker | null>(null);
     const [zoomLevel, setZoomLevel] = useState(0);
+
+    const [containerSizes, setContainerSizes] = useState<{ [key: string]: { width: number; height: number } }>({});
+    const [iconAnimations, setIconAnimations] = useState<Animated.Value[]>((markers || []).map(() => new Animated.Value(1)));
+    const [textAnimations, setTextAnimations] = useState<Animated.Value[]>((markers || []).map(() => new Animated.Value(0)));
+
+
+    // const [points] = useClusterer(
+    //     markers?.map(marker => ({
+    //         type: 'Feature',
+    //         geometry: {
+    //             type: 'Point',
+    //             coordinates: [marker.coordinates.long, marker.coordinates.lat],
+    //         },
+    //         properties: marker,
+    //     })) || [],
+    //     { width: screenDimensions.width, height: screenDimensions.height },
+    //     {
+    //         latitude: fakeUserLocation.lat,
+    //         longitude: fakeUserLocation.long,
+    //         latitudeDelta: 0.0922,
+    //         longitudeDelta: 0.0421,
+    //     }
+    //   );
+
+    const handleTextLayout = (markerId: string, event: LayoutChangeEvent) => {
+        const { width, height } = event.nativeEvent.layout;
+        setContainerSizes(prevSizes => ({
+            ...prevSizes,
+            [markerId]: {
+                width: Math.max(20, width + 5), // Ajustement pour inclure le padding
+                height: Math.max(20, height + 5),
+            },
+        }));
+    };
 
     const [scaleAnimations, setScaleAnimations] = useState<Animated.Value[]>(
         markers?.map(() => new Animated.Value(0)) || []
     ); // Initialiser les animations de scale
 
+    useEffect(() => {
+        if (markers) {
+            setIconAnimations(prev => [
+                ...prev,
+                ...markers.slice(prev.length).map(() => new Animated.Value(1)),
+            ]);
+
+            setTextAnimations(prev => [
+                ...prev,
+                ...markers.slice(prev.length).map(() => new Animated.Value(0)),
+            ]);
+
+            setScaleAnimations(prev => [
+                ...prev,
+                ...markers.slice(prev.length).map(() => new Animated.Value(0)),
+            ]);
+        }
+    }, [markers]);
+
+    const animateToClosestMarker = (closestMarkerId: string) => {
+        markers && markers.forEach((marker, index) => {
+            if (marker.markerId === closestMarkerId) {
+                if (iconAnimations[index] && textAnimations[index]) {
+                    // Animer pour faire apparaître le texte et disparaître l'icône
+                    Animated.parallel([
+                        Animated.timing(iconAnimations[index], {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(textAnimations[index], {
+                            toValue: 1,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                    ]).start();
+                }
+            } else {
+                if (iconAnimations[index] && textAnimations[index]) {
+                    // Revenir à l'état d'origine (icône visible et texte invisible)
+                    Animated.parallel([
+                        Animated.timing(iconAnimations[index], {
+                            toValue: 1,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(textAnimations[index], {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true,
+                        }),
+                    ]).start();
+                }
+            }
+        });
+    };
 
 
     const handlePressMarker = (point: IMarker) => {
-        if (newMarker) {
-            newMarkerModalRef.current?.animateMarkersExiting();
-        }
-
         if (mapRef.current) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
             setMarkerSnap(point);
             setMarker(point);
+            if (newMarker) {
+                animateMarkersExiting(WindowType.CHAT);
+            } else {
+                setActiveWindow(WindowType.CHAT)
+            }
         }
     };
 
     const handleLongPress = (event: any) => {
         const { coordinate } = event.nativeEvent;
 
-        impactAsync(ImpactFeedbackStyle.Medium)
+        impactAsync(ImpactFeedbackStyle.Medium) // Haptic feedback
 
         setNewMarker({
-            markerId: Math.random().toString(36).substr(2, 9),
             coordinates: {
                 lat: coordinate.latitude,
                 long: coordinate.longitude,
             },
-            subscribedUserIds: [],
-            connectedUserIds: [],
-            dataType: 'message',
-            minZoom: 15,
-            label: '',
-        });
+            dataType: MarkerType.DEFAULT
+        } as INewMarker);
     };
 
     useEffect(() => {
         if (marker && mapRef.current) {
             setMarkerSnap(marker);
+            setClosestMarker(marker);
 
             mapRef.current.animateCamera(
                 {
@@ -77,6 +179,7 @@ const Map: React.FC<IMap> = () => {
                 { duration: 1000 }
             );
         }
+
 
         if (!marker && markerSnap && mapRef.current) {
 
@@ -91,7 +194,7 @@ const Map: React.FC<IMap> = () => {
             );
             setMarkerSnap(null);
         }
-    }, [marker]);
+    }, [marker?.markerId]);
 
     useEffect(() => {
         const previousMarkers = previousMarkersRef.current;
@@ -127,11 +230,34 @@ const Map: React.FC<IMap> = () => {
         });
     }, [scaleAnimations, markers]);
 
+    const findClosestMarker = (center: { lat: number; lon: number }) => {
+        let closest = null;
+        let minDistance = Infinity;
+
+        markers && markers.forEach(marker => {
+            const distance = haversine(center, {
+                lat: marker.coordinates.lat,
+                lon: marker.coordinates.long
+            });
+            if (distance < minDistance) {
+                minDistance = distance;
+                closest = marker;
+            }
+        });
+        setClosestMarker(closest);
+    };
+
+    useEffect(() => {
+        if (closestMarker) {
+            animateToClosestMarker(closestMarker.markerId);
+        }
+    }, [closestMarker]);
+
 
     return (
         <View style={styles.map}>
             <MapView
-                //rotateEnabled={false}
+                mapType='standard'
                 ref={mapRef}
                 style={styles.map}
                 showsUserLocation={true}
@@ -148,12 +274,27 @@ const Map: React.FC<IMap> = () => {
                     left: screenDimensions.width * 0.05,
                 }}
                 showsPointsOfInterest={false}
+                onRegionChangeComplete={(region) => setRegion({
+                    lat: region.latitude,
+                    long: region.longitude,
+                    latDelta: region.latitudeDelta,
+                    longDelta: region.longitudeDelta,
+                })}
+                followsUserLocation={true}
+                loadingEnabled={true}
+                userInterfaceStyle='light'
+                zoomEnabled={true}
                 onLongPress={handleLongPress}
+                onRegionChange={(region) => findClosestMarker({
+                    lat: region.latitude,
+                    lon: region.longitude
+                })}
+                pitchEnabled={true}
             >
-                <NewMarkerModal ref={newMarkerModalRef} />
+                <NewMarkerModal />
 
                 {markers &&
-                    markers.map((marker, index) => {
+                    markers.map((marker: any, index: any) => {
                         return (
                             <Marker
                                 key={marker.markerId}
@@ -177,10 +318,36 @@ const Map: React.FC<IMap> = () => {
                                         },
                                     ]}
                                 >
-                                    <TouchableOpacity style={styles.pillContainer} onPress={() => handlePressMarker(marker)}>
-                                        <Text style={styles.pillText}>{marker?.label}</Text>
-                                    </TouchableOpacity>
+                                    <View style={styles.pillInnerContainer}>
+                                        <View
+                                            style={[
+                                                styles.pillInnerContainer,
+                                                containerSizes[marker.markerId] || { width: 50, height: 30 }
+                                            ]}
+                                        >
+                                            <Animated.View style={[styles.pillIcon, { opacity: iconAnimations[index] }]}>
+                                                <TouchableOpacity onPress={() => handlePressMarker(marker)}>
+                                                    <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
+                                                </TouchableOpacity>
+                                            </Animated.View>
+
+                                            <Animated.View
+                                                onLayout={(event) => handleTextLayout(marker.markerId, event)}
+                                                style={[
+                                                    styles.pillTextContainer,
+                                                    { opacity: textAnimations[index] }
+                                                ]}
+                                            >
+                                                <TouchableOpacity onPress={() => handlePressMarker(marker)}>
+                                                    <Text style={styles.pillText}>
+                                                        {marker?.label}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </Animated.View>
+                                        </View>
+                                    </View>
                                 </Animated.View>
+
                             </Marker>
                         );
                     })}
@@ -214,23 +381,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#007AFF', // Solid blue
     },
     pillContainer: {
-        alignItems: 'center', // Centrer le contenu horizontalement
-        justifyContent: 'center', // Centrer le contenu verticalement
-        backgroundColor: THEME.colors.primary,
-        paddingHorizontal: 5,
-        borderRadius: 6,
-        elevation: 3,
-        minWidth: 30, // Largeur minimale pour afficher les courts textes
-        maxWidth: 100, // Largeur maximale pour limiter l'expansion
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pillInnerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pillIcon: {
+        height: 20,
+        width: 20,
+        borderRadius: 10,
+        backgroundColor: THEME.colors.accent,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
         zIndex: 1,
     },
+    pillTextContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute',
+        backgroundColor: THEME.colors.primary,
+        borderRadius: 6,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+    },
     pillText: {
-        width: '100%',
-        fontSize: 11, // Taille du texte
-        fontWeight: 'bold', // Texte en gras
-        color: THEME.colors.text.white, // Couleur du texte
-        paddingTop: 3,
-        paddingBottom: 3,
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: THEME.colors.text.white,
         textAlign: 'center',
     },
 });

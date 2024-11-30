@@ -1,29 +1,31 @@
 import { Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown } from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown, FadeInUp, FadeInDown, FadeOutUp, FadeOutDown } from 'react-native-reanimated'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
-import { useAuth } from '~/providers/AuthProvider';
+import { useAuth } from '~/contexts/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
-import { useMap } from '~/providers/MapProvider';
+import { useMap } from '~/contexts/MapProvider';
 import { ISwitch } from '~/types/SwitchInterface';
 import Switch from './Switch';
 import { THEME } from '~/constants/constants';
+import { WindowType } from '~/contexts/window/types';
+import { useWindow } from '~/contexts/window/Context';
 
 interface SearchMenuProps {
     onFocusInput: () => void;
     onBlurInput: () => void;
 }
 
-const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: boolean; onPress: () => void }> = ({ user, isSelected, onPress }) => {
+const UserItem: React.FC<{ user: IUser; isactive: boolean; isAnyactive: boolean; onPress: () => void }> = ({ user, isactive, onPress }) => {
     // Animation pour la couleur de fond
-    const backgroundColorValue = useSharedValue(isSelected ? 0 : 1);
+    const backgroundColorValue = useSharedValue(isactive ? 0 : 1);
 
     const { user: currentUser } = useAuth();
 
     // Détermine si l'utilisateur actuel suit cet utilisateur
     const isFollowing = () => {
-        if (currentUser?.following) {
-            return currentUser.following.includes(user.userId);
+        if (currentUser?.friends) {
+            return currentUser.friends.some((friend: IUser) => friend.userId === user.userId);
         } else {
             return false;
         }
@@ -32,8 +34,8 @@ const UserItem: React.FC<{ user: IUser; isSelected: boolean; isAnySelected: bool
     const mainColor = isFollowing() ? '#DA70D6' : '#0088cc';
 
     useEffect(() => {
-        backgroundColorValue.value = withTiming(isSelected ? 0 : 1, { duration: 300 });
-    }, [isSelected]);
+        backgroundColorValue.value = withTiming(isactive ? 0 : 1, { duration: 300 });
+    }, [isactive]);
 
     // Style animé pour la couleur de fond et du texte
     const animatedStyle = useAnimatedStyle(() => {
@@ -82,6 +84,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     const [modalVisible, setModalVisible] = useState(false);
 
     const { user, isLoading, signOut } = useAuth();
+    const { state } = useWindow()
     const { category, setCategory, displayMarkersForUser, setDisplayMarkersForUser } = useMap();
 
     const isTyping = searchContent !== '';
@@ -119,38 +122,76 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     const visibilitySwitch: ISwitch = {
         buttons: [
             {
-                label: 'Discover',
-                class: <Ionicons />,
-                name: 'compass-outline',
-                color: THEME.colors.primary,
-                textColor: THEME.colors.text.black,
-                iconColorSelected: THEME.colors.accent,
-                size: 16,
+                text: {
+                    label: 'Discover',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.text.black
+                    }
+                },
+                icon: {
+                    component: <Ionicons />,
+                    size: 16,
+                    label: 'compass-outline',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.primary,
+                    }
+                },
+                background: {
+                    active: THEME.colors.primary,
+                    default: THEME.colors.grayscale.main,
+                }
             },
             {
-                label: 'Friends',
-                class: <MaterialIcons />,
-                name: 'group',
-                color: THEME.colors.primary,
-                textColor: THEME.colors.text.black,
-                iconColorSelected: THEME.colors.accent,
-                size: 16,
+                text: {
+                    label: 'Friends',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.text.black
+                    }
+                },
+                icon: {
+                    component: <MaterialIcons />,
+                    size: 16,
+                    label: 'group',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.primary,
+                    }
+                },
+                background: {
+                    active: THEME.colors.primary,
+                    default: THEME.colors.grayscale.main,
+                }
             },
             {
-                label: 'Favorite',
-                class: <MaterialIcons />,
-                name: 'favorite-outline',
-                color: THEME.colors.primary,
-                textColor: THEME.colors.text.black,
-                iconColorSelected: THEME.colors.accent,
-                size: 16,
+                text: {
+                    label: 'Favorite',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.text.black
+                    }
+                },
+                icon: {
+                    component: <MaterialIcons />,
+                    size: 16,
+                    label: 'favorite-outline',
+                    color: {
+                        active: THEME.colors.text.white,
+                        default: THEME.colors.primary,
+                    }
+                },
+                background: {
+                    active: THEME.colors.primary,
+                    default: THEME.colors.grayscale.main,
+                }
             },
         ],
     }
 
-
     return (
-        <Animated.View key="searchMenu" style={styles.container} entering={SlideInDown.springify().damping(17)} exiting={SlideOutDown.springify().damping(17)}>
+        <Animated.View key={state.activeWindow} style={[styles.container]} entering={FadeInDown.springify()} exiting={FadeOutDown.springify()}>
             {/* <FlatList
                 data={getFollowingAccounts()}
                 horizontal={true}
@@ -161,8 +202,8 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
                 renderItem={({ item: user }) => (
                     <UserItem
                         user={user}
-                        isSelected={displayMarkersForUser === user.userId}
-                        isAnySelected={displayMarkersForUser !== undefined}
+                        isactive={displayMarkersForUser === user.userId}
+                        isAnyactive={displayMarkersForUser !== undefined}
                         onPress={() => handlePressUser(user.userId)}
                     />
                 )}
@@ -259,7 +300,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
         paddingVertical: 12,
         paddingHorizontal: 10,
         borderRadius: 20,
@@ -267,8 +308,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        shadowOpacity: .4,
+        shadowRadius: 20,
         elevation: 10,
     },
     secondRow: {
@@ -362,7 +403,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: THEME.colors.background.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_x1,
         borderRadius: 10,
         paddingHorizontal: 10,
         height: 40,

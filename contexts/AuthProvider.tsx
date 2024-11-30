@@ -35,38 +35,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 storeUser(firebaseUser.email || '', token);
 
                 console.log('User', firebaseUser.uid);
+
                 // Récupérer les informations utilisateur depuis Firestore
                 const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
                 if (userDoc.exists()) {
-                    const userData = userDoc.data() as IUser;
+                    const userData = userDoc.data();
+
+                    // Récupérer les amis par leurs IDs
+                    const friendsIds = userData.friends || [];
+                    let friends: IUser[] = [];
+                    if (friendsIds.length > 0) {
+                        const friendsDocs = await Promise.all(
+                            friendsIds.map((id: string) => getDoc(doc(firestore, "users", id)))
+                        );
+                        friends = friendsDocs
+                            .filter((doc) => doc.exists())
+                            .map((doc) => doc.data() as IUser);
+                    }
+
+
+                    // Mise à jour de l'état utilisateur
                     setUser({
                         userId: firebaseUser.uid,
                         email: userData.email,
                         username: userData.username,
                         birthdate: userData.birthdate,
                         locale: userData.locale,
-                        following: userData.following,
+                        friends: friends,
                         subscribedTo: userData.subscribedTo,
                         location: {
                             lat: fakeUserLocation.lat,
                             long: fakeUserLocation.long,
                             latDelta: fakeUserLocation.latDelta,
                             longDelta: fakeUserLocation.longDelta,
-                        }
+                        },
                     });
                 } else {
                     console.error('User document not found in Firestore');
                     router.push('/LoginScreen');
                 }
-
             } else {
                 setUser(null);
                 router.push('/LoginScreen');
             }
         });
-        97
+
         return () => unsubscribe();
     }, []);
+
 
     const storeUser = async (email: string, token: string) => {
         try {
@@ -88,7 +104,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 email,
                 birthdate,
                 locale,
-                following: [],
+                friends: [],
                 subscribedTo: [],
                 location: {
                     lat: fakeUserLocation.lat,
@@ -124,22 +140,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
 
             if (userDoc.exists()) {
-                const userData = userDoc.data() as IUser;
+                const userData = userDoc.data();
+
+                // Récupérer les amis par leurs IDs
+                const friendsIds = userData.friends || [];
+                let friends: IUser[] = [];
+                if (friendsIds.length > 0) {
+                    const friendsDocs = await Promise.all(
+                        friendsIds.map((id: string) => getDoc(doc(firestore, "users", id)))
+                    );
+                    friends = friendsDocs
+                        .filter((doc) => doc.exists())
+                        .map((doc) => doc.data() as IUser);
+                }
+
+                // Mise à jour de l'état utilisateur
                 setUser({
                     userId: firebaseUser.uid,
                     email: userData.email,
                     username: userData.username,
                     birthdate: userData.birthdate,
                     locale: userData.locale,
-                    following: userData.following,
+                    friends: friends,
                     subscribedTo: userData.subscribedTo,
                     location: {
                         lat: fakeUserLocation.lat,
                         long: fakeUserLocation.long,
                         latDelta: fakeUserLocation.latDelta,
                         longDelta: fakeUserLocation.longDelta,
-                    }
+                    },
                 });
+
                 console.log('User signed in:', userData);
             } else {
                 console.error('User document not found in Firestore');
@@ -154,6 +185,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return false;
         }
     };
+
 
     const signOut = async () => {
         setIsLoading(true);

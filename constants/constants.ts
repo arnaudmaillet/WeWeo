@@ -1,17 +1,11 @@
 export const THEME = {
     colors: {
-        primary: '#6058ff',
+        primary: '#6A89CC',
         secondary: '#dedcff',
-        accent: '#2bffc2',
+        accent: '#FFD580',
         text: {
             black : '#212427',
             white: '#F2F2F2'
-        },
-        background: {
-            main: '#F4F3F2',
-            lighter_x1: '#FAFAFA',
-            lignter_x2: '#FEFEFE',
-            darker_x1: '#E8E7E5',
         },
         border: '#000000',
         shadow: '#000000',
@@ -20,6 +14,13 @@ export const THEME = {
         warning: '#FFA500',
         info: '#00BFFF',
         disabled: '#A9A9A9',
+        grayscale: {
+            main: '#F4F3F2',
+            lighter_x1: '#FAFAFA',
+            lighter_x2: '#FEFEFE',
+            darker_x1: '#E8E7E5',
+            darker_x2: '#D9D8D6'
+        }
     },
     fonts: {
         primary: 'Arial',

@@ -6,14 +6,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { IMarkerChatScreen } from '~/types/MarkerInterfaces';
+import { IMarkerChatScreen, IMessage } from '~/types/MarkerInterfaces';
 
 import Stickers from './Stickers';
 import Message from './Message';
 
-import { useMarker } from '~/providers/MarkerProvider';
+import { useMarker } from '~/contexts/MarkerProvider';
 import { THEME } from '~/constants/constants';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useMap } from '~/contexts/MapProvider';
 
 
 const MAX_ICONS_PER_ROW = 5;
@@ -26,6 +27,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
     const inputRef = useRef<TextInput>(null);
 
     const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage, subscribe, isSubscribed } = useMarker();
+    const { mapRef } = useMap()
 
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -39,7 +41,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         if (marker.label === '') {
             inputRef.current?.focus()
         }
-    }, [marker])
+    }, [marker.markerId])
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardWillShow', (e: any) => {
@@ -57,10 +59,38 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
             keyboardDidShowListener.remove();
             keyboardDidHideListener.remove();
         };
-    }, []);
+    }, [messages]);
+
+    const combineMessages = (messages: IMessage[]) => {
+        return messages.reduce((acc: IMessage[], curr: IMessage) => {
+            const lastMessage: IMessage = acc[acc.length - 1];
+            if (lastMessage && lastMessage.senderId === curr.senderId) {
+                // If the sender is the same as the last message, combine the content
+                lastMessage.content += `\n${curr.content}`;
+                lastMessage.combinedKey += `_${curr.messageId}`;
+            } else {
+                // Otherwise, push a new message item to the array
+                acc.push({ ...curr });
+            }
+            return acc;
+        }, []);
+    };
+
 
     const handleShowStickers = () => {
         setShowStickers(true);
+    }
+
+    const test = () => {
+        mapRef.current?.animateCamera(
+            {
+                center: {
+                    latitude: 37.7749,
+                    longitude: -122.4194,
+                },
+            },
+            { duration: 1000 }
+        );
     }
 
     const renderUserIcons = () => {
@@ -105,7 +135,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
             <Animated.View
                 style={styles.messageSection}
                 entering={StretchInY.springify().damping(17)}
-                exiting={SlideOutDown}
+                exiting={SlideOutDown.springify().damping(17)}
             >
                 {/* Header Bandeau */}
                 <View style={styles.markerHeader}>
@@ -127,7 +157,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                         entering={FadeInRight.springify().damping(20)}
                         key={isSubscribed.toString()}
                     >
-                        <TouchableOpacity style={styles.subscribeContainer} onPress={subscribe}>
+                        <TouchableOpacity style={styles.subscribeContainer} onPress={test}>
                             <View style={[
                                 styles.subscribeIcon,
                                 { backgroundColor: isSubscribed ? THEME.colors.primary : 'transparent' },
@@ -146,14 +176,20 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
                 <FlatList
                     ref={flatListRef}
-                    data={messages}
-                    renderItem={({ item, index }) => (
-                        <Message
-                            key={item.messageId}
-                            item={item}
-                            previousSender={index > 0 ? messages[index - 1].senderInfo : null}
-                        />
-                    )}
+                    data={combineMessages(messages)}
+                    renderItem={({ item, index }) => {
+                        // Check if there is a previous message and if it is from the same sender
+                        const previousMessage = index > 0 ? messages[index - 1] : null;
+                        const isSameUser = previousMessage && previousMessage.senderId === item.senderId;
+
+                        return (
+                            <Message
+                                key={item.messageId}
+                                item={item}
+                                previousMessage={isSameUser ? previousMessage : null}
+                            />
+                        );
+                    }}
                     keyExtractor={(_, index) => index.toString()}
                     contentContainerStyle={[styles.messageList, { paddingBottom: keyboardHeight }]}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
@@ -256,8 +292,8 @@ const styles = StyleSheet.create({
         padding: 10,
         overflow: 'hidden',
         borderBottomWidth: 0.5,
-        borderColor: THEME.colors.background.darker_x1,
-        backgroundColor: THEME.colors.background.darker_x1,
+        borderColor: THEME.colors.grayscale.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_x1,
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
     },
@@ -280,7 +316,7 @@ const styles = StyleSheet.create({
     userStackIconContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
         borderWidth: .5,
         borderColor: 'gray',
         borderRadius: 10,
@@ -347,7 +383,7 @@ const styles = StyleSheet.create({
     messageSection: {
         flex: 10,
         width: '100%',
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
         borderWidth: 0.5,
@@ -362,6 +398,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'flex-start',
         paddingHorizontal: 10,
+        paddingVertical: 10
     },
     // Bouton pour fermer les stickers
     closeStickerButton: {
@@ -383,7 +420,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
         borderWidth: 1,
@@ -393,7 +430,7 @@ const styles = StyleSheet.create({
     // Zone d'entrée de texte
     messageInput: {
         flex: 1,
-        backgroundColor: THEME.colors.background.main,
+        backgroundColor: THEME.colors.grayscale.main,
     },
     // Bouton pour afficher les stickers
     toggleStickerButton: {

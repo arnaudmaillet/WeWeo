@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import Animated, { BounceIn, SlideInDown, SlideInRight } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import { useKeyboard } from '~/providers/KeyboardProvider';
-import { useAuth } from '~/providers/AuthProvider';
+import { useKeyboard } from '~/contexts/KeyboardProvider';
+import { useAuth } from '~/contexts/AuthProvider';
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
