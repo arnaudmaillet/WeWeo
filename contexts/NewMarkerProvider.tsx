@@ -24,7 +24,7 @@ export interface NewMarkerContextProps {
 export const NewMarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const { newMarker } = useMap();
-    const { setActiveWindow } = useWindow()
+    const { setActive: setActiveWindow } = useWindow()
 
     const dotAnimation = useRef(new Animated.Value(0)).current;
     const closeAnimation = useRef(new Animated.Value(0)).current;

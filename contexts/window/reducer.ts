@@ -1,16 +1,16 @@
 import { WindowState, WindowAction, WindowType, WindowActionType } from "./types";
 
 export const initialState: WindowState = {
-    activeWindow: WindowType.DEFAULT,
-    isWindowLoaded: false,
+    active: WindowType.DEFAULT,
+    isLoaded: false,
 };
 
 export const reducer = (state: WindowState, action: WindowAction): WindowState => {
     switch (action.type) {
-        case WindowActionType.SET_ACTIVE_WINDOW:
-            return { ...state, activeWindow: action.payload };
-        case WindowActionType.SET_WINDOW_LOADED:
-            return { ...state, isWindowLoaded: action.payload };
+        case WindowActionType.SET_ACTIVE:
+            return { ...state, active: action.payload };
+        case WindowActionType.SET_LOADED:
+            return { ...state, isLoaded: action.payload };
         default:
             throw new Error(`Unhandled action type: ${JSON.stringify(action)}`);
     }

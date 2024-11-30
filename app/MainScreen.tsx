@@ -25,7 +25,7 @@ const MainScreen = () => {
     const keyboardHeight = useSharedValue(0);
 
     const { keyboardProps } = useKeyboard();
-    const { state, setActiveWindow } = useWindow()
+    const { state: windowState, setActive: setActiveWindow } = useWindow()
 
 
     const dismissKeyboard = () => {
@@ -146,7 +146,7 @@ const MainScreen = () => {
 
 
     const renderWindow = () => {
-        switch (state.activeWindow) {
+        switch (windowState.active) {
             case WindowType.CHAT:
                 return (
                     marker && (

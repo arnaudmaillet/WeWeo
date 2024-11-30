@@ -5,15 +5,15 @@ export enum WindowType {
 }
 
 export interface WindowState {
-    activeWindow: WindowType;
-    isWindowLoaded: boolean;
+    active: WindowType;
+    isLoaded: boolean;
 }
 
 export enum WindowActionType {
-    SET_ACTIVE_WINDOW = "SET_ACTIVE_WINDOW",
-    SET_WINDOW_LOADED = "SET_WINDOW_LOADED"
+    SET_ACTIVE = "SET_ACTIVE",
+    SET_LOADED = "SET_LOADED"
 }
 
 export type WindowAction =
-    | { type: WindowActionType.SET_ACTIVE_WINDOW; payload: WindowType }
-    | { type: WindowActionType.SET_WINDOW_LOADED; payload: boolean };
+    | { type: WindowActionType.SET_ACTIVE; payload: WindowType }
+    | { type: WindowActionType.SET_LOADED; payload: boolean };

@@ -20,7 +20,7 @@ const NewMarkerModal = () => {
         animateMarkersEntering,
         animateMarkersExiting,
     } = useNewMarker();
-    const { setActiveWindow } = useWindow()
+    const { setActive: setActiveWindow } = useWindow()
     const [columns, setColumns] = useState(2);
 
     useEffect(() => {

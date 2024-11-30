@@ -1,6 +1,6 @@
 import { Modal, StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown, FadeInUp, FadeInDown, FadeOutUp, FadeOutDown } from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, ZoomInEasyDown, interpolateColor, SlideInDown, SlideOutDown, FadeInUp, FadeInDown, FadeOutUp, FadeOutDown, runOnJS } from 'react-native-reanimated'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useAuth } from '~/contexts/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
@@ -8,7 +8,6 @@ import { useMap } from '~/contexts/MapProvider';
 import { ISwitch } from '~/types/SwitchInterface';
 import Switch from './Switch';
 import { THEME } from '~/constants/constants';
-import { WindowType } from '~/contexts/window/types';
 import { useWindow } from '~/contexts/window/Context';
 
 interface SearchMenuProps {
@@ -84,7 +83,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     const [modalVisible, setModalVisible] = useState(false);
 
     const { user, isLoading, signOut } = useAuth();
-    const { state } = useWindow()
+    const { state: windowState, setLoaded: setWindowLoaded } = useWindow()
     const { category, setCategory, displayMarkersForUser, setDisplayMarkersForUser } = useMap();
 
     const isTyping = searchContent !== '';
@@ -191,7 +190,12 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     }
 
     return (
-        <Animated.View key={state.activeWindow} style={[styles.container]} entering={FadeInDown.springify()} exiting={FadeOutDown.springify()}>
+        <Animated.View
+            key={windowState.active}
+            style={[styles.container]}
+            entering={FadeInDown.springify()}
+            exiting={FadeOutDown.springify().withCallback(() => runOnJS(setWindowLoaded)(true))}
+        >
             {/* <FlatList
                 data={getFollowingAccounts()}
                 horizontal={true}

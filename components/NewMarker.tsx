@@ -1,10 +1,9 @@
-import { ActivityIndicator, FlatList, LayoutChangeEvent, StyleSheet, Text, TextInput, View } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOut, FadeOutDown, interpolateColor, runOnJS, SlideInDown, SlideOutDown, useAnimatedStyle, useSharedValue, withTiming, ZoomInEasyDown, LinearTransition, withSpring, SlideInUp, FadeOutUp } from 'react-native-reanimated'
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
+import React, { useState } from 'react'
+import Animated, { FadeInDown, FadeInUp, FadeOut, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { INPUT, THEME } from '~/constants/constants'
 import { useMap } from '~/contexts/MapProvider'
-import { WindowType } from '~/contexts/window/types'
 import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler'
 import { IUser } from '~/types/UserInterfaces'
 import { useAuth } from '~/contexts/AuthProvider'
@@ -31,11 +30,10 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
 
     const { newMarker, addMarker } = useMap();
     const { user } = useAuth();
-    const { state } = useWindow()
+    const { state: windowState, setLoaded: setWindowLoaded } = useWindow()
 
     const friendsContainer = useSharedValue(0)
     const [heightContainer, setHeightContainer] = useState(0)
-    const [isComponentLoaded, setIsComponentLoaded] = useState<boolean>(false)
 
     const handleFriendSelect = (friendId: string) => {
         setSelectedFriends((prev) =>
@@ -52,7 +50,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
 
     // Style animé
     const animatedStyle = useAnimatedStyle(() => ({
-        height: isComponentLoaded ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
+        height: windowState.isLoaded ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
             finished && runOnJS(setDamplingValue)(14)
         }) : undefined
     }));
@@ -103,7 +101,14 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
     };
 
     return (
-        <Animated.View style={[animatedStyle, styles.container, { minHeight: heightContainer }]} key={state.activeWindow} entering={FadeInDown.springify().withCallback(() => runOnJS(setIsComponentLoaded)(true))} exiting={FadeOutDown.springify()}>
+        <Animated.View
+            style={
+                [animatedStyle, styles.container, { minHeight: heightContainer }]
+            }
+            key={windowState.active}
+            entering={FadeInDown.springify().withCallback(() => runOnJS(setWindowLoaded)(true))}
+            exiting={FadeOutDown.springify()}
+        >
             <Animated.View
                 style={styles.friendsContainer} onLayout={(event) => {
                     const { height } = event.nativeEvent.layout;
@@ -153,12 +158,12 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                         </TouchableOpacity>
                         {
                             user?.friends.length && user?.friends.length > 0 ? <TouchableOpacity
-                                disabled={isComponentLoaded === false}
+                                disabled={!windowState.isLoaded}
                                 style={[styles.optionButton, selectedOption === Selector.FRIENDS && styles.selectedOption]}
                                 onPress={() => setSelectedOption(Selector.FRIENDS)}
                             >
                                 {
-                                    isComponentLoaded ?
+                                    windowState.isLoaded ?
                                         <MaterialIcons
                                             name="group"
                                             size={16}

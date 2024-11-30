@@ -4,8 +4,8 @@ import { WindowActionType, WindowState, WindowType } from "./types";
 
 interface ContextProps {
     state: WindowState;
-    setActiveWindow: (window: WindowType) => void;
-    setWindowLoaded: (isLoaded: boolean) => void;
+    setActive: (window: WindowType) => void;
+    setLoaded: (isLoaded: boolean) => void;
 }
 
 const WindowContext = createContext<ContextProps | undefined>(undefined);
@@ -13,16 +13,18 @@ const WindowContext = createContext<ContextProps | undefined>(undefined);
 export const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    const setActiveWindow = (window: WindowType) => {
-        dispatch({ type: WindowActionType.SET_ACTIVE_WINDOW, payload: window })
+    // don'4t forget to setWindowLoaded to true on the exiting callback animations (reanimated)
+    const setActive = (window: WindowType) => {
+        setLoaded(false)
+        dispatch({ type: WindowActionType.SET_ACTIVE, payload: window })
     }
 
-    const setWindowLoaded = (isLoaded: boolean) => {
-        dispatch({ type: WindowActionType.SET_WINDOW_LOADED, payload: isLoaded })
+    const setLoaded = (isLoaded: boolean) => {
+        dispatch({ type: WindowActionType.SET_LOADED, payload: isLoaded })
     }
 
     return (
-        <WindowContext.Provider value={{ state, setActiveWindow, setWindowLoaded }}>
+        <WindowContext.Provider value={{ state, setActive, setLoaded }}>
             {children}
         </WindowContext.Provider>
     );
