@@ -49,8 +49,6 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     useEffect(() => {
         if (user) {
             const unsubscribe = fetchMarkers();
-
-            // Arrêter l'observation lorsque le composant est démonté
             return () => unsubscribe();
         } else {
             setMarkers(null);

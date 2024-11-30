@@ -29,12 +29,12 @@ const NewMarkerModal = () => {
 
     useEffect(() => {
         enteringNewMarkerAnimation();
-    }, [markerState.newMarker?.coordinates]);
+    }, [markerState.new?.coordinates]);
 
     const handleButtonPress = useCallback(
         (type: MarkerType) => {
 
-            if (markerState.newMarker?.type === type) {
+            if (markerState.new?.type === type) {
                 updateNewMarker({ type: MarkerType.DEFAULT });
                 setActiveWindow(WindowType.DEFAULT)
             } else {
@@ -42,14 +42,14 @@ const NewMarkerModal = () => {
                 setActiveWindow(WindowType.NEW_MARKER)
             }
         },
-        [markerState.newMarker, updateNewMarker]
+        [markerState.new, updateNewMarker]
     );
 
     return (
         <Marker
             coordinate={{
-                latitude: markerState.newMarker?.coordinates.lat || 0,
-                longitude: markerState.newMarker?.coordinates.long || 0,
+                latitude: markerState.new?.coordinates.lat || 0,
+                longitude: markerState.new?.coordinates.long || 0,
             }}
         >
             <View style={[styles.container, { width: columns * 60 - 10 }]}>
@@ -66,20 +66,20 @@ const NewMarkerModal = () => {
                                 <TouchableOpacity
                                     style={[
                                         styles.button,
-                                        markerState.newMarker?.type === MarkerType.CHAT && styles.activeBackground,
+                                        markerState.new?.type === MarkerType.CHAT && styles.activeBackground,
                                     ]}
                                     onPress={() => handleButtonPress(MarkerType.CHAT)}
                                 >
                                     {React.cloneElement(_.icon.component, {
                                         name: _.icon.label,
-                                        color: markerState.newMarker?.type === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
+                                        color: markerState.new?.type === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
                                         size: _.icon.size,
                                         style: styles.buttonIcon,
                                     })}
                                     <Text
                                         style={[
                                             styles.buttonText,
-                                            markerState.newMarker?.type === MarkerType.CHAT && styles.activeColor,
+                                            markerState.new?.type === MarkerType.CHAT && styles.activeColor,
                                         ]}
                                     >
                                         Chat

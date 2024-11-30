@@ -5,7 +5,6 @@ import MapView, { Marker } from 'react-native-maps';
 import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
-import { IMarker } from '../types/MarkerInterfaces';
 import { useMap } from '~/contexts/MapProvider';
 import NewMarkerModal from './NewMarkerModal';
 
@@ -18,15 +17,20 @@ import { WindowType } from '~/contexts/window/types';
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useMarker } from '~/contexts/marker/Context'
-import { MarkerType } from '~/contexts/marker/types';
+import { IMarker, MarkerType } from '~/contexts/marker/types';
 
 const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
 
-    const { mapRef, markers, marker, setMarker, setCamera } = useMap();
+    const { mapRef, setCamera } = useMap();
     const { setActive: setActiveWindow } = useWindow()
-    const { state: markerState, exitingAnimation: exitingNewMarkerAnimation, setNew: setNewMarker } = useMarker()
+    const {
+        state: markerState,
+        exitingAnimation: exitingNewMarkerAnimation,
+        setNew: setNewMarker,
+        setActive: setActiveMarker
+    } = useMarker()
 
     const previousMarkersRef = useRef<IMarker[]>([]); // Référence pour stocker les anciens marqueurs
 
@@ -41,8 +45,8 @@ const Map: React.FC<IMap> = () => {
     const [zoomLevel, setZoomLevel] = useState(0);
 
     const [containerSizes, setContainerSizes] = useState<{ [key: string]: { width: number; height: number } }>({});
-    const [iconAnimations, setIconAnimations] = useState<Animated.Value[]>((markers || []).map(() => new Animated.Value(1)));
-    const [textAnimations, setTextAnimations] = useState<Animated.Value[]>((markers || []).map(() => new Animated.Value(0)));
+    const [iconAnimations, setIconAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(1)));
+    const [textAnimations, setTextAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(0)));
 
 
     // const [points] = useClusterer(
@@ -75,30 +79,30 @@ const Map: React.FC<IMap> = () => {
     };
 
     const [scaleAnimations, setScaleAnimations] = useState<Animated.Value[]>(
-        markers?.map(() => new Animated.Value(0)) || []
+        markerState.list.map(() => new Animated.Value(0)) || []
     ); // Initialiser les animations de scale
 
     useEffect(() => {
-        if (markers) {
+        if (markerState.list) {
             setIconAnimations(prev => [
                 ...prev,
-                ...markers.slice(prev.length).map(() => new Animated.Value(1)),
+                ...markerState.list.slice(prev.length).map(() => new Animated.Value(1)),
             ]);
 
             setTextAnimations(prev => [
                 ...prev,
-                ...markers.slice(prev.length).map(() => new Animated.Value(0)),
+                ...markerState.list.slice(prev.length).map(() => new Animated.Value(0)),
             ]);
 
             setScaleAnimations(prev => [
                 ...prev,
-                ...markers.slice(prev.length).map(() => new Animated.Value(0)),
+                ...markerState.list.slice(prev.length).map(() => new Animated.Value(0)),
             ]);
         }
-    }, [markers]);
+    }, [markerState.list]);
 
     const animateToClosestMarker = (closestMarkerId: string) => {
-        markers && markers.forEach((marker, index) => {
+        markerState.list.forEach((marker: IMarker, index: number) => {
             if (marker.markerId === closestMarkerId) {
                 if (iconAnimations[index] && textAnimations[index]) {
                     // Animer pour faire apparaître le texte et disparaître l'icône
@@ -142,8 +146,8 @@ const Map: React.FC<IMap> = () => {
                 setCamera(camera);
             });
             setMarkerSnap(point);
-            setMarker(point);
-            if (markerState.newMarker) {
+            setActiveMarker(point);
+            if (markerState.new) {
                 exitingNewMarkerAnimation(WindowType.CHAT);
             } else {
                 setActiveWindow(WindowType.CHAT)
@@ -166,15 +170,15 @@ const Map: React.FC<IMap> = () => {
     };
 
     useEffect(() => {
-        if (marker && mapRef.current) {
-            setMarkerSnap(marker);
-            setClosestMarker(marker);
+        if (markerState.active && mapRef.current) {
+            setMarkerSnap(markerState.active);
+            setClosestMarker(markerState.active);
 
             mapRef.current.animateCamera(
                 {
                     center: {
-                        latitude: marker.coordinates.lat,
-                        longitude: marker.coordinates.long,
+                        latitude: markerState.active.coordinates.lat,
+                        longitude: markerState.active.coordinates.long,
                     },
                 },
                 { duration: 1000 }
@@ -182,7 +186,7 @@ const Map: React.FC<IMap> = () => {
         }
 
 
-        if (!marker && markerSnap && mapRef.current) {
+        if (!markerState.active && markerSnap && mapRef.current) {
 
             mapRef.current.animateCamera(
                 {
@@ -195,16 +199,16 @@ const Map: React.FC<IMap> = () => {
             );
             setMarkerSnap(null);
         }
-    }, [marker?.markerId]);
+    }, [markerState.active?.markerId]);
 
     useEffect(() => {
         const previousMarkers = previousMarkersRef.current;
-        const newMarkers = markers?.filter((marker: IMarker) =>
+        const newMarkers = markerState.list.filter((marker: IMarker) =>
             !previousMarkers.some(prevMarker => prevMarker.markerId === marker.markerId)
         );
 
         if (newMarkers && newMarkers.length > 0) {
-            const updatedAnimations = markers?.map((marker, index) =>
+            const updatedAnimations = markerState.list.map((marker: IMarker, index: number) =>
                 newMarkers.some(newMarker => newMarker.markerId === marker.markerId)
                     ? new Animated.Value(0)
                     : scaleAnimations[index] || new Animated.Value(1)
@@ -212,10 +216,10 @@ const Map: React.FC<IMap> = () => {
             setScaleAnimations(updatedAnimations || []);
         }
 
-        if (markers) {
-            previousMarkersRef.current = markers;
+        if (markerState.list) {
+            previousMarkersRef.current = markerState.list;
         }
-    }, [markers]);
+    }, [markerState.list]);
 
 
     useEffect(() => {
@@ -229,13 +233,13 @@ const Map: React.FC<IMap> = () => {
                 }).start();
             }, 0); // Délai aléatoire
         });
-    }, [scaleAnimations, markers]);
+    }, [scaleAnimations, markerState.list]);
 
     const findClosestMarker = (center: { lat: number; lon: number }) => {
         let closest = null;
         let minDistance = Infinity;
 
-        markers && markers.forEach(marker => {
+        markerState.list.forEach((marker: IMarker) => {
             const distance = haversine(center, {
                 lat: marker.coordinates.lat,
                 lon: marker.coordinates.long
@@ -271,7 +275,7 @@ const Map: React.FC<IMap> = () => {
                 mapPadding={{
                     top: 0,
                     right: screenDimensions.width * 0.05,
-                    bottom: marker ? screenDimensions.height * 0.78 : 0,
+                    bottom: markerState.active ? screenDimensions.height * 0.78 : 0,
                     left: screenDimensions.width * 0.05,
                 }}
                 showsPointsOfInterest={false}
@@ -294,64 +298,63 @@ const Map: React.FC<IMap> = () => {
             >
                 <NewMarkerModal />
 
-                {markers &&
-                    markers.map((marker: any, index: any) => {
-                        return (
-                            <Marker
-                                key={marker.markerId}
-                                coordinate={{
-                                    latitude: marker.coordinates.lat,
-                                    longitude: marker.coordinates.long,
-                                }}
+                {markerState.list.map((marker: any, index: any) => {
+                    return (
+                        <Marker
+                            key={marker.markerId}
+                            coordinate={{
+                                latitude: marker.coordinates.lat,
+                                longitude: marker.coordinates.long,
+                            }}
+                        >
+                            <Animated.View
+                                style={[
+                                    {
+                                        transform: [
+                                            { scale: scaleAnimations[index] || new Animated.Value(1) },
+                                            {
+                                                translateY: scaleAnimations[index]?.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [-20, 0],
+                                                }) || 0
+                                            },
+                                        ],
+                                    },
+                                ]}
                             >
-                                <Animated.View
-                                    style={[
-                                        {
-                                            transform: [
-                                                { scale: scaleAnimations[index] || new Animated.Value(1) },
-                                                {
-                                                    translateY: scaleAnimations[index]?.interpolate({
-                                                        inputRange: [0, 1],
-                                                        outputRange: [-20, 0],
-                                                    }) || 0
-                                                },
-                                            ],
-                                        },
-                                    ]}
-                                >
-                                    <View style={styles.pillInnerContainer}>
-                                        <View
+                                <View style={styles.pillInnerContainer}>
+                                    <View
+                                        style={[
+                                            styles.pillInnerContainer,
+                                            containerSizes[marker.markerId] || { width: 50, height: 30 }
+                                        ]}
+                                    >
+                                        <Animated.View style={[styles.pillIcon, { opacity: iconAnimations[index] }]}>
+                                            <TouchableOpacity onPress={() => handlePressMarker(marker)}>
+                                                <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
+                                            </TouchableOpacity>
+                                        </Animated.View>
+
+                                        <Animated.View
+                                            onLayout={(event) => handleTextLayout(marker.markerId, event)}
                                             style={[
-                                                styles.pillInnerContainer,
-                                                containerSizes[marker.markerId] || { width: 50, height: 30 }
+                                                styles.pillTextContainer,
+                                                { opacity: textAnimations[index] }
                                             ]}
                                         >
-                                            <Animated.View style={[styles.pillIcon, { opacity: iconAnimations[index] }]}>
-                                                <TouchableOpacity onPress={() => handlePressMarker(marker)}>
-                                                    <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
-                                                </TouchableOpacity>
-                                            </Animated.View>
-
-                                            <Animated.View
-                                                onLayout={(event) => handleTextLayout(marker.markerId, event)}
-                                                style={[
-                                                    styles.pillTextContainer,
-                                                    { opacity: textAnimations[index] }
-                                                ]}
-                                            >
-                                                <TouchableOpacity onPress={() => handlePressMarker(marker)}>
-                                                    <Text style={styles.pillText}>
-                                                        {marker?.label}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            </Animated.View>
-                                        </View>
+                                            <TouchableOpacity onPress={() => handlePressMarker(marker)}>
+                                                <Text style={styles.pillText}>
+                                                    {marker?.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </Animated.View>
                                     </View>
-                                </Animated.View>
+                                </View>
+                            </Animated.View>
 
-                            </Marker>
-                        );
-                    })}
+                        </Marker>
+                    );
+                })}
             </MapView>
         </View>
     );
