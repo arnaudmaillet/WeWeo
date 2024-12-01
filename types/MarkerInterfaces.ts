@@ -14,7 +14,6 @@ export enum MimeTypes {
 
 export interface IFile {
     name: string,
-    uri: string,
     url: string,
     type: MimeTypes
 }

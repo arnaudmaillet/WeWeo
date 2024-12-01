@@ -7,7 +7,6 @@ import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/window/Context"
 import { useAuth } from "../AuthProvider";
 import { initialMarkerState, markerReducer } from "./reducer";
-import MapView from "react-native-maps";
 import { IMarker, INewMarker, MarkerActionType, MarkerState } from "./types";
 import { addDoc, collection, GeoPoint, onSnapshot, query, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
@@ -33,8 +32,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { setActive: setActiveWindow } = useWindow()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
-
-    const mapRef = useRef<MapView | null>(null);
 
     const dotAnimation = useRef(new Animated.Value(0)).current;
     const closeAnimation = useRef(new Animated.Value(0)).current;

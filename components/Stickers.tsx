@@ -5,7 +5,7 @@ import Animated, { BounceIn } from 'react-native-reanimated';
 import { IFile, MimeTypes } from '~/types/MarkerInterfaces';
 import { useMarker } from '~/contexts/MarkerProvider';
 
-// const stickers: IFile[] = [
+// export const stickers: IFile[] = [
 //     { name: "sticker1", uri: require('~/assets/stickers/sticker1.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },
 //     { name: "sticker2", uri: require('~/assets/stickers/sticker2.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker2.gif", type: MimeTypes.GIF },
 //     { name: "sticker3", uri: require('~/assets/stickers/sticker3.gif'), url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif", type: MimeTypes.GIF },

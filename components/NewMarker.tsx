@@ -1,20 +1,34 @@
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
 import React, { useState } from 'react'
-import Animated, { FadeInDown, FadeInUp, FadeOut, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
+import Animated, { BounceIn, FadeIn, FadeInDown, FadeInUp, FadeOut, FadeOutDown, runOnJS, SlideInDown, SlideInUp, SlideOutDown, useAnimatedStyle, useSharedValue, withSpring, ZoomInEasyDown, ZoomInEasyUp, ZoomOutDown, ZoomOutEasyDown, ZoomOutEasyUp } from 'react-native-reanimated'
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { INPUT, THEME } from '~/constants/constants'
 import { useMap } from '~/contexts/MapProvider'
 import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler'
 import { IUser } from '~/types/UserInterfaces'
 import { useAuth } from '~/contexts/AuthProvider'
-import { IMarker } from '~/types/MarkerInterfaces'
 import { useWindow } from '~/contexts/window/Context'
 import { useMarker } from '~/contexts/marker/Context'
+import { Image } from 'expo-image';
+import { IFile, MimeTypes } from '~/types/MarkerInterfaces'
 
 enum Selector {
     EVERYONE = 'everyone',
     FRIENDS = 'friends',
 }
+
+const stickers: IFile[] = [
+    { name: "sticker1", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },
+    { name: "sticker2", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker2.gif", type: MimeTypes.GIF },
+    { name: "sticker3", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif", type: MimeTypes.GIF },
+    { name: "sticker4", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker4.gif", type: MimeTypes.GIF },
+    { name: "sticker5", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker5.gif", type: MimeTypes.GIF },
+    { name: "sticker6", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker6.gif", type: MimeTypes.GIF },
+    { name: "sticker7", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker7.gif", type: MimeTypes.GIF },
+    { name: "sticker8", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker8.gif", type: MimeTypes.GIF },
+    { name: "sticker9", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker9.gif", type: MimeTypes.GIF },
+    { name: "sticker10", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker10.gif", type: MimeTypes.GIF },
+];
 
 interface NewMarkerProps { }
 
@@ -24,7 +38,10 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
     const [inputValue, setInputValue] = useState<string>('')
     const [selectedOption, setSelectedOption] = useState<Selector>(Selector.EVERYONE)
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
+    const [selectedSticker, setSelectedSticker] = useState<IFile>()
     const [damplingValue, setDamplingValue] = useState<number>(100);
+    const [heightContainer, setHeightContainer] = useState(0)
+    const [isStickersOpen, setIsStickersOpen] = useState<boolean>(false)
 
     const { addMarker } = useMap();
     const { user } = useAuth();
@@ -32,7 +49,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
     const { state: markerState } = useMarker()
 
     const friendsContainer = useSharedValue(0)
-    const [heightContainer, setHeightContainer] = useState(0)
+
 
     const handleFriendSelect = (friendId: string) => {
         setSelectedFriends((prev) =>
@@ -40,14 +57,6 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
         );
     };
 
-    // const animatedStyle = useAnimatedStyle(() => {
-    //     return {
-    //         height: selectedOption === Selector.FRIENDS ? withSpring(275, { damping: 17 }) : withSpring(150, { damping: 17 })
-    //     };
-    // });
-
-
-    // Style animé
     const animatedStyle = useAnimatedStyle(() => ({
         height: windowState.isLoaded ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
             finished && runOnJS(setDamplingValue)(14)
@@ -99,6 +108,14 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
         );
     };
 
+    const renderSticker = ({ item }: { item: IFile }) => (
+        <TouchableOpacity onPress={() => setSelectedSticker(item)}>
+            <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
+                <Image source={{ uri: item.url }} style={styles.sticker} />
+            </Animated.View>
+        </TouchableOpacity>
+    );
+
     return (
         <Animated.View
             style={
@@ -114,7 +131,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                     friendsContainer.value = height
                 }}
             >
-                {selectedOption === Selector.FRIENDS &&
+                {selectedOption === Selector.FRIENDS && !isStickersOpen &&
                     <View style={{ padding: 10 }}>
                         <Animated.View style={{
                             backgroundColor: THEME.colors.grayscale.lighter_x1,
@@ -138,50 +155,73 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                 const { height } = event.nativeEvent.layout;
                 setHeightContainer(height)
             }}>
-                <View style={styles.accessSettingContainer}>
-                    <View style={styles.textContainer}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 16, color: THEME.colors.primary, marginBottom: 10 }}>Viewer Access</Text>
-                        <Text style={{ color: 'gray', marginBottom: 2 }}>Who can see this marker?</Text>
-                    </View>
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={[styles.optionButton, selectedOption === Selector.EVERYONE && styles.selectedOption]}
-                            onPress={() => setSelectedOption(Selector.EVERYONE)}
-                        >
-                            <Ionicons
-                                name="globe-outline"
-                                size={16}
-                                color={THEME.colors.primary}
+                {
+                    isStickersOpen ?
+                        <View style={styles.stickerContainer}>
+                            <FlatList
+                                contentContainerStyle={{ alignItems: 'center' }}
+                                data={stickers}
+                                renderItem={renderSticker}
+                                keyExtractor={(item) => item.name}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
                             />
-                            {selectedOption === Selector.EVERYONE && <Text style={styles.optionText}>Everyone</Text>}
-                        </TouchableOpacity>
-                        {
-                            user?.friends.length && user?.friends.length > 0 ? <TouchableOpacity
-                                disabled={!windowState.isLoaded}
-                                style={[styles.optionButton, selectedOption === Selector.FRIENDS && styles.selectedOption]}
-                                onPress={() => setSelectedOption(Selector.FRIENDS)}
-                            >
-                                {
-                                    windowState.isLoaded ?
-                                        <MaterialIcons
-                                            name="group"
+                        </View>
+                        :
+                        <View style={styles.accessSettingContainer}>
+                            <Animated.View key={isStickersOpen.toString()} exiting={FadeOut.springify()} style={{ width: '100%', flexDirection: 'row', }}>
+                                <View style={styles.textContainer}>
+                                    <Text style={{ fontWeight: 'bold', fontSize: 16, color: THEME.colors.primary, marginBottom: 10 }}>Viewer Access</Text>
+                                    <Text style={{ color: 'gray', marginBottom: 2 }}>Who can see this marker?</Text>
+                                </View>
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.optionButton,
+                                            selectedOption === Selector.EVERYONE && styles.selectedOption,
+                                        ]}
+                                        onPress={() => setSelectedOption(Selector.EVERYONE)}
+                                    >
+                                        <Ionicons
+                                            name="globe-outline"
                                             size={16}
                                             color={THEME.colors.primary}
-                                        /> :
-                                        <ActivityIndicator size={16} />
-                                }
+                                        />
+                                        {selectedOption === Selector.EVERYONE && <Text style={styles.optionText}>Everyone</Text>}
+                                    </TouchableOpacity>
+                                    {
+                                        user?.friends.length && user?.friends.length > 0 ? <TouchableOpacity
+                                            disabled={!windowState.isLoaded}
+                                            style={[
+                                                styles.optionButton,
+                                                selectedOption === Selector.FRIENDS && styles.selectedOption,
+                                            ]}
+                                            onPress={() => setSelectedOption(Selector.FRIENDS)}
+                                        >
+                                            {
+                                                windowState.isLoaded ?
+                                                    <MaterialIcons
+                                                        name="group"
+                                                        size={16}
+                                                        color={THEME.colors.primary}
+                                                    /> :
+                                                    <ActivityIndicator size={16} />
+                                            }
 
-                                {selectedOption === Selector.FRIENDS && <Text style={styles.optionText}>Friends</Text>}
-                            </TouchableOpacity> : <></>
-                        }
-
-                        <View />
-                    </View>
-                </View>
+                                            {selectedOption === Selector.FRIENDS && <Text style={styles.optionText}>Friends</Text>}
+                                        </TouchableOpacity> : undefined
+                                    }
+                                    <View />
+                                </View>
+                            </Animated.View>
+                        </View>
+                }
                 <View style={styles.column}>
-                    <View style={styles.iconContainer}>
-
-                    </View>
+                    <TouchableOpacity onPress={() => setIsStickersOpen(!isStickersOpen)} style={styles.iconContainer}>
+                        <Animated.View key={selectedSticker?.name} entering={ZoomInEasyDown} exiting={ZoomOutEasyUp}>
+                            <Image source={{ uri: selectedSticker ? selectedSticker.url : "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif" }} style={styles.sticker} />
+                        </Animated.View>
+                    </TouchableOpacity>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.input}
@@ -235,12 +275,20 @@ const styles = StyleSheet.create({
         position: "relative",
     },
     accessSettingContainer: {
+        overflow: 'hidden',
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        height: 70,
         width: '100%',
         backgroundColor: THEME.colors.grayscale.lighter_x1,
         borderRadius: 10,
         padding: 10,
+    },
+    stickerContainer: {
+        flexDirection: 'row',
+        height: 70,
+        width: '100%',
+        backgroundColor: THEME.colors.grayscale.lighter_x1,
+        borderRadius: 10
     },
     column: {
         flex: 1,
@@ -249,18 +297,18 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     buttonContainer: {
-        flex: 5,
+        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        alignItems: 'center',
+        flex: 4
     },
     textContainer: {
-        flex: 5,
         flexDirection: 'column',
-        alignItems: 'flex-start',
         justifyContent: 'flex-start',
+        flex: 5
     },
     optionButton: {
+        height: 35,
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 8,
@@ -323,12 +371,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     iconContainer: {
+        overflow: 'hidden',
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: THEME.colors.grayscale.darker_x1,
         borderRadius: 10,
-        padding: 10,
         marginTop: 10,
     },
     inputContainer: {
@@ -392,5 +440,9 @@ const styles = StyleSheet.create({
     selectedFriendText: {
         color: THEME.colors.text.black, // Couleur du texte pour l'ami sélectionné
         fontWeight: 'bold',
+    },
+    sticker: {
+        width: 60,
+        height: 50,
     },
 });
