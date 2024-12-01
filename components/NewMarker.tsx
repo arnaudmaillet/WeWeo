@@ -36,22 +36,19 @@ interface NewMarkerProps { }
 const NewMarker: React.FC<NewMarkerProps> = () => {
 
     const [inputValue, setInputValue] = useState<string>('')
-    const [selectedOption, setSelectedOption] = useState<Selector>(Selector.EVERYONE)
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
-    const [selectedSticker, setSelectedSticker] = useState<IFile>()
     const [damplingValue, setDamplingValue] = useState<number>(100);
     const [heightContainer, setHeightContainer] = useState(0)
     const [isStickersOpen, setIsStickersOpen] = useState<boolean>(false)
 
-    const { addMarker } = useMap();
     const { user } = useAuth();
     const { state: windowState, setLoaded: setWindowLoaded } = useWindow()
-    const { state: markerState } = useMarker()
+    const { state: markerState, updateNew: updateNewMarker, addNew: addNewMarker } = useMarker()
 
     const friendsContainer = useSharedValue(0)
 
 
-    const handleFriendSelect = (friendId: string) => {
+    const handleSelectFriend = (friendId: string) => {
         setSelectedFriends((prev) =>
             prev.includes(friendId) ? prev.filter(id => id !== friendId) : [...prev, friendId]
         );
@@ -63,29 +60,6 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
         }) : undefined
     }));
 
-
-    const submitMarker = async () => {
-        // if (markerState.newMarker) {
-        //     await addMarker({
-        //         ...newMarker,
-        //         label: inputValue,
-        //         minZoom: 15,
-        //         policy: {
-        //             isPrivate: selectedOption === Selector.EVERYONE ? false : true,
-        //             show: selectedOption === Selector.EVERYONE
-        //                 ? []
-        //                 : (selectedFriends.length > 0 ? [...selectedFriends, user?.userId!] : [])
-        //         },
-        //         subscribedUserIds: [],
-        //         connectedUserIds: [],
-        //         createdAt: new Date().getTime(),
-        //         senderId: user?.userId!,
-        //     } as IMarker);
-        //     setInputValue('');
-        //     setSelectedFriends([]);
-        // }
-    };
-
     const UserItem: React.FC<{ user: IUser }> = ({ user }) => {
         const isSelected = selectedFriends.includes(user.userId);
 
@@ -93,7 +67,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
             <View style={styles.flatListItem}>
                 <TouchableWithoutFeedback
                     style={[styles.accountIconContainer, isSelected && styles.selectedFriend]}
-                    onPress={() => handleFriendSelect(user.userId)}
+                    onPress={() => handleSelectFriend(user.userId)}
                 >
                     <Text style={[styles.accountIconText, isSelected && styles.selectedFriendText]}>
                         {user.username.slice(0, 2).toUpperCase()}
@@ -109,7 +83,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
     };
 
     const renderSticker = ({ item }: { item: IFile }) => (
-        <TouchableOpacity onPress={() => setSelectedSticker(item)}>
+        <TouchableOpacity onPress={() => updateNewMarker({ icon: item.url })}>
             <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
                 <Image source={{ uri: item.url }} style={styles.sticker} />
             </Animated.View>
@@ -131,7 +105,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                     friendsContainer.value = height
                 }}
             >
-                {selectedOption === Selector.FRIENDS && !isStickersOpen &&
+                {markerState.new?.policy.isPrivate === true && !isStickersOpen &&
                     <View style={{ padding: 10 }}>
                         <Animated.View style={{
                             backgroundColor: THEME.colors.grayscale.lighter_x1,
@@ -178,25 +152,35 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                                     <TouchableOpacity
                                         style={[
                                             styles.optionButton,
-                                            selectedOption === Selector.EVERYONE && styles.selectedOption,
+                                            markerState.new?.policy.isPrivate === false && styles.selectedOption,
                                         ]}
-                                        onPress={() => setSelectedOption(Selector.EVERYONE)}
+                                        onPress={() => updateNewMarker({
+                                            policy: {
+                                                isPrivate: false,
+                                                show: markerState.new?.policy.show || []
+                                            }
+                                        })}
                                     >
                                         <Ionicons
                                             name="globe-outline"
                                             size={16}
                                             color={THEME.colors.primary}
                                         />
-                                        {selectedOption === Selector.EVERYONE && <Text style={styles.optionText}>Everyone</Text>}
+                                        {markerState.new?.policy.isPrivate === false && <Text style={styles.optionText}>Everyone</Text>}
                                     </TouchableOpacity>
                                     {
                                         user?.friends.length && user?.friends.length > 0 ? <TouchableOpacity
                                             disabled={!windowState.isLoaded}
                                             style={[
                                                 styles.optionButton,
-                                                selectedOption === Selector.FRIENDS && styles.selectedOption,
+                                                markerState.new?.policy.isPrivate === true && styles.selectedOption,
                                             ]}
-                                            onPress={() => setSelectedOption(Selector.FRIENDS)}
+                                            onPress={() => updateNewMarker({
+                                                policy: {
+                                                    isPrivate: true,
+                                                    show: markerState.new?.policy.show || []
+                                                }
+                                            })}
                                         >
                                             {
                                                 windowState.isLoaded ?
@@ -208,7 +192,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                                                     <ActivityIndicator size={16} />
                                             }
 
-                                            {selectedOption === Selector.FRIENDS && <Text style={styles.optionText}>Friends</Text>}
+                                            {markerState.new?.policy.isPrivate === true && <Text style={styles.optionText}>Friends</Text>}
                                         </TouchableOpacity> : undefined
                                     }
                                     <View />
@@ -218,8 +202,8 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                 }
                 <View style={styles.column}>
                     <TouchableOpacity onPress={() => setIsStickersOpen(!isStickersOpen)} style={styles.iconContainer}>
-                        <Animated.View key={selectedSticker?.name} entering={ZoomInEasyDown} exiting={ZoomOutEasyUp}>
-                            <Image source={{ uri: selectedSticker ? selectedSticker.url : "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif" }} style={styles.sticker} />
+                        <Animated.View key={markerState.new?.icon} entering={ZoomInEasyDown} exiting={ZoomOutEasyUp}>
+                            <Image source={{ uri: markerState.new?.icon }} style={styles.sticker} />
                         </Animated.View>
                     </TouchableOpacity>
                     <View style={styles.inputContainer}>
@@ -228,7 +212,11 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                             maxLength={INPUT.max_length.first_message}
                             placeholder="Say something..."
                             value={inputValue}
-                            onChangeText={setInputValue}
+                            onChangeText={(e) => {
+                                setInputValue(e)
+                                updateNewMarker({ label: e })
+                            }
+                            }
                         />
                         <View style={styles.characterCountContainer}>
                             <Text style={[styles.characterCountText, { color: inputValue.length < 25 ? '#B0B0B0' : 'rgba(255,87,51,0.5)' }]}>{inputValue.length}/ {INPUT.max_length.first_message}</Text>
@@ -236,14 +224,14 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                     </View>
                     <TouchableOpacity
                         style={styles.sendContainer}
-                        onPress={submitMarker}
-                        disabled={selectedOption === Selector.FRIENDS && selectedFriends.length === 0}
+                        onPress={addNewMarker}
+                        disabled={markerState.new?.policy.isPrivate === true && selectedFriends.length === 0}
                     >
                         <MaterialCommunityIcons
                             name="send-circle"
                             size={35}
                             color={
-                                selectedOption === Selector.FRIENDS && selectedFriends.length === 0
+                                markerState.new?.policy.isPrivate === true && selectedFriends.length === 0
                                     ? THEME.colors.grayscale.darker_x1
                                     : THEME.colors.primary
                             }

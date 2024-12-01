@@ -13,16 +13,17 @@ export interface IPolicy {
 export interface INewMarker {
     coordinates: ICoordinates;
     type: MarkerType;
+    icon: string;
+    label: string;
+    policy: IPolicy;
 }
 export interface IMarker extends INewMarker {
     markerId: string;
     createdAt: number;
     senderId: string;
-    label: string;
     minZoom: number;
     subscribedUserIds: string[];
     connectedUserIds: string[];
-    policy: IPolicy;
 }
 export interface MarkerState {
     list: IMarker[];

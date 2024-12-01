@@ -18,6 +18,7 @@ import { WindowType } from '~/contexts/window/types';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { useMarker } from '~/contexts/marker/Context'
 import { IMarker, MarkerType } from '~/contexts/marker/types';
+import { Image } from 'expo-image';
 
 const Map: React.FC<IMap> = () => {
 
@@ -165,7 +166,13 @@ const Map: React.FC<IMap> = () => {
                 lat: coordinate.latitude,
                 long: coordinate.longitude,
             },
-            type: MarkerType.DEFAULT
+            type: MarkerType.DEFAULT,
+            icon: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif",
+            policy: {
+                isPrivate: false,
+                show: []
+            },
+            label: ""
         });
     };
 
@@ -298,7 +305,7 @@ const Map: React.FC<IMap> = () => {
             >
                 <NewMarkerModal />
 
-                {markerState.list.map((marker: any, index: any) => {
+                {markerState.list.map((marker: IMarker, index: any) => {
                     return (
                         <Marker
                             key={marker.markerId}
@@ -331,7 +338,9 @@ const Map: React.FC<IMap> = () => {
                                     >
                                         <Animated.View style={[styles.pillIcon, { opacity: iconAnimations[index] }]}>
                                             <TouchableOpacity onPress={() => handlePressMarker(marker)}>
-                                                <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
+                                                {
+                                                    marker.icon ? <Image source={{ uri: marker.icon }} style={styles.sticker} /> : <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
+                                                }
                                             </TouchableOpacity>
                                         </Animated.View>
 
@@ -416,5 +425,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: THEME.colors.text.white,
         textAlign: 'center',
+    },
+    sticker: {
+        width: 50,
+        height: 40,
     },
 });

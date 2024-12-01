@@ -24,6 +24,7 @@ export interface MarkerContextProps {
     setNew: (marker: INewMarker | IMarker | null) => void
     updateNew: (updatedFields: Partial<INewMarker | IMarker>) => void
     setActive: (marker: IMarker | null) => void
+    addNew: () => void
 }
 
 export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -101,14 +102,20 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
     };
 
-    const addMarker = async (marker: IMarker): Promise<boolean> => {
-        if (!user || !marker) return false;
-        try {
-            const { coordinates, ...rest } = marker;
 
+    const addNew = async (): Promise<boolean> => {
+
+        if (!user || !state.new) return false;
+        try {
+            const { coordinates, ...rest } = state.new;
             await addDoc(collection(firestore, "markers"), {
                 coordinates: new GeoPoint(coordinates.lat, coordinates.long),
-                ...rest
+                ...rest,
+                minZoom: 15,
+                subscribedUserIds: [user.userId],
+                connectedUserIds: [],
+                senderId: user?.userId!,
+                createdAt: new Date().getTime(),
             });
 
             dispatch({ type: MarkerActionType.SET_NEW, payload: null });
@@ -170,6 +177,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             enteringAnimation,
             exitingAnimation,
             setNew,
+            addNew,
             updateNew,
             setActive
         }}>
