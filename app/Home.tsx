@@ -12,6 +12,7 @@ import { IMarker } from '~/types/MarkerInterfaces'
 import NewMarkerWindow from '~/windows/NewMarker'
 import { WindowType } from '~/contexts/window/types'
 import { useMarker } from '~/contexts/marker/Context'
+import MarkerChat from '~/components/MarkerChat'
 
 const _MAX_GESTURE_VERTICAL_OFFSET = -20
 
@@ -151,7 +152,7 @@ const MainScreen = () => {
                 return (
                     marker && (
                         <>
-                            {/* <AnimatedPressable
+                            <AnimatedPressable
                                 style={styles.backdrop}
                                 onPress={() => {
                                     dismissKeyboard();
@@ -169,7 +170,7 @@ const MainScreen = () => {
                                         <MarkerChat marker={marker} />
                                     </KeyboardAvoidingView>
                                 </Animated.View>
-                            </GestureDetector> */}
+                            </GestureDetector>
                         </>
                     )
                 )

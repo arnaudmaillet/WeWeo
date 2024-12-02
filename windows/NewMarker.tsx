@@ -160,7 +160,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                             entering={windowState.isLoaded ? ZoomInEasyDown : undefined}
                             exiting={ZoomOutEasyUp}
                         >
-                            <Image source={{ uri: markerState.new?.icon }} style={styles.stickerPreview} />
+                            <Image source={{ uri: markerState.new?.icon }} style={styles.stickerPreview} contentFit='contain' />
                         </Animated.View>
                     </TouchableOpacity>
                     <View style={styles.messageInputWrapper}>
@@ -317,7 +317,6 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     iconWrapper: {
-        overflow: 'hidden',
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
