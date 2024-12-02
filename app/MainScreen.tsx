@@ -9,7 +9,7 @@ import { useMap } from '~/contexts/MapProvider'
 import { useWindow } from '~/contexts/window/Context'
 
 import { IMarker } from '~/types/MarkerInterfaces'
-import NewMarker from '~/components/NewMarker'
+import NewMarker from '~/components/newMarker/NewMarker'
 import { WindowType } from '~/contexts/window/types'
 import { useMarker } from '~/contexts/marker/Context'
 

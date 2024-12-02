@@ -7,19 +7,22 @@ import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 interface FriendsListProps {
     selected: string[]
-    setSelected: Dispatch<SetStateAction<string[]>>
+    setSelected: (friendsIds: string[]) => void
 }
 
 const FriendsList: FC<FriendsListProps> = ({ selected, setSelected }) => {
 
     const { user } = useAuth()
+
     if (!user) return
 
     const handleSelect = (friendId: string) => {
-        setSelected((prev) =>
-            prev.includes(friendId) ? prev.filter(id => id !== friendId) : [...prev, friendId]
-        );
+        const updatedList = selected.includes(friendId)
+            ? selected.filter((id) => id !== friendId)
+            : [...selected, friendId];
+        setSelected(updatedList);
     };
+
 
     const userItem = ({ item }: { item: IUser }) => {
 

@@ -6,7 +6,7 @@ import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
 import { useMap } from '~/contexts/MapProvider';
-import NewMarkerModal from './NewMarkerModal';
+import NewMarkerModal from './newMarker/NewMarkerModal';
 
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
@@ -339,7 +339,7 @@ const Map: React.FC<IMap> = () => {
                                         <Animated.View style={[styles.pillIcon, { opacity: iconAnimations[index] }]}>
                                             <TouchableOpacity onPress={() => handlePressMarker(marker)}>
                                                 {
-                                                    marker.icon ? <Image source={{ uri: marker.icon }} style={styles.sticker} /> : <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
+                                                    marker.icon ? <Image source={{ uri: marker.icon }} style={styles.sticker} contentFit='contain' /> : <FontAwesome6 name="question" size={16} color={THEME.colors.primary} />
                                                 }
                                             </TouchableOpacity>
                                         </Animated.View>

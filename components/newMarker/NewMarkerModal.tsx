@@ -89,32 +89,6 @@ const NewMarkerModal = () => {
                         )
                     })
                 }
-                {/* <Animated.View style={{ opacity: chatAnimation, transform: [{ scale: chatAnimation }] }}>
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            newMarker?.dataType === MarkerType.CHAT && styles.activeBackground,
-                        ]}
-                        onPress={() => handleButtonPress(MarkerType.CHAT)}
-                    >
-                        <Fontisto
-                            name="hipchat"
-                            size={10}
-                            style={[
-                                styles.buttonIcon,
-                                newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
-                            ]}
-                        />
-                        <Text
-                            style={[
-                                styles.buttonText,
-                                newMarker?.dataType === MarkerType.CHAT && styles.activeColor,
-                            ]}
-                        >
-                            Chat
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View> */}
                 <Animated.View style={{ opacity: closeAnimation, transform: [{ scale: closeAnimation }] }}>
                     <TouchableOpacity
                         style={styles.closeButton}
@@ -123,58 +97,6 @@ const NewMarkerModal = () => {
                         <FontAwesome name="times" size={15} style={styles.closeIcon} />
                     </TouchableOpacity>
                 </Animated.View>
-                {/* <Animated.View style={{ opacity: groupAnimation, transform: [{ scale: groupAnimation }] }}>
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            newMarker?.dataType === MarkerType.GROUP && styles.activeBackground,
-                        ]}
-                        onPress={() => handleButtonPress(MarkerType.GROUP)}
-                    >
-                        <FontAwesome6
-                            name="people-group"
-                            size={10}
-                            style={[
-                                styles.buttonIcon,
-                                newMarker?.dataType === MarkerType.GROUP && styles.activeColor,
-                            ]}
-                        />
-                        <Text
-                            style={[
-                                styles.buttonText,
-                                newMarker?.dataType === MarkerType.GROUP && styles.activeColor,
-                            ]}
-                        >
-                            Group
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>
-                <Animated.View style={{ opacity: channelAnimation, transform: [{ scale: channelAnimation }] }}>
-                    <TouchableOpacity
-                        style={[
-                            styles.button,
-                            newMarker?.dataType === MarkerType.CHANNEL && styles.activeBackground,
-                        ]}
-                        onPress={() => handleButtonPress(MarkerType.CHANNEL)}
-                    >
-                        <FontAwesome
-                            name="comments-o"
-                            size={12}
-                            style={[
-                                styles.buttonIconChannel,
-                                newMarker?.dataType === MarkerType.CHANNEL && styles.activeColor,
-                            ]}
-                        />
-                        <Text
-                            style={[
-                                styles.buttonText,
-                                newMarker?.dataType === MarkerType.CHANNEL && styles.activeColor,
-                            ]}
-                        >
-                            Channel
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View> */}
             </View>
         </Marker>
     );
