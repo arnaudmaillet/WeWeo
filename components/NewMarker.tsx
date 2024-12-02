@@ -140,10 +140,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                             maxLength={INPUT.max_length.first_message}
                             placeholder="Say something..."
                             value={markerState.new?.label}
-                            onChangeText={(e) => {
-                                updateNewMarker({ label: e })
-                            }
-                            }
+                            onChangeText={(e) => updateNewMarker({ label: e })}
                         />
                         <View style={styles.characterCountContainer}>
                             <Text style={[styles.characterCountText, { color: markerState.new?.label.length && markerState.new?.label.length >= 25 ? 'rgba(255,87,51,0.5)' : '#B0B0B0' }]}>{markerState.new?.label.length}/ {INPUT.max_length.first_message}</Text>

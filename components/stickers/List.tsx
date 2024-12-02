@@ -3,7 +3,7 @@ import { FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { BounceIn } from 'react-native-reanimated';
 import { IFile, MimeTypes } from '~/types/MarkerInterfaces';
-import { useMarker } from '~/contexts/MarkerProvider';
+import { useMarker } from '~/contexts/marker/Context';
 
 export const stickers: IFile[] = [
     { name: "sticker1", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },
@@ -21,21 +21,10 @@ export const stickers: IFile[] = [
 
 const StickersList: React.FC = () => {
 
-    const { file, setFile, sendSticker } = useMarker();
-
-
-    useEffect(() => {
-        if (file) {
-            sendSticker();
-        }
-    }, [file]);
-
-    const handleStickerSend = (sticker: IFile) => {
-        setFile(sticker);
-    }
+    const { updateNew: updateNewMarker } = useMarker()
 
     const renderSticker = ({ item }: { item: IFile }) => (
-        <TouchableOpacity onPress={() => handleStickerSend(item)}>
+        <TouchableOpacity onPress={() => updateNewMarker({ icon: item.url })}>
             <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
                 <Image source={{ uri: item.url }} style={styles.sticker} />
             </Animated.View>
