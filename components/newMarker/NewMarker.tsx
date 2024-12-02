@@ -1,363 +1,183 @@
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
-import React, { useState } from 'react';
-import Animated, {
-    FadeInDown,
-    FadeInUp,
-    FadeOut,
-    FadeOutDown,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    ZoomInEasyDown,
-    ZoomOutEasyUp,
-} from 'react-native-reanimated';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import { INPUT, THEME } from '~/constants/constants';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Animated, View, StyleSheet, Text } from 'react-native';
+import { Marker } from 'react-native-maps';
+import { FontAwesome } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { useAuth } from '~/contexts/AuthProvider';
+
+import { THEME } from '~/constants/constants';
+import { WindowType } from '~/contexts/window/types';
+import { useMarker } from '~/contexts/marker/Context'
 import { useWindow } from '~/contexts/window/Context';
-import { useMarker } from '~/contexts/marker/Context';
-import { Image } from 'expo-image';
-import StickersList from '../stickers/List';
-import FriendsList from '../friends/List';
+import { MarkerType } from '~/contexts/marker/types';
 
-interface NewMarkerProps { }
+const NewMarker = () => {
+    const { state: markerState, updateNew: updateNewMarker } = useMarker()
+    const {
+        dotAnimation,
+        closeAnimation,
+        newMarkerButtons,
+        enteringAnimation: enteringNewMarkerAnimation,
+        exitingAnimation: exitingNewMarkerAnimation
+    } = useMarker();
+    const { setActive: setActiveWindow } = useWindow()
+    const [columns, setColumns] = useState(2);
 
-const NewMarker: React.FC<NewMarkerProps> = () => {
-    const [heightContainer, setHeightContainer] = useState(0);
-    const [damplingValue, setDamplingValue] = useState<number>(100);
-    const [isStickersOpen, setIsStickersOpen] = useState<boolean>(false);
-    const [canFriendsDisplayed, setCanFriendsDisplayed] = useState<boolean>(false) // equivalent to windowState.isLoaded but this one works idkw
+    useEffect(() => {
+        const totalButtons = 4;
+        setColumns(Math.ceil(Math.sqrt(totalButtons)));
+    }, []);
 
-    const { user } = useAuth();
-    const { state: windowState, setLoaded: setWindowLoaded } = useWindow();
-    const { state: markerState, updateNew: updateNewMarker, addNew: addNewMarker } = useMarker();
+    useEffect(() => {
+        enteringNewMarkerAnimation();
+    }, [markerState.new?.coordinates]);
 
-    const friendsContainer = useSharedValue(0);
+    const handleButtonPress = useCallback(
+        (type: MarkerType) => {
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        height: windowState.isLoaded
-            ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
-                if (finished) {
-                    runOnJS(setDamplingValue)(14)
-                    runOnJS(setCanFriendsDisplayed)(true)
-                }
-            }) : undefined
-    }));
-
-    const handleUpdateFriends = (friendsIds: string[]) => {
-        updateNewMarker({
-            policy: {
-                isPrivate: markerState.new?.policy.isPrivate || true,
-                show: friendsIds
+            if (markerState.new?.type === type) {
+                updateNewMarker({ type: MarkerType.DEFAULT });
+                setActiveWindow(WindowType.DEFAULT)
+            } else {
+                updateNewMarker({ type: type });
+                setActiveWindow(WindowType.NEW_MARKER)
             }
-        })
-    }
+        },
+        [markerState.new, updateNewMarker]
+    );
 
     return (
-        <Animated.View
-            style={[animatedStyle, styles.container, { minHeight: heightContainer }]}
-            key={windowState.active}
-            entering={FadeInDown.springify().withCallback(() => runOnJS(setWindowLoaded)(true))}
-            exiting={FadeOutDown.springify()}
+        <Marker
+            coordinate={{
+                latitude: markerState.new?.coordinates.lat || 0,
+                longitude: markerState.new?.coordinates.long || 0,
+            }}
         >
-            <Animated.View
-                style={styles.friendsListContainer}
-                onLayout={(event) => {
-                    const { height } = event.nativeEvent.layout;
-                    friendsContainer.value = height;
-                }}
-            >
-                {markerState.new?.policy.isPrivate === true && !isStickersOpen && canFriendsDisplayed && (
-                    <View style={styles.friendsPickerWrapper}>
-                        <Animated.View
-                            style={styles.friendsPickerContent}
-                            entering={FadeInUp.springify().damping(17)}
-                            exiting={FadeOut}
-                        >
-                            <Text style={styles.friendsPickerText}>Pick some friends</Text>
-                            <FriendsList selected={markerState.new.policy.show} setSelected={handleUpdateFriends} />
-                        </Animated.View>
-                    </View>
-                )}
-            </Animated.View>
-            <View
-                style={styles.bottomControlsContainer}
-                onLayout={(event) => {
-                    const { height } = event.nativeEvent.layout;
-                    setHeightContainer(height);
-                }}
-            >
-                {isStickersOpen ? (
-                    <View style={styles.stickerSelectionWrapper}>
-                        <StickersList />
-                    </View>
-                ) : (
-                    <View style={styles.accessSettingsWrapper}>
-                        <Animated.View key={isStickersOpen.toString()} exiting={FadeOut.springify()} style={styles.fullRow}>
-                            <View style={styles.accessTextWrapper}>
-                                <Text style={styles.accessTitle}>Viewer Access</Text>
-                                <Text style={styles.accessSubtitle}>Who can see this marker?</Text>
-                            </View>
-                            <View style={styles.accessButtonGroup}>
+            <View style={[styles.container, { width: columns * 60 - 10 }]}>
+                <Animated.View
+                    style={[
+                        styles.centerDot,
+                        { opacity: dotAnimation, transform: [{ translateX: -4 }] },
+                    ]}
+                />
+                {
+                    newMarkerButtons.map(_ => {
+                        return (
+                            <Animated.View style={{ opacity: _.animation, transform: [{ scale: _.animation }] }} key={_.text.label}>
                                 <TouchableOpacity
                                     style={[
-                                        styles.accessButton,
-                                        markerState.new?.policy.isPrivate === false && styles.selectedAccessButton,
+                                        styles.button,
+                                        markerState.new?.type === MarkerType.CHAT && styles.activeBackground,
                                     ]}
-                                    onPress={() =>
-                                        updateNewMarker({
-                                            policy: {
-                                                isPrivate: false,
-                                                show: markerState.new?.policy.show || [],
-                                            },
-                                        })
-                                    }
+                                    onPress={() => handleButtonPress(MarkerType.CHAT)}
                                 >
-                                    <Ionicons name="globe-outline" size={16} color={THEME.colors.primary} />
-                                    {markerState.new?.policy.isPrivate === false && (
-                                        <Text style={styles.accessButtonText}>Everyone</Text>
-                                    )}
-                                </TouchableOpacity>
-                                {user?.friends.length && user?.friends.length > 0 ? (
-                                    <TouchableOpacity
-                                        disabled={!windowState.isLoaded}
+                                    {React.cloneElement(_.icon.component, {
+                                        name: _.icon.label,
+                                        color: markerState.new?.type === MarkerType.CHAT ? _.icon.color.active : _.icon.color.default,
+                                        size: _.icon.size,
+                                        style: styles.buttonIcon,
+                                    })}
+                                    <Text
                                         style={[
-                                            styles.accessButton,
-                                            markerState.new?.policy.isPrivate === true && styles.selectedAccessButton,
+                                            styles.buttonText,
+                                            markerState.new?.type === MarkerType.CHAT && styles.activeColor,
                                         ]}
-                                        onPress={() =>
-                                            updateNewMarker({
-                                                policy: {
-                                                    isPrivate: true,
-                                                    show: markerState.new?.policy.show || [],
-                                                },
-                                            })
-                                        }
                                     >
-                                        {windowState.isLoaded ? (
-                                            <MaterialIcons name="group" size={16} color={THEME.colors.primary} />
-                                        ) : (
-                                            <ActivityIndicator size={16} />
-                                        )}
-                                        {markerState.new?.policy.isPrivate === true && (
-                                            <Text style={styles.accessButtonText}>Friends</Text>
-                                        )}
-                                    </TouchableOpacity>
-                                ) : undefined}
-                            </View>
-                        </Animated.View>
-                    </View>
-                )}
-                <View style={styles.markerControls}>
+                                        Chat
+                                    </Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )
+                    })
+                }
+                <Animated.View style={{ opacity: closeAnimation, transform: [{ scale: closeAnimation }] }}>
                     <TouchableOpacity
-                        onPress={() => setIsStickersOpen(!isStickersOpen)}
-                        style={styles.iconWrapper}
+                        style={styles.closeButton}
+                        onPress={() => exitingNewMarkerAnimation(WindowType.DEFAULT)}
                     >
-                        <Animated.View
-                            key={markerState.new?.icon}
-                            entering={windowState.isLoaded ? ZoomInEasyDown : undefined}
-                            exiting={ZoomOutEasyUp}
-                        >
-                            <Image source={{ uri: markerState.new?.icon }} style={styles.stickerPreview} />
-                        </Animated.View>
+                        <FontAwesome name="times" size={15} style={styles.closeIcon} />
                     </TouchableOpacity>
-                    <View style={styles.messageInputWrapper}>
-                        <TextInput
-                            style={styles.messageInput}
-                            maxLength={INPUT.max_length.first_message}
-                            placeholder="Say something..."
-                            value={markerState.new?.label}
-                            onChangeText={(e) => updateNewMarker({ label: e })}
-                        />
-                        <View style={styles.characterCountWrapper}>
-                            <Text
-                                style={[
-                                    styles.characterCountText,
-                                    {
-                                        color:
-                                            markerState.new?.label.length &&
-                                                markerState.new?.label.length >= 25
-                                                ? 'rgba(255,87,51,0.5)'
-                                                : '#B0B0B0',
-                                    },
-                                ]}
-                            >
-                                {markerState.new?.label.length}/ {INPUT.max_length.first_message}
-                            </Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.sendButtonWrapper}
-                        onPress={addNewMarker}
-                        disabled={markerState.new?.policy.isPrivate === true && markerState.new.policy.show.length === 0}
-                    >
-                        <MaterialCommunityIcons
-                            name="send-circle"
-                            size={35}
-                            color={
-                                markerState.new?.policy.isPrivate === true && markerState.new.policy.show.length === 0
-                                    ? THEME.colors.grayscale.darker_x1
-                                    : THEME.colors.primary
-                            }
-                        />
-                    </TouchableOpacity>
-                </View>
+                </Animated.View>
             </View>
-        </Animated.View>
+        </Marker>
     );
 };
 
 export default NewMarker;
 
-
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.main,
-        borderRadius: 20,
-        borderColor: 'rgba(0, 0, 0, 0.1)',
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 20,
-        elevation: 10,
-        flexDirection: 'column',
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
-        position: 'relative',
+        zIndex: 10,
     },
-    friendsListContainer: {
-        width: '100%',
-    },
-    friendsPickerWrapper: {
-        padding: 10,
-    },
-    friendsPickerContent: {
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
-        borderRadius: 10,
-        flexDirection: 'column',
-        gap: 10,
-        paddingVertical: 10,
-    },
-    friendsPickerText: {
-        fontSize: 16,
-        color: THEME.colors.primary,
-        paddingHorizontal: 10,
-    },
-    bottomControlsContainer: {
+    centerDot: {
         position: 'absolute',
-        padding: 10,
-        bottom: 0,
+        width: 8,
+        height: 8,
+        borderRadius: 5,
+        backgroundColor: THEME.colors.primary,
+        zIndex: 1,
+        left: '50%',
+        borderColor: THEME.colors.text.black,
     },
-    stickerSelectionWrapper: {
-        flexDirection: 'row',
-        height: 70,
-        width: '100%',
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
-        borderRadius: 10,
-    },
-    accessSettingsWrapper: {
-        overflow: 'hidden',
-        flexDirection: 'row',
-        height: 70,
-        width: '100%',
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
-        borderRadius: 10,
-        padding: 10,
-    },
-    fullRow: {
-        width: '100%',
-        flexDirection: 'row',
-    },
-    accessTextWrapper: {
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        flex: 5,
-    },
-    accessTitle: {
-        fontWeight: 'bold',
-        fontSize: 16,
-        color: THEME.colors.primary,
-        marginBottom: 10,
-    },
-    accessSubtitle: {
-        color: 'gray',
-        marginBottom: 2,
-    },
-    accessButtonGroup: {
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        flex: 4,
-    },
-    accessButton: {
-        height: 35,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        marginHorizontal: 2,
-        borderRadius: 10,
-        backgroundColor: THEME.colors.grayscale.darker_x1,
-    },
-    selectedAccessButton: {
+    closeButton: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: 3,
         backgroundColor: THEME.colors.accent,
+        width: 50,
+        alignItems: 'center',
+        height: 40,
+        borderRadius: 10,
+        borderColor: THEME.colors.text.black,
+        marginVertical: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    accessButtonText: {
-        marginLeft: 5,
+    closeIcon: {
+        alignSelf: 'center',
         color: THEME.colors.primary,
     },
-    markerControls: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 10,
-    },
-    iconWrapper: {
-        overflow: 'hidden',
-        flex: 1,
+    button: {
+        display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        padding: 3,
+        backgroundColor: THEME.colors.grayscale.main,
+        marginVertical: 5,
         borderRadius: 10,
-        marginTop: 10,
-    },
-    stickerPreview: {
-        width: 60,
-        height: 50,
-    },
-    messageInputWrapper: {
-        flex: 6,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_x1,
-        borderRadius: 10,
-        paddingHorizontal: 10,
         height: 40,
-        marginTop: 20,
+        width: 50,
+        shadowColor: THEME.colors.text.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    messageInput: {
-        flex: 1,
-        paddingVertical: 8,
+    buttonIcon: {
+        alignSelf: 'center',
+        marginBottom: 3,
     },
-    characterCountWrapper: {
-        padding: 4,
-        width: 55,
-        height: 35,
-        alignItems: 'center',
-        justifyContent: 'center',
+    buttonIconChannel: {
+        alignSelf: 'center',
+        marginBottom: 2,
+        color: THEME.colors.primary,
     },
-    characterCountText: {
-        fontSize: 14,
+    buttonText: {
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: THEME.colors.text.black,
+        textAlign: 'center',
     },
-    sendButtonWrapper: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
+    activeBackground: {
+        backgroundColor: THEME.colors.primary,
+    },
+    activeColor: {
+        color: THEME.colors.text.white,
     },
 });
-

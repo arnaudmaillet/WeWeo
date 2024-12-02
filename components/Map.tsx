@@ -6,7 +6,7 @@ import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
 import { useMap } from '~/contexts/MapProvider';
-import NewMarkerModal from './newMarker/NewMarkerModal';
+import NewMarker from './newMarker/NewMarker';
 
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
@@ -303,7 +303,7 @@ const Map: React.FC<IMap> = () => {
                 })}
                 pitchEnabled={true}
             >
-                <NewMarkerModal />
+                <NewMarker />
 
                 {markerState.list.map((marker: IMarker, index: any) => {
                     return (

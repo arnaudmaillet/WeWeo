@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
-import SearchMenu from '~/components/SearchMenu'
+import SearchMenuWindow from '~/windows/SearchMenu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useMap } from '~/contexts/MapProvider'
 import { useWindow } from '~/contexts/window/Context'
 
 import { IMarker } from '~/types/MarkerInterfaces'
-import NewMarker from '~/components/newMarker/NewMarker'
+import NewMarkerWindow from '~/windows/NewMarker'
 import { WindowType } from '~/contexts/window/types'
 import { useMarker } from '~/contexts/marker/Context'
 
@@ -194,7 +194,7 @@ const MainScreen = () => {
                                     keyboardVerticalOffset={380}
                                     style={styles.keyboardAvoidingView}
                                 >
-                                    <NewMarker />
+                                    <NewMarkerWindow />
                                 </KeyboardAvoidingView>
                             </Animated.View>
                         </GestureDetector>
@@ -220,7 +220,7 @@ const MainScreen = () => {
                                 keyboardVerticalOffset={380}
                                 style={styles.keyboardAvoidingView}
                             >
-                                <SearchMenu onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                                <SearchMenuWindow onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
                             </KeyboardAvoidingView>
                         </Animated.View>
                     </>

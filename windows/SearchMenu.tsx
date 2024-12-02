@@ -6,11 +6,11 @@ import { useAuth } from '~/contexts/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/contexts/MapProvider';
 import { ISwitch } from '~/types/SwitchInterface';
-import Switch from './Switch';
+import Switch from '../components/Switch';
 import { THEME } from '~/constants/constants';
 import { useWindow } from '~/contexts/window/Context';
 
-interface SearchMenuProps {
+interface SearchMenuWindowProps {
     onFocusInput: () => void;
     onBlurInput: () => void;
 }
@@ -78,7 +78,7 @@ const UserItem: React.FC<{ user: IUser; isactive: boolean; isAnyactive: boolean;
 
 
 
-const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) => {
+const SearchMenuWindow: React.FC<SearchMenuWindowProps> = ({ onFocusInput, onBlurInput }) => {
     const [searchContent, setSearchContent] = React.useState<string>('')
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -298,7 +298,7 @@ const SearchMenu: React.FC<SearchMenuProps> = ({ onFocusInput, onBlurInput }) =>
     )
 }
 
-export default SearchMenu
+export default SearchMenuWindow
 
 const styles = StyleSheet.create({
     container: {
