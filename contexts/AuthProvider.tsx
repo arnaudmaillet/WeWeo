@@ -72,11 +72,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     });
                 } else {
                     console.error('User document not found in Firestore');
-                    router.push('/LoginScreen');
+                    router.push('/Login');
                 }
             } else {
                 setUser(null);
-                router.push('/LoginScreen');
+                router.push('/Login');
             }
         });
 
@@ -193,7 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await firebaseSignOut(auth);
             await AsyncStorage.removeItem('@user_token');
             setUser(null);
-            router.push('/LoginScreen');
+            router.push('/Login');
         } catch (error) {
             console.error('Failed to sign out:', error);
         } finally {

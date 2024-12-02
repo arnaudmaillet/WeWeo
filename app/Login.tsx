@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useKeyboard } from '~/contexts/KeyboardProvider';
 import { useAuth } from '~/contexts/AuthProvider';
 
-const LoginScreen = () => {
+const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [input, setInput] = useState('');
@@ -26,7 +26,7 @@ const LoginScreen = () => {
                 setEmail('');
                 setInput('');
                 setKeyboardPropsOnClick(!keyboardPropsOnClick);
-                router.push('/MainScreen');
+                router.push('/Home');
             } else {
                 setInput(email);
                 alert('Invalid email or password');
@@ -40,7 +40,7 @@ const LoginScreen = () => {
 
     const handleSignup = () => {
         Keyboard.dismiss();
-        router.push('/SignupScreen');
+        router.push('/Signup');
     }
 
     return (
@@ -171,4 +171,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LoginScreen;
+export default Login;

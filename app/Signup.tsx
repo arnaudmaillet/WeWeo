@@ -13,7 +13,7 @@ interface LocaleProps {
     flag: string;
 }
 
-const SignupScreen = () => {
+const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -286,7 +286,7 @@ const SignupScreen = () => {
                     </View>
 
                     {/* Bouton pour aller à l'écran de connexion */}
-                    <TouchableOpacity onPress={() => router.push('/LoginScreen')} style={styles.loginButton}>
+                    <TouchableOpacity onPress={() => router.push('/Login')} style={styles.loginButton}>
                         <Text style={styles.loginButtonText}>已经有账号？登录</Text>
                     </TouchableOpacity>
                 </View>
@@ -414,4 +414,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SignupScreen;
+export default Signup;

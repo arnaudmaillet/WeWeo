@@ -20,9 +20,9 @@ export default function Layout() {
                 <Deprecated>
                   <MarkerProvider>
                     <Stack>
-                      <Stack.Screen name="LoginScreen" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
-                      <Stack.Screen name="SignupScreen" options={{ title: 'Signup', headerShown: false }} />
-                      <Stack.Screen name="MainScreen" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
+                      <Stack.Screen name="Login" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
+                      <Stack.Screen name="Signup" options={{ title: 'Signup', headerShown: false }} />
+                      <Stack.Screen name="Home" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
                     </Stack>
                   </MarkerProvider>
                 </Deprecated>
