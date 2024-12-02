@@ -104,7 +104,7 @@ const Map: React.FC<IMap> = () => {
 
     const animateToClosestMarker = (closestMarkerId: string) => {
         markerState.list.forEach((marker: IMarker, index: number) => {
-            if (marker.markerId === closestMarkerId) {
+            if (marker.markerId === closestMarkerId && marker.label.length > 0) {
                 if (iconAnimations[index] && textAnimations[index]) {
                     // Animer pour faire apparaître le texte et disparaître l'icône
                     Animated.parallel([

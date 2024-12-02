@@ -1,41 +1,21 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native'
 import React, { useState } from 'react'
-import Animated, { BounceIn, FadeIn, FadeInDown, FadeInUp, FadeOut, FadeOutDown, runOnJS, SlideInDown, SlideInUp, SlideOutDown, useAnimatedStyle, useSharedValue, withSpring, ZoomInEasyDown, ZoomInEasyUp, ZoomOutDown, ZoomOutEasyDown, ZoomOutEasyUp } from 'react-native-reanimated'
+import Animated, { FadeInDown, FadeInUp, FadeOut, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withSpring, ZoomInEasyDown, ZoomInEasyUp, ZoomOutDown, ZoomOutEasyDown, ZoomOutEasyUp } from 'react-native-reanimated'
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { INPUT, THEME } from '~/constants/constants'
-import { useMap } from '~/contexts/MapProvider'
-import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler'
-import { IUser } from '~/types/UserInterfaces'
+import { TouchableOpacity } from 'react-native-gesture-handler'
 import { useAuth } from '~/contexts/AuthProvider'
 import { useWindow } from '~/contexts/window/Context'
 import { useMarker } from '~/contexts/marker/Context'
 import { Image } from 'expo-image';
-import { IFile, MimeTypes } from '~/types/MarkerInterfaces'
-
-enum Selector {
-    EVERYONE = 'everyone',
-    FRIENDS = 'friends',
-}
-
-const stickers: IFile[] = [
-    { name: "sticker1", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },
-    { name: "sticker2", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker2.gif", type: MimeTypes.GIF },
-    { name: "sticker3", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker3.gif", type: MimeTypes.GIF },
-    { name: "sticker4", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker4.gif", type: MimeTypes.GIF },
-    { name: "sticker5", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker5.gif", type: MimeTypes.GIF },
-    { name: "sticker6", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker6.gif", type: MimeTypes.GIF },
-    { name: "sticker7", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker7.gif", type: MimeTypes.GIF },
-    { name: "sticker8", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker8.gif", type: MimeTypes.GIF },
-    { name: "sticker9", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker9.gif", type: MimeTypes.GIF },
-    { name: "sticker10", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker10.gif", type: MimeTypes.GIF },
-];
+import StickersList from './stickers/List'
+import FriendsList from './friends/List'
 
 interface NewMarkerProps { }
 
 
 const NewMarker: React.FC<NewMarkerProps> = () => {
 
-    const [inputValue, setInputValue] = useState<string>('')
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
     const [damplingValue, setDamplingValue] = useState<number>(100);
     const [heightContainer, setHeightContainer] = useState(0)
@@ -47,48 +27,11 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
 
     const friendsContainer = useSharedValue(0)
 
-
-    const handleSelectFriend = (friendId: string) => {
-        setSelectedFriends((prev) =>
-            prev.includes(friendId) ? prev.filter(id => id !== friendId) : [...prev, friendId]
-        );
-    };
-
     const animatedStyle = useAnimatedStyle(() => ({
         height: windowState.isLoaded ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
             finished && runOnJS(setDamplingValue)(14)
         }) : undefined
     }));
-
-    const UserItem: React.FC<{ user: IUser }> = ({ user }) => {
-        const isSelected = selectedFriends.includes(user.userId);
-
-        return (
-            <View style={styles.flatListItem}>
-                <TouchableWithoutFeedback
-                    style={[styles.accountIconContainer, isSelected && styles.selectedFriend]}
-                    onPress={() => handleSelectFriend(user.userId)}
-                >
-                    <Text style={[styles.accountIconText, isSelected && styles.selectedFriendText]}>
-                        {user.username.slice(0, 2).toUpperCase()}
-                    </Text>
-                </TouchableWithoutFeedback>
-                <View>
-                    <Text style={{ color: 'gray', fontSize: 10 }}>
-                        {user.username.length > 6 ? user.username.slice(0, 6) + '...' : user.username}
-                    </Text>
-                </View>
-            </View>
-        );
-    };
-
-    const renderSticker = ({ item }: { item: IFile }) => (
-        <TouchableOpacity onPress={() => updateNewMarker({ icon: item.url })}>
-            <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
-                <Image source={{ uri: item.url }} style={styles.sticker} />
-            </Animated.View>
-        </TouchableOpacity>
-    );
 
     return (
         <Animated.View
@@ -112,15 +55,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                             borderRadius: 10, flexDirection: "column", gap: 10, paddingVertical: 10
                         }} entering={FadeInUp.springify().damping(17)} exiting={FadeOut}>
                             <Text style={{ fontSize: 16, color: THEME.colors.primary, paddingHorizontal: 10 }}>Pick some friends</Text>
-                            <FlatList
-                                data={user?.friends}
-                                horizontal={true}
-                                keyExtractor={(user: IUser) => user.userId.toString()}
-                                showsHorizontalScrollIndicator={false}
-                                renderItem={({ item: user }) => (
-                                    <UserItem user={user} />
-                                )}
-                            />
+                            <FriendsList selected={selectedFriends} setSelected={setSelectedFriends} />
                         </Animated.View>
                     </View>
                 }
@@ -132,14 +67,7 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                 {
                     isStickersOpen ?
                         <View style={styles.stickerContainer}>
-                            <FlatList
-                                contentContainerStyle={{ alignItems: 'center' }}
-                                data={stickers}
-                                renderItem={renderSticker}
-                                keyExtractor={(item) => item.name}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                            />
+                            <StickersList />
                         </View>
                         :
                         <View style={styles.accessSettingContainer}>
@@ -211,15 +139,14 @@ const NewMarker: React.FC<NewMarkerProps> = () => {
                             style={styles.input}
                             maxLength={INPUT.max_length.first_message}
                             placeholder="Say something..."
-                            value={inputValue}
+                            value={markerState.new?.label}
                             onChangeText={(e) => {
-                                setInputValue(e)
                                 updateNewMarker({ label: e })
                             }
                             }
                         />
                         <View style={styles.characterCountContainer}>
-                            <Text style={[styles.characterCountText, { color: inputValue.length < 25 ? '#B0B0B0' : 'rgba(255,87,51,0.5)' }]}>{inputValue.length}/ {INPUT.max_length.first_message}</Text>
+                            <Text style={[styles.characterCountText, { color: markerState.new?.label.length && markerState.new?.label.length >= 25 ? 'rgba(255,87,51,0.5)' : '#B0B0B0' }]}>{markerState.new?.label.length}/ {INPUT.max_length.first_message}</Text>
                         </View>
                     </View>
                     <TouchableOpacity
@@ -399,35 +326,6 @@ const styles = StyleSheet.create({
     },
     friendsContainer: {
         width: '100%',
-    },
-    flatListItem: {
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 5,
-        width: 50,
-    },
-    accountIconContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: THEME.colors.grayscale.darker_x1
-    },
-    accountIconText: {
-        color: THEME.colors.primary,
-        fontWeight: 'bold',
-        fontSize: 12,
-    },
-    selectedFriend: {
-        backgroundColor: THEME.colors.accent, // Couleur de fond pour l'ami sélectionné
-        borderColor: THEME.colors.primary,
-        borderWidth: 2,
-    },
-    selectedFriendText: {
-        color: THEME.colors.text.black, // Couleur du texte pour l'ami sélectionné
-        fontWeight: 'bold',
     },
     sticker: {
         width: 60,
