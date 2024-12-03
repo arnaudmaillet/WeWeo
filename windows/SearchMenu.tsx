@@ -5,7 +5,7 @@ import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@
 import { useAuth } from '~/contexts/AuthProvider';
 import { IUser } from '~/types/UserInterfaces';
 import { useMap } from '~/contexts/MapProvider';
-import { ISwitch } from '~/types/SwitchInterface';
+import { ISwitch } from '~/types/ButtonInterface';
 import Switch from '../components/Switch';
 import { THEME } from '~/constants/constants';
 import { useWindow } from '~/contexts/window/Context';

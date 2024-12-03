@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Animated, { interpolateColor, SharedValue, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import { ISwitch } from '~/types/SwitchInterface';
+import { ISwitch } from '~/types/ButtonInterface';
 import { THEME } from '~/constants/constants';
 
 interface ISwitchProps {

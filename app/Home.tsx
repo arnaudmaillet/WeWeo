@@ -161,7 +161,7 @@ const MainScreen = () => {
                                 }}
                             />
                             <GestureDetector gesture={panGesture}>
-                                <Animated.View style={[styles.sheet, translateSheetY]}>
+                                <Animated.View style={styles.sheet}>
                                     <KeyboardAvoidingView
                                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                                         keyboardVerticalOffset={170}

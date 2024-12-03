@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef } from "react";
 import { Animated } from "react-native";
 import { WindowType } from "~/contexts/window/types";
-import { IAnimatedButton } from "~/types/SwitchInterface";
+import { IAnimatedButton } from "~/types/ButtonInterface";
 import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/window/Context"
@@ -36,7 +36,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const dotAnimation = useRef(new Animated.Value(0)).current;
     const closeAnimation = useRef(new Animated.Value(0)).current;
-
 
     const newMarkerButtons: IAnimatedButton[] = useMemo(() => [
         {
@@ -102,7 +101,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
     };
 
-
     const addNew = async (): Promise<boolean> => {
 
         if (!user || !state.new) return false;
@@ -116,6 +114,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 connectedUserIds: [],
                 senderId: user?.userId!,
                 createdAt: new Date().getTime(),
+                messages: []
             });
 
             dispatch({ type: MarkerActionType.SET_NEW, payload: null });

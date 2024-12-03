@@ -1,8 +1,20 @@
 import { ICoordinates } from "~/types/MapInterfaces";
+import { IUser } from "~/types/UserInterfaces";
 
 export enum MarkerType {
     DEFAULT = 'DEFAULT',
     CHAT = 'CHAT',
+}
+
+export interface IMessage {
+    messageId: string,
+    senderId: string,
+    senderInfo: IUser,
+    markerId: string,
+    content: string,
+    createdAt: number,
+    type: string,
+    combinedKey?: string
 }
 
 export interface IPolicy {
@@ -24,6 +36,7 @@ export interface IMarker extends INewMarker {
     minZoom: number;
     subscribedUserIds: string[];
     connectedUserIds: string[];
+    messages: IMessage[]
 }
 export interface MarkerState {
     list: IMarker[];
