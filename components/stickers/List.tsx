@@ -3,7 +3,7 @@ import { FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { BounceIn } from 'react-native-reanimated';
 import { IFile, MimeTypes } from '~/types/MarkerInterfaces';
-import { useMarker } from '~/contexts/marker/Context';
+import { useMarker } from '~/contexts/markers/Context';
 
 export const stickers: IFile[] = [
     { name: "sticker1", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker1.gif", type: MimeTypes.GIF },

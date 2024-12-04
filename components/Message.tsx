@@ -80,7 +80,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
                         </Animated.View>
                         <Animated.View
                             entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
-                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.grayscale.darker_x1 }]}
+                            style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.grayscale.darker_1x }]}
                         >
                             {renderContent()}
                         </Animated.View>
@@ -168,12 +168,12 @@ const styles = StyleSheet.create({
     messageText: {
         color: 'black',
         margin: 3,
-        fontSize: 12,
+        fontSize: 13,
     },
     messageTextCurrentUser: {
         color: 'white',
         margin: 3,
-        fontSize: 12,
+        fontSize: 13,
     },
     sticker: {
         width: 70,

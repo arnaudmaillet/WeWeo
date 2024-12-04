@@ -8,7 +8,7 @@ import { useMap } from '~/contexts/MapProvider';
 import { ISwitch } from '~/types/ButtonInterface';
 import Switch from '../components/Switch';
 import { THEME } from '~/constants/constants';
-import { useWindow } from '~/contexts/window/Context';
+import { useWindow } from '~/contexts/windows/Context';
 
 interface SearchMenuWindowProps {
     onFocusInput: () => void;
@@ -269,7 +269,7 @@ const SearchMenuWindow: React.FC<SearchMenuWindowProps> = ({ onFocusInput, onBlu
 
                     {/* Input field with search icon on the left */}
                     <View style={styles.inputContainer}>
-                        <Ionicons name="search-outline" size={20} color="#B0B0B0" style={styles.searchIcon} />
+                        <Ionicons name="search-outline" size={20} color={THEME.colors.grayscale.darker_3x} style={styles.searchIcon} />
                         <TextInput
                             style={styles.input}
                             placeholder="Type to search..."
@@ -284,9 +284,9 @@ const SearchMenuWindow: React.FC<SearchMenuWindowProps> = ({ onFocusInput, onBlu
                                 isTyping ? setSearchContent('') : console.log('Voice search')
                             }} style={styles.sendButton}>
                                 {isTyping ? (
-                                    <MaterialIcons name="cancel" size={20} color="rgba(0, 0, 0, 0.25)" />
+                                    <MaterialIcons name="cancel" size={20} color={THEME.colors.grayscale.darker_3x} />
                                 ) : (
-                                    <FontAwesome6 name="microphone" size={18} color='#B0B0B0' />
+                                    <FontAwesome6 name="microphone" size={18} color={THEME.colors.grayscale.darker_3x} />
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
         borderRadius: 10,
         paddingHorizontal: 10,
         height: 40,

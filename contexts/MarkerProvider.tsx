@@ -72,8 +72,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // Appeler la fonction pour connecter l'utilisateur
         connectUser();
 
-
-
         // Déconnecter l'utilisateur et arrêter l'écoute lorsque le composant est démonté
         return () => {
             disconnectUser();

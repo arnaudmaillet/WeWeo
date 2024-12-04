@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: THEME.colors.grayscale.darker_x1
+        backgroundColor: THEME.colors.grayscale.darker_1x
     },
     iconText: {
         color: THEME.colors.primary,

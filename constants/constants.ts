@@ -16,10 +16,11 @@ export const THEME = {
         disabled: '#A9A9A9',
         grayscale: {
             main: '#F4F3F2',
-            lighter_x1: '#FAFAFA',
-            lighter_x2: '#FEFEFE',
-            darker_x1: '#E8E7E5',
-            darker_x2: '#D9D8D6'
+            lighter_1x: '#FAFAFA',
+            lighter_2x: '#FEFEFE',
+            darker_1x: '#E8E7E5',
+            darker_2x: '#D9D8D6',
+            darker_3x: '#B0B0B0'
         }
     },
     fonts: {

@@ -32,7 +32,7 @@ export interface INewMarker {
 export interface IMarker extends INewMarker {
     markerId: string;
     createdAt: number;
-    senderId: string;
+    creatorId: string;
     minZoom: number;
     subscribedUserIds: string[];
     connectedUserIds: string[];
@@ -50,7 +50,8 @@ export enum MarkerActionType {
     UPDATE = "UPDATE",
     SET_NEW = "SET_NEW",
     UPDATE_NEW = "UPDATE_NEW",
-    SET_ACTIVE = "SET_ACTIVE"
+    SET_ACTIVE = "SET_ACTIVE",
+    UPDATE_ACTIVE_MESSAGES = "UPDATE_ACTIVE_MESSAGES",
 }
 
 export type MarkerAction =
@@ -60,4 +61,5 @@ export type MarkerAction =
     | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
     | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
     | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
+    | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
 

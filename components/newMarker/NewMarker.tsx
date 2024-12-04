@@ -5,17 +5,17 @@ import { FontAwesome } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { THEME } from '~/constants/constants';
-import { WindowType } from '~/contexts/window/types';
-import { useMarker } from '~/contexts/marker/Context'
-import { useWindow } from '~/contexts/window/Context';
-import { MarkerType } from '~/contexts/marker/types';
+import { WindowType } from '~/contexts/windows/types';
+import { useMarker } from '~/contexts/markers/Context'
+import { useWindow } from '~/contexts/windows/Context';
+import { MarkerType } from '~/contexts/markers/types';
 
 const NewMarker = () => {
     const { state: markerState, updateNew: updateNewMarker } = useMarker()
     const {
         dotAnimation,
         closeAnimation,
-        newMarkerButtons,
+        mapbuttons: newMarkerButtons,
         enteringAnimation: enteringNewMarkerAnimation,
         exitingAnimation: exitingNewMarkerAnimation
     } = useMarker();

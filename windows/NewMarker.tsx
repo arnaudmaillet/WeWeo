@@ -16,8 +16,8 @@ import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-ic
 import { INPUT, THEME } from '~/constants/constants';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useAuth } from '~/contexts/AuthProvider';
-import { useWindow } from '~/contexts/window/Context';
-import { useMarker } from '~/contexts/marker/Context';
+import { useWindow } from '~/contexts/windows/Context';
+import { useMarker } from '~/contexts/markers/Context';
 import { Image } from 'expo-image';
 import StickersList from '~/components/stickers/List';
 import FriendsList from '~/components/friends/List';
@@ -32,7 +32,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
 
     const { user } = useAuth();
     const { state: windowState, setLoaded: setWindowLoaded } = useWindow();
-    const { state: markerState, updateNew: updateNewMarker, addNew: addNewMarker } = useMarker();
+    const { state: markerState, updateNew: updateNewMarker, firestoreAdd: addNewMarker } = useMarker();
 
     const friendsContainer = useSharedValue(0);
 
@@ -198,7 +198,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                             size={35}
                             color={
                                 markerState.new?.policy.isPrivate === true && markerState.new.policy.show.length === 0
-                                    ? THEME.colors.grayscale.darker_x1
+                                    ? THEME.colors.grayscale.darker_1x
                                     : THEME.colors.primary
                             }
                         />
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     friendsPickerContent: {
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
+        backgroundColor: THEME.colors.grayscale.lighter_1x,
         borderRadius: 10,
         flexDirection: 'column',
         gap: 10,
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         height: 70,
         width: '100%',
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
+        backgroundColor: THEME.colors.grayscale.lighter_1x,
         borderRadius: 10,
     },
     accessSettingsWrapper: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         height: 70,
         width: '100%',
-        backgroundColor: THEME.colors.grayscale.lighter_x1,
+        backgroundColor: THEME.colors.grayscale.lighter_1x,
         borderRadius: 10,
         padding: 10,
     },
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         marginHorizontal: 2,
         borderRadius: 10,
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
     },
     selectedAccessButton: {
         backgroundColor: THEME.colors.accent,
@@ -320,9 +320,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
         borderRadius: 10,
         marginTop: 10,
+        overflow: 'hidden'
     },
     stickerPreview: {
         width: 60,
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
         flex: 6,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
         borderRadius: 10,
         paddingHorizontal: 10,
         height: 40,

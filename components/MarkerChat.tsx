@@ -1,65 +1,64 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TextInput, FlatList, Text, TouchableOpacity, Keyboard, ActivityIndicator } from 'react-native'
-import Animated, { BounceIn, FadeIn, FadeInRight, FadeOut, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomInEasyDown, ZoomOut, ZoomOutEasyDown } from 'react-native-reanimated'
+import Animated, { BounceIn, FadeIn, FadeInRight, FadeOut, FadeOutUp, SlideInDown, SlideInLeft, SlideOutDown, StretchInY, ZoomIn, ZoomInEasyDown, ZoomOut, ZoomOutEasyDown } from 'react-native-reanimated'
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { IMarkerChatScreen, IMessage } from '~/types/MarkerInterfaces';
-
 import Stickers from './Stickers';
 import Message from './Message';
 
-import { useMarker } from '~/contexts/MarkerProvider';
 import { THEME } from '~/constants/constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMap } from '~/contexts/MapProvider';
+import { useMarker } from '~/contexts/markers/Context';
+import { IMarker, IMessage } from '~/contexts/markers/types';
+import useNumberFormatter from '~/hooks/useNumberFormatter';
+import { useAuth } from '~/contexts/AuthProvider';
 
 
 const MAX_ICONS_PER_ROW = 5;
 const ICON_BASE_SIZE = 38;
 
+export interface IMarkerChatScreen { }
 
-const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
+const MarkerChat: React.FC<IMarkerChatScreen> = () => {
 
     const flatListRef = useRef<FlatList>(null);
     const inputRef = useRef<TextInput>(null);
 
-    const { isLoading, message, messages, participants, setMessage, setMessages, setParticipants, sendMessage, subscribe, isSubscribed } = useMarker();
-    const { mapRef } = useMap()
+    const { user } = useAuth()
+    const { state: markerState, participants: markerParticipants, isSubscribed, firestoreManageActiveSubscription, firestoreAddActiveMessage } = useMarker()
 
+    if (!markerState.active || !user) return null
+
+    const { formatNumber } = useNumberFormatter();
+    const { mapRef } = useMap()
     const [showStickers, setShowStickers] = useState<boolean>(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     const [keyboardHeight, setKeyboardHeight] = useState(7);
+    const [message, setMessage] = useState<string>('')
 
     const isTyping = message !== '';
 
-    useEffect(() => {
-        setMessages([])
-        setParticipants([])
-        if (marker.label === '') {
-            inputRef.current?.focus()
-        }
-    }, [marker.markerId])
+    // useEffect(() => {
+    //     const keyboardDidShowListener = Keyboard.addListener('keyboardWillShow', (e: any) => {
+    //         setKeyboardHeight(6.9999); // Récupère la hauteur du clavier
+    //         setKeyboardVisible(true);
+    //         flatListRef.current?.scrollToEnd({ animated: true });
+    //     });
 
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardWillShow', (e: any) => {
-            setKeyboardHeight(6.9999); // Récupère la hauteur du clavier
-            setKeyboardVisible(true);
-            flatListRef.current?.scrollToEnd({ animated: true });
-        });
+    //     const keyboardDidHideListener = Keyboard.addListener('keyboardWillHide', () => {
+    //         setKeyboardVisible(false);
+    //         setKeyboardHeight(7);
+    //     });
 
-        const keyboardDidHideListener = Keyboard.addListener('keyboardWillHide', () => {
-            setKeyboardVisible(false);
-            setKeyboardHeight(7);
-        });
-
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-        };
-    }, [messages]);
+    //     return () => {
+    //         keyboardDidShowListener.remove();
+    //         keyboardDidHideListener.remove();
+    //     };
+    // }, [messages]);
 
     const combineMessages = (messages: IMessage[]) => {
         return messages.reduce((acc: IMessage[], curr: IMessage) => {
@@ -76,6 +75,12 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
         }, []);
     };
 
+    const handleSendMessage = () => {
+        if (message.length > 0) {
+            firestoreAddActiveMessage(message)
+            setMessage("")
+        }
+    }
 
     const handleShowStickers = () => {
         setShowStickers(true);
@@ -94,7 +99,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
     }
 
     const renderUserIcons = () => {
-        const totalParticipants = participants.length;
+        const totalParticipants = markerParticipants.length;
         let iconSize = ICON_BASE_SIZE;
 
         const totalWidth = Math.min(totalParticipants * (iconSize), ICON_BASE_SIZE * MAX_ICONS_PER_ROW);
@@ -106,7 +111,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
         return (
             <Animated.View style={[styles.userStackIconContainer, { width: totalWidth + 5 }]} entering={FadeIn.springify().damping(17)} exiting={FadeOut.springify().damping(17)}>
-                {participants.map((user, index) => (
+                {markerParticipants.map((user, index) => (
                     <Animated.View
                         key={user.userId}
                         entering={ZoomIn.springify().damping(17).randomDelay().delay(500)}
@@ -135,18 +140,18 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
             <Animated.View
                 style={styles.messageSection}
                 entering={StretchInY.springify().damping(17)}
-                exiting={SlideOutDown.springify().damping(17)}
+                exiting={FadeOutUp.springify()}
             >
                 {/* Header Bandeau */}
-                <View style={styles.markerHeader}>
+                {/* <View style={styles.markerHeader}>
                     <View style={styles.userStackContainer}>
                         <View style={styles.userStack}>
-                            {participants.length > 0 && renderUserIcons()}
-                            {participants.length > 0 && <Animated.View
+                            {markerParticipants && markerParticipants.length > 0 && renderUserIcons()}
+                            {markerParticipants && markerParticipants.length > 0 && <Animated.View
                                 key={marker.markerId}
-                                entering={FadeIn.springify().damping(17).delay(participants.length * 15 + 500)}
+                                entering={FadeIn.springify().damping(17).delay(markerParticipants.length * 15 + 500)}
                                 style={styles.userCountBadge}>
-                                <Text style={styles.userCountText}>{participants.length}</Text>
+                                <Text style={styles.userCountText}>{markerParticipants.length}</Text>
                                 <FontAwesome6 name="users" size={13} color="gray" />
                             </Animated.View>
                             }
@@ -172,30 +177,32 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
-                </View>
+                </View> */}
+                {
+                    markerState.active && markerState.active.messages && <FlatList
+                        ref={flatListRef}
+                        data={combineMessages(markerState.active.messages)}
+                        renderItem={({ item, index }) => {
+                            // Check if there is a previous message and if it is from the same sender
+                            const previousMessage = index > 0 ? markerState.active!.messages[index - 1] : null;
+                            const isSameUser = previousMessage && previousMessage.senderId === item.senderId;
 
-                <FlatList
-                    ref={flatListRef}
-                    data={combineMessages(messages)}
-                    renderItem={({ item, index }) => {
-                        // Check if there is a previous message and if it is from the same sender
-                        const previousMessage = index > 0 ? messages[index - 1] : null;
-                        const isSameUser = previousMessage && previousMessage.senderId === item.senderId;
+                            return (
+                                <Message
+                                    key={item.messageId}
+                                    item={item}
+                                    previousMessage={isSameUser ? previousMessage : null}
+                                />
+                            );
+                        }}
+                        keyExtractor={(_, index) => index.toString()}
+                        contentContainerStyle={[styles.messageList, { paddingBottom: keyboardHeight }]}
+                        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                        getItemLayout={(_, index) => ({ length: 100, offset: 100 * index, index })}
+                        showsVerticalScrollIndicator={false}
+                    />
+                }
 
-                        return (
-                            <Message
-                                key={item.messageId}
-                                item={item}
-                                previousMessage={isSameUser ? previousMessage : null}
-                            />
-                        );
-                    }}
-                    keyExtractor={(_, index) => index.toString()}
-                    contentContainerStyle={[styles.messageList, { paddingBottom: keyboardHeight }]}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    getItemLayout={(_, index) => ({ length: 100, offset: 100 * index, index })}
-                    showsVerticalScrollIndicator={false}
-                />
                 {
                     showStickers && (
 
@@ -212,8 +219,81 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
 
                     )
                 }
-            </Animated.View>
-            <Animated.View
+                <View style={styles.bottom}>
+                    <View style={styles.bottomWrapper}>
+                        <View style={styles.settingsWrapper}>
+                            {
+                                markerState.active.creatorId === user.userId && <TouchableOpacity>
+                                    <MaterialIcons name="settings" size={22} color={THEME.colors.grayscale.darker_3x} />
+                                </TouchableOpacity>
+                            }
+                            {
+                                markerState.active.creatorId !== user.userId && <TouchableOpacity onPress={firestoreManageActiveSubscription}>
+                                    {
+                                        isSubscribed ? <MaterialIcons name="bookmark" size={22} color={THEME.colors.primary} /> : <MaterialCommunityIcons name="bookmark-outline" size={22} color={THEME.colors.grayscale.darker_3x} />
+                                    }
+                                </TouchableOpacity>
+                            }
+                            {
+                                (markerState.active.creatorId === user.userId || isSubscribed) &&
+                                <Animated.View entering={ZoomIn.springify()}>
+                                    <TouchableOpacity>
+                                        <Ionicons name="notifications" size={20} color={THEME.colors.grayscale.darker_3x} />
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            }
+                            <TouchableOpacity>
+                                <View style={styles.connectedWrapper}>
+                                    <Ionicons name="people-circle-outline" size={24} color={THEME.colors.grayscale.darker_3x} />
+                                    <View style={styles.badgeContainer}>
+                                        <Text style={styles.badgeText}>{formatNumber(13)}</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.messageInputWrapper}>
+                            <TextInput
+                                ref={inputRef}
+                                style={styles.messageInput}
+                                placeholder="Message"
+                                value={message}
+                                onChangeText={setMessage}
+                            />
+                            <Animated.View
+                                style={styles.toggleStickerButton}
+                                key={isKeyboardVisible.toString()}
+                                entering={ZoomIn.springify().damping(17)}
+                                exiting={ZoomOut.springify().damping(17).duration(500)}
+                            >
+                                <TouchableOpacity onPress={handleShowStickers}>
+                                    {!isKeyboardVisible && (
+                                        <MaterialCommunityIcons name="sticker-emoji" size={23} color={THEME.colors.grayscale.darker_3x} />
+                                    )}
+                                </TouchableOpacity>
+                            </Animated.View>
+
+                            <TouchableOpacity onPress={handleSendMessage} style={styles.sendMessageButton}>
+                                <Animated.View style={styles.iconWrapper} key={isTyping.toString()} entering={ZoomIn.springify().damping(17).delay(100)}>
+                                    {
+                                        // isLoading ? (
+                                        //     <ActivityIndicator size="small" color="#0088cc" />
+                                        // ) : (
+                                        isTyping ? (
+                                            <View style={styles.sendIcon}>
+                                                <Ionicons name="send" size={12} color={THEME.colors.grayscale.lighter_2x} />
+                                            </View>
+                                        ) : (
+                                            <FontAwesome6 name="microphone" size={18} color={THEME.colors.grayscale.darker_3x} />
+                                        )
+                                        // )
+                                    }
+                                </Animated.View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Animated.View >
+            {/* <Animated.View
                 style={styles.inputSection}
                 entering={marker.label !== '' ? SlideInDown.springify().damping(17) : undefined}
                 exiting={SlideOutDown}
@@ -232,8 +312,6 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                             value={message}
                             onChangeText={setMessage}
                         />
-
-                        {/* Bouton pour afficher la liste des stickers */}
                         <Animated.View
                             style={styles.toggleStickerButton}
                             key={isKeyboardVisible.toString()}
@@ -247,28 +325,27 @@ const MarkerChat: React.FC<IMarkerChatScreen> = ({ marker }) => {
                             </TouchableOpacity>
                         </Animated.View>
 
-                        {/* Bouton d'envoi de message ou micro */}
-                        <TouchableOpacity onPress={sendMessage} style={styles.sendMessageButton}>
+                        <TouchableOpacity onPress={handleSendMessage} style={styles.sendMessageButton}>
                             <Animated.View style={styles.iconWrapper} key={isTyping.toString()} entering={ZoomIn.springify().damping(17).delay(100)}>
                                 {
-                                    isLoading ? (
-                                        <ActivityIndicator size="small" color="#0088cc" />
+                                    // isLoading ? (
+                                    //     <ActivityIndicator size="small" color="#0088cc" />
+                                    // ) : (
+                                    isTyping ? (
+                                        <View style={styles.sendIcon}>
+                                            <Ionicons name="send" size={15} color="white" />
+                                        </View>
                                     ) : (
-                                        isTyping ? (
-                                            <View style={styles.sendIcon}>
-                                                <Ionicons name="send" size={15} color="white" />
-                                            </View>
-                                        ) : (
-                                            <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
-                                        )
+                                        <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
                                     )
+                                    // )
                                 }
                             </Animated.View>
                         </TouchableOpacity>
                     </View>
                 )}
-            </Animated.View>
-        </View>
+            </Animated.View> */}
+        </View >
     )
 }
 
@@ -292,8 +369,8 @@ const styles = StyleSheet.create({
         padding: 10,
         overflow: 'hidden',
         borderBottomWidth: 0.5,
-        borderColor: THEME.colors.grayscale.darker_x1,
-        backgroundColor: THEME.colors.grayscale.darker_x1,
+        borderColor: THEME.colors.grayscale.darker_1x,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
         borderTopLeftRadius: 15,
         borderTopRightRadius: 15,
     },
@@ -383,6 +460,7 @@ const styles = StyleSheet.create({
     messageSection: {
         flex: 10,
         width: '100%',
+        height: '100%',
         backgroundColor: THEME.colors.grayscale.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
@@ -398,7 +476,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'flex-start',
         paddingHorizontal: 10,
-        paddingVertical: 10
+        paddingVertical: 10,
     },
     // Bouton pour fermer les stickers
     closeStickerButton: {
@@ -410,27 +488,64 @@ const styles = StyleSheet.create({
     // Section d'entrée du message et des stickers
     inputSection: {
         flex: 1,
-        width: '100%',
         justifyContent: 'center',
         alignItems: 'center',
         marginVertical: 10,
     },
+    bottom: {
+        marginHorizontal: 10,
+        borderTopWidth: 1,
+        borderColor: THEME.colors.grayscale.darker_1x,
+    },
+    bottomWrapper: {
+        marginVertical: 7,
+        gap: 10,
+        flexDirection: 'row',
+    },
+    settingsWrapper: {
+        flexDirection: 'row',
+        borderRadius: 10,
+        alignItems: 'center',
+        backgroundColor: THEME.colors.grayscale.darker_1x,
+        paddingHorizontal: 5,
+        gap: 5
+    },
+    connectedWrapper: {
+        position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    badgeContainer: {
+        position: 'absolute',
+        bottom: -5,
+        right: -5,
+        backgroundColor: '#FF4C4C',
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 1
+    },
+    badgeText: {
+        color: 'white',
+        fontSize: 6,
+        fontWeight: 'bold',
+    },
     // Conteneur d'entrée de message
     messageInputWrapper: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        width: '100%',
-        backgroundColor: THEME.colors.grayscale.main,
-        borderRadius: 15,
-        borderColor: 'rgba(0, 0, 0, 0.15)',
-        borderWidth: 1,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
+        borderRadius: 10,
         paddingHorizontal: 10,
-        height: 45,
+        height: 40,
     },
     // Zone d'entrée de texte
     messageInput: {
         flex: 1,
-        backgroundColor: THEME.colors.grayscale.main,
+        backgroundColor: THEME.colors.grayscale.darker_1x,
     },
     // Bouton pour afficher les stickers
     toggleStickerButton: {
@@ -451,11 +566,11 @@ const styles = StyleSheet.create({
     // Icône d'envoi
     sendIcon: {
         borderRadius: 15,
-        width: 25,
-        height: 25,
+        width: 23,
+        height: 23,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#0088cc',
+        backgroundColor: THEME.colors.primary,
     },
     // Conteneur des stickers
     stickerSelector: {

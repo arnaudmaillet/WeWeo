@@ -12,13 +12,13 @@ import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { THEME } from '~/constants/constants';
 import { fakeUserLocation } from '~/contexts/AuthProvider';
-import { useWindow } from '~/contexts/window/Context';
-import { WindowType } from '~/contexts/window/types';
+import { useWindow } from '~/contexts/windows/Context';
+import { WindowType } from '~/contexts/windows/types';
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useMarker } from '~/contexts/marker/Context'
-import { IMarker, MarkerType } from '~/contexts/marker/types';
+import { useMarker } from '~/contexts/markers/Context'
 import { Image } from 'expo-image';
+import { IMarker, MarkerType } from '~/contexts/markers/types';
 
 const Map: React.FC<IMap> = () => {
 
@@ -280,9 +280,9 @@ const Map: React.FC<IMap> = () => {
                     longitudeDelta: 0.0421,
                 }}
                 mapPadding={{
-                    top: 0,
+                    top: markerState.active ? screenDimensions.height * 0.70 : 0,
                     right: screenDimensions.width * 0.05,
-                    bottom: markerState.active ? screenDimensions.height * 0.78 : 0,
+                    bottom: 0,
                     left: screenDimensions.width * 0.05,
                 }}
                 showsPointsOfInterest={false}

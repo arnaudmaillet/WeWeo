@@ -30,6 +30,21 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
             };
         case MarkerActionType.SET_ACTIVE:
             return { ...state, active: action.payload };
+        case MarkerActionType.UPDATE_ACTIVE_MESSAGES:
+            if (!state.active) {
+                throw new Error("No active marker to update messages");
+            }
+            const updatedActiveMarker = {
+                ...state.active,
+                messages: action.payload,
+            };
+            return {
+                ...state,
+                active: updatedActiveMarker,
+                list: state.list.map(marker =>
+                    marker.markerId === updatedActiveMarker.markerId ? updatedActiveMarker : marker
+                ),
+            };
         default:
             throw new Error(`Unhandled action type: ${JSON.stringify(action)}`);
     }
