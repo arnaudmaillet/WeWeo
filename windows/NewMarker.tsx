@@ -32,7 +32,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
 
     const { user } = useAuth();
     const { state: windowState, setLoaded: setWindowLoaded } = useWindow();
-    const { state: markerState, updateNew: updateNewMarker, firestoreAdd: addNewMarker } = useMarker();
+    const { state: markerState, updateNew: updateNewMarker, firestoreAdd: addNewMarker, } = useMarker();
 
     const friendsContainer = useSharedValue(0);
 
@@ -91,7 +91,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
             >
                 {isStickersOpen ? (
                     <View style={styles.stickerSelectionWrapper}>
-                        <StickersList />
+                        <StickersList isHorizontal={true} onClickItem={(url) => updateNewMarker({ icon: url })} />
                     </View>
                 ) : (
                     <View style={styles.accessSettingsWrapper}>

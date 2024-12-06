@@ -79,7 +79,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
                             </View>
                         </Animated.View>
                         <Animated.View
-                            entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
+                            entering={FadeIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
                             style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.grayscale.darker_1x }]}
                         >
                             {renderContent()}
@@ -88,7 +88,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
                 </View>
             ) : (
                 <Animated.View
-                    entering={BounceIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
+                    entering={FadeIn.springify().stiffness(150).damping(100).delay(200).randomDelay()}
                     style={[styles.messageBubble, { alignSelf: 'flex-end' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.primary }]}
                 >
                     {renderContent()}

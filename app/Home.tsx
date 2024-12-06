@@ -1,9 +1,9 @@
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native'
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Text, Dimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
+import Animated, { FadeInDown, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import SearchMenuWindow from '~/windows/SearchMenu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useWindow } from '~/contexts/windows/Context'
@@ -11,15 +11,18 @@ import { useWindow } from '~/contexts/windows/Context'
 import NewMarkerWindow from '~/windows/NewMarker'
 import { WindowType } from '~/contexts/windows/types'
 import { useMarker } from '~/contexts/markers/Context'
-import MarkerChat from '~/components/MarkerChat'
+import MarkerChat from '~/components/marker/MarkerChat'
 import { IMarker } from '~/contexts/markers/types'
+import MarkerChatBottom from '~/components/marker/MarketChatBottom';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
+const _MULTI_WINDOWS_OFFSET = 5
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const insets = useSafeAreaInsets();
+    const translateSheetYBottomOffset = useSharedValue(0)
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
@@ -27,7 +30,9 @@ const MainScreen = () => {
 
     const { keyboardProps } = useKeyboard();
     const { state: windowState, setActive: setActiveWindow } = useWindow()
-    const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation, } = useMarker()
+    const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation, isChatBottomWindowShowed, setIsChatBottomWindowShowed } = useMarker()
+
+    const screenHeight = Dimensions.get('window').height;
 
     const dismissKeyboard = () => {
         Keyboard.dismiss();
@@ -36,6 +41,12 @@ const MainScreen = () => {
     const translateSheetY = useAnimatedStyle(() => {
         return {
             transform: [{ translateY: offset.value }]
+        };
+    })
+
+    const translateSheetYBottom = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateSheetYBottomOffset.value }]
         };
     })
 
@@ -49,6 +60,20 @@ const MainScreen = () => {
         setActiveMarker(point);
         !point && setActiveWindow(WindowType.DEFAULT);
     }
+
+    const panTranslateSheetYBottom = Gesture.Pan()
+        .onChange((event) => {
+            const currentY = event.translationY;
+            translateSheetYBottomOffset.value = currentY > 0 ? currentY : withSpring(Math.max(-(_MAX_GESTURE_VERTICAL_OFFSET), currentY));
+        })
+        .onFinalize(() => {
+            if (translateSheetYBottomOffset.value > 30) {
+                translateSheetYBottomOffset.value = withSpring(0, {}, () => {
+                    runOnJS(setIsChatBottomWindowShowed)(false)
+                })
+            }
+            translateSheetYBottomOffset.value = withSpring(0);
+        });
 
     const pan = Gesture.Pan()
         .onChange((event) => {
@@ -112,16 +137,17 @@ const MainScreen = () => {
         .onEnd((event) => {
             const isVerticalSwipe = Math.abs(event.translationY) > Math.abs(event.translationX);
             if (isVerticalSwipe) {
-                if (offset.value > -520 / 3) {
+                if (offset.value > -100) {
                     // Si le swipe vers le haut n'est pas suffisant, revenir à 0
                     offset.value = withSpring(0);
                 } else {
+                    runOnJS(runOnJSSetSelectedMarker)(null);
                     // Si le swipe vers le haut est suffisant, fermer le marqueur
-                    offset.value = withTiming(-1000, {}, (finished) => {
-                        if (finished && markerState.active) {
-                            runOnJS(runOnJSSetSelectedMarker)(null);
-                        }
-                    });
+                    // offset.value = withTiming(-1000, {}, (finished) => {
+                    //     if (finished && markerState.active) {
+                    //         runOnJS(runOnJSSetSelectedMarker)(null);
+                    //     }
+                    // });
                 }
             } else {
                 runOnJS(dismissKeyboard)();
@@ -164,7 +190,7 @@ const MainScreen = () => {
                                 }}
                             /> */}
                             <GestureDetector gesture={panGesture}>
-                                <Animated.View style={[translateSheetY, styles.sheet, { top: insets.top }]}>
+                                <Animated.View style={[translateSheetY, styles.sheet, { top: insets.top, height: screenHeight * .75 - insets.top - _MULTI_WINDOWS_OFFSET }]}>
                                     <KeyboardAvoidingView
                                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                                         keyboardVerticalOffset={65}
@@ -172,6 +198,21 @@ const MainScreen = () => {
                                     >
                                         <MarkerChat />
                                     </KeyboardAvoidingView>
+                                </Animated.View>
+                            </GestureDetector>
+                            <GestureDetector gesture={panTranslateSheetYBottom}>
+                                <Animated.View
+                                    pointerEvents={isChatBottomWindowShowed ? 'auto' : 'none'}
+                                    key={isChatBottomWindowShowed.toString()}
+                                    style={[styles.sheet, { bottom: insets.bottom, height: screenHeight * .25 - insets.bottom - _MULTI_WINDOWS_OFFSET }]}
+                                    entering={FadeInDown.springify()}
+                                    exiting={FadeOutDown.springify()}>
+                                    {
+                                        isChatBottomWindowShowed &&
+                                        <Animated.View style={[translateSheetYBottom, { flex: 1 }]}>
+                                            <MarkerChatBottom />
+                                        </Animated.View>
+                                    }
                                 </Animated.View>
                             </GestureDetector>
                         </>
@@ -257,7 +298,6 @@ const styles = StyleSheet.create({
         zIndex: 1,
         width: '94%',
         maxWidth: 800,
-        height: '70%'
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
@@ -270,5 +310,5 @@ const styles = StyleSheet.create({
         zIndex: 2,
         width: '94%',
         maxWidth: 800,
-    }
+    },
 })

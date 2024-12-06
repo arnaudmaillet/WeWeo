@@ -6,16 +6,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import Stickers from './Stickers';
-import Message from './Message';
+import Stickers from '../Stickers';
+import Message from '../Message';
 
 import { THEME } from '~/constants/constants';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useMap } from '~/contexts/MapProvider';
 import { useMarker } from '~/contexts/markers/Context';
 import { IMarker, IMessage } from '~/contexts/markers/types';
 import useNumberFormatter from '~/hooks/useNumberFormatter';
 import { useAuth } from '~/contexts/AuthProvider';
+import SettingsWrapper from './SettingsWrapper';
 
 
 const MAX_ICONS_PER_ROW = 5;
@@ -29,7 +29,13 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
     const inputRef = useRef<TextInput>(null);
 
     const { user } = useAuth()
-    const { state: markerState, participants: markerParticipants, isSubscribed, firestoreManageActiveSubscription, firestoreAddActiveMessage } = useMarker()
+    const {
+        state: markerState,
+        isSubscribed,
+        isChatBottomWindowShowed,
+        setIsChatBottomWindowShowed,
+        firestoreAddActiveMessage,
+    } = useMarker()
 
     if (!markerState.active || !user) return null
 
@@ -82,102 +88,14 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
         }
     }
 
-    const handleShowStickers = () => {
-        setShowStickers(true);
-    }
-
-    const test = () => {
-        mapRef.current?.animateCamera(
-            {
-                center: {
-                    latitude: 37.7749,
-                    longitude: -122.4194,
-                },
-            },
-            { duration: 1000 }
-        );
-    }
-
-    const renderUserIcons = () => {
-        const totalParticipants = markerParticipants.length;
-        let iconSize = ICON_BASE_SIZE;
-
-        const totalWidth = Math.min(totalParticipants * (iconSize), ICON_BASE_SIZE * MAX_ICONS_PER_ROW);
-
-        // Diviser la taille des icônes si le nombre dépasse la limite
-        if (totalParticipants > MAX_ICONS_PER_ROW) {
-            iconSize = ICON_BASE_SIZE / 2 - 2;
-        }
-
-        return (
-            <Animated.View style={[styles.userStackIconContainer, { width: totalWidth + 5 }]} entering={FadeIn.springify().damping(17)} exiting={FadeOut.springify().damping(17)}>
-                {markerParticipants.map((user, index) => (
-                    <Animated.View
-                        key={user.userId}
-                        entering={ZoomIn.springify().damping(17).randomDelay().delay(500)}
-                        exiting={ZoomOut}
-                        style={[
-                            styles.userStackIcon,
-                            { width: iconSize, height: iconSize },
-                        ]}
-                    >
-                        <View style={[styles.userIconContainer, { borderRadius: iconSize / 2 }]}>
-                            <Text style={[styles.userAvatarText, { fontSize: iconSize * 0.4 }]}>
-                                {user.username.charAt(0)}
-                            </Text>
-                        </View>
-                    </Animated.View>
-                ))}
-            </Animated.View>
-        );
-    };
-
 
     return (
-        <View
-            style={styles.container}
+        <Animated.View
+            style={styles.messageSection}
+            entering={StretchInY.springify().damping(17)}
+            exiting={FadeOutUp.springify()}
         >
-            <Animated.View
-                style={styles.messageSection}
-                entering={StretchInY.springify().damping(17)}
-                exiting={FadeOutUp.springify()}
-            >
-                {/* Header Bandeau */}
-                {/* <View style={styles.markerHeader}>
-                    <View style={styles.userStackContainer}>
-                        <View style={styles.userStack}>
-                            {markerParticipants && markerParticipants.length > 0 && renderUserIcons()}
-                            {markerParticipants && markerParticipants.length > 0 && <Animated.View
-                                key={marker.markerId}
-                                entering={FadeIn.springify().damping(17).delay(markerParticipants.length * 15 + 500)}
-                                style={styles.userCountBadge}>
-                                <Text style={styles.userCountText}>{markerParticipants.length}</Text>
-                                <FontAwesome6 name="users" size={13} color="gray" />
-                            </Animated.View>
-                            }
-                        </View>
-                    </View>
-                    <Animated.View
-                        style={{ flex: 2 }}
-                        entering={FadeInRight.springify().damping(20)}
-                        key={isSubscribed.toString()}
-                    >
-                        <TouchableOpacity style={styles.subscribeContainer} onPress={test}>
-                            <View style={[
-                                styles.subscribeIcon,
-                                { backgroundColor: isSubscribed ? THEME.colors.primary : 'transparent' },
-                            ]}>
-                                {
-                                    isSubscribed ? (
-                                        <MaterialIcons name='favorite' size={18} color={THEME.colors.accent} />
-                                    ) : (
-                                        <Text style={styles.subscribeButton}>{'Subscribe'}</Text>
-                                    )
-                                }
-                            </View>
-                        </TouchableOpacity>
-                    </Animated.View>
-                </View> */}
+            <View style={{ flex: 1 }}>
                 {
                     markerState.active && markerState.active.messages && <FlatList
                         ref={flatListRef}
@@ -202,113 +120,31 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
                         showsVerticalScrollIndicator={false}
                     />
                 }
+            </View>
+            {
+                showStickers && (
 
-                {
-                    showStickers && (
-
-                        <TouchableOpacity
-                            onPress={() => setShowStickers(false)}
-                            style={styles.closeStickerButton}
+                    <TouchableOpacity
+                        onPress={() => setShowStickers(false)}
+                        style={styles.closeStickerButton}
+                    >
+                        <Animated.View
+                            entering={BounceIn.springify().damping(17)}
                         >
-                            <Animated.View
-                                entering={BounceIn.springify().damping(17)}
-                            >
-                                <FontAwesome6 name="circle-xmark" size={20} color="#D3D3D3" />
-                            </Animated.View>
-                        </TouchableOpacity>
+                            <FontAwesome6 name="circle-xmark" size={20} color="#D3D3D3" />
+                        </Animated.View>
+                    </TouchableOpacity>
 
-                    )
-                }
-                <View style={styles.bottom}>
-                    <View style={styles.bottomWrapper}>
-                        <View style={styles.settingsWrapper}>
-                            {
-                                markerState.active.creatorId === user.userId && <TouchableOpacity>
-                                    <MaterialIcons name="settings" size={22} color={THEME.colors.grayscale.darker_3x} />
-                                </TouchableOpacity>
-                            }
-                            {
-                                markerState.active.creatorId !== user.userId && <TouchableOpacity onPress={firestoreManageActiveSubscription}>
-                                    {
-                                        isSubscribed ? <MaterialIcons name="bookmark" size={22} color={THEME.colors.primary} /> : <MaterialCommunityIcons name="bookmark-outline" size={22} color={THEME.colors.grayscale.darker_3x} />
-                                    }
-                                </TouchableOpacity>
-                            }
-                            {
-                                (markerState.active.creatorId === user.userId || isSubscribed) &&
-                                <Animated.View entering={ZoomIn.springify()}>
-                                    <TouchableOpacity>
-                                        <Ionicons name="notifications" size={20} color={THEME.colors.grayscale.darker_3x} />
-                                    </TouchableOpacity>
-                                </Animated.View>
-                            }
-                            <TouchableOpacity>
-                                <View style={styles.connectedWrapper}>
-                                    <Ionicons name="people-circle-outline" size={24} color={THEME.colors.grayscale.darker_3x} />
-                                    <View style={styles.badgeContainer}>
-                                        <Text style={styles.badgeText}>{formatNumber(13)}</Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.messageInputWrapper}>
-                            <TextInput
-                                ref={inputRef}
-                                style={styles.messageInput}
-                                placeholder="Message"
-                                value={message}
-                                onChangeText={setMessage}
-                            />
-                            <Animated.View
-                                style={styles.toggleStickerButton}
-                                key={isKeyboardVisible.toString()}
-                                entering={ZoomIn.springify().damping(17)}
-                                exiting={ZoomOut.springify().damping(17).duration(500)}
-                            >
-                                <TouchableOpacity onPress={handleShowStickers}>
-                                    {!isKeyboardVisible && (
-                                        <MaterialCommunityIcons name="sticker-emoji" size={23} color={THEME.colors.grayscale.darker_3x} />
-                                    )}
-                                </TouchableOpacity>
-                            </Animated.View>
-
-                            <TouchableOpacity onPress={handleSendMessage} style={styles.sendMessageButton}>
-                                <Animated.View style={styles.iconWrapper} key={isTyping.toString()} entering={ZoomIn.springify().damping(17).delay(100)}>
-                                    {
-                                        // isLoading ? (
-                                        //     <ActivityIndicator size="small" color="#0088cc" />
-                                        // ) : (
-                                        isTyping ? (
-                                            <View style={styles.sendIcon}>
-                                                <Ionicons name="send" size={12} color={THEME.colors.grayscale.lighter_2x} />
-                                            </View>
-                                        ) : (
-                                            <FontAwesome6 name="microphone" size={18} color={THEME.colors.grayscale.darker_3x} />
-                                        )
-                                        // )
-                                    }
-                                </Animated.View>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Animated.View >
-            {/* <Animated.View
-                style={styles.inputSection}
-                entering={marker.label !== '' ? SlideInDown.springify().damping(17) : undefined}
-                exiting={SlideOutDown}
-                key={showStickers.toString()}
-            >
-                {showStickers ? (
-                    <View style={styles.stickerSelector}>
-                        <Stickers />
-                    </View>
-                ) : (
+                )
+            }
+            <View style={styles.bottom}>
+                <View style={styles.bottomWrapper}>
+                    <SettingsWrapper />
                     <View style={styles.messageInputWrapper}>
                         <TextInput
                             ref={inputRef}
                             style={styles.messageInput}
-                            placeholder="Tapez votre message..."
+                            placeholder="Message"
                             value={message}
                             onChangeText={setMessage}
                         />
@@ -318,9 +154,9 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
                             entering={ZoomIn.springify().damping(17)}
                             exiting={ZoomOut.springify().damping(17).duration(500)}
                         >
-                            <TouchableOpacity onPress={handleShowStickers}>
+                            <TouchableOpacity onPress={() => setIsChatBottomWindowShowed(!isChatBottomWindowShowed)}>
                                 {!isKeyboardVisible && (
-                                    <MaterialCommunityIcons name="sticker-emoji" size={23} color="#D3D3D3" />
+                                    <MaterialCommunityIcons name="sticker-emoji" size={23} color={THEME.colors.grayscale.darker_3x} />
                                 )}
                             </TouchableOpacity>
                         </Animated.View>
@@ -333,35 +169,26 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
                                     // ) : (
                                     isTyping ? (
                                         <View style={styles.sendIcon}>
-                                            <Ionicons name="send" size={15} color="white" />
+                                            <Ionicons name="send" size={12} color={THEME.colors.grayscale.lighter_2x} />
                                         </View>
                                     ) : (
-                                        <FontAwesome6 name="microphone" size={20} color="#D3D3D3" />
+                                        <FontAwesome6 name="microphone" size={18} color={THEME.colors.grayscale.darker_3x} />
                                     )
                                     // )
                                 }
                             </Animated.View>
                         </TouchableOpacity>
                     </View>
-                )}
-            </Animated.View> */}
-        </View >
+                </View>
+                <View style={styles.ellipsis}>
+                    <FontAwesome6 name="ellipsis" size={20} color={THEME.colors.grayscale.darker_3x} />
+                </View>
+            </View>
+        </Animated.View >
     )
 }
 
 const styles = StyleSheet.create({
-    // Conteneur principal
-    container: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        width: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
-    },
     // Bandeau du haut avec les utilisateurs
     markerHeader: {
         flexDirection: 'row',
@@ -458,9 +285,8 @@ const styles = StyleSheet.create({
     },
     // Section des messages
     messageSection: {
-        flex: 10,
+        flex: 1,
         width: '100%',
-        height: '100%',
         backgroundColor: THEME.colors.grayscale.main,
         borderRadius: 15,
         borderColor: 'rgba(0, 0, 0, 0.15)',
@@ -498,7 +324,6 @@ const styles = StyleSheet.create({
         borderColor: THEME.colors.grayscale.darker_1x,
     },
     bottomWrapper: {
-        marginVertical: 7,
         gap: 10,
         flexDirection: 'row',
     },
@@ -506,9 +331,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         borderRadius: 10,
         alignItems: 'center',
-        backgroundColor: THEME.colors.grayscale.darker_1x,
         paddingHorizontal: 5,
-        gap: 5
+        gap: 5,
+        marginTop: 10,
+        marginBottom: 15,
     },
     connectedWrapper: {
         position: 'relative',
@@ -540,6 +366,8 @@ const styles = StyleSheet.create({
         backgroundColor: THEME.colors.grayscale.darker_1x,
         borderRadius: 10,
         paddingHorizontal: 10,
+        marginTop: 10,
+        marginBottom: 15,
         height: 40,
     },
     // Zone d'entrée de texte
@@ -588,6 +416,15 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    ellipsis: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        position: 'absolute',
+        bottom: -3,
+        left: '50%',
+        transform: [{ translateX: -25 }],
+        width: 50
+    }
 });
 
 

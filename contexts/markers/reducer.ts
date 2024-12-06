@@ -45,6 +45,22 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
                     marker.markerId === updatedActiveMarker.markerId ? updatedActiveMarker : marker
                 ),
             };
+        case MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS:
+            if (!state.active) {
+                //throw new Error("No active marker to update connected users");
+                return state
+            }
+            const updatedActiveWithConnectedUsers = {
+                ...state.active,
+                connectedUserIds: action.payload,
+            };
+            return {
+                ...state,
+                active: updatedActiveWithConnectedUsers,
+                list: state.list.map(marker =>
+                    marker.markerId === updatedActiveWithConnectedUsers.markerId ? updatedActiveWithConnectedUsers : marker
+                ),
+            };
         default:
             throw new Error(`Unhandled action type: ${JSON.stringify(action)}`);
     }

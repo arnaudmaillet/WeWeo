@@ -18,13 +18,15 @@ export const stickers: IFile[] = [
     { name: "sticker10", url: "https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker10.gif", type: MimeTypes.GIF },
 ];
 
+interface StickerListProps {
+    isHorizontal: boolean
+    onClickItem: (url: string) => void
+}
 
-const StickersList: React.FC = () => {
-
-    const { updateNew: updateNewMarker } = useMarker()
+const StickersList: React.FC<StickerListProps> = ({ isHorizontal, onClickItem }) => {
 
     const renderSticker = ({ item }: { item: IFile }) => (
-        <TouchableOpacity onPress={() => updateNewMarker({ icon: item.url })}>
+        <TouchableOpacity onPress={() => onClickItem(item.url)}>
             <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
                 <Image source={{ uri: item.url }} style={styles.sticker} />
             </Animated.View>
@@ -37,8 +39,10 @@ const StickersList: React.FC = () => {
             renderItem={renderSticker}
             keyExtractor={(item) => item.url}
             contentContainerStyle={styles.stickerList}
-            horizontal
+            numColumns={isHorizontal ? undefined : 5}
+            horizontal={isHorizontal ? true : undefined}
             showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
         />
     );
 };

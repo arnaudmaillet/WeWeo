@@ -6,7 +6,7 @@ import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
 import { useMap } from '~/contexts/MapProvider';
-import NewMarker from './newMarker/NewMarker';
+import NewMarker from './marker/NewMarker';
 
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';

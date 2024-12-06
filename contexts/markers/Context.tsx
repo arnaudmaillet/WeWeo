@@ -8,7 +8,7 @@ import { useWindow } from "~/contexts/windows/Context"
 import { useAuth } from "../AuthProvider";
 import { initialMarkerState, markerReducer } from "./reducer";
 import { IMarker, IMessage, INewMarker, MarkerActionType, MarkerState } from "./types";
-import { addDoc, arrayRemove, arrayUnion, collection, doc, GeoPoint, getDoc, onSnapshot, orderBy, query, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, doc, GeoPoint, getDoc, onSnapshot, orderBy, query, runTransaction, updateDoc, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
 import { IUser } from "~/types/UserInterfaces";
@@ -20,16 +20,17 @@ export interface MarkerContextProps {
     dotAnimation: Animated.Value
     closeAnimation: Animated.Value
     mapbuttons: IAnimatedButton[]
-    participants: IUser[]
     isSubscribed: boolean
-    setNew: (marker: INewMarker | IMarker | null) => void
-    updateNew: (updatedFields: Partial<INewMarker | IMarker>) => void
-    setActive: (marker: IMarker | null) => void
+    isChatBottomWindowShowed: boolean
+    setNew: (payload: INewMarker | IMarker | null) => void
+    updateNew: (payload: Partial<INewMarker | IMarker>) => void
+    setActive: (payload: IMarker | null) => void
     firestoreAdd: () => void
-    firestoreAddActiveMessage: (payload: string) => Promise<void>
+    firestoreAddActiveMessage: (message: string) => Promise<void>
     firestoreManageActiveSubscription: () => Promise<void>
     enteringAnimation: () => Promise<void>
     exitingAnimation: (setActiveWindow: WindowType) => Promise<void>
+    setIsChatBottomWindowShowed: (payload: boolean) => void
 }
 
 export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -38,8 +39,9 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { setActive: setActiveWindow } = useWindow()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
-    const [participants, setParticipants] = useState<IUser[]>()
     const [isSubscribed, setIsSubscribed] = useState<boolean>()
+    const [isChatBottomWindowShowed, setIsChatBottomWindowShowed] = useState<boolean>(false)
+    const [isChatBottomWindowFinished, setIsChatBottomWindowFinished] = useState<boolean>(true)
 
     const dotAnimation = useRef(new Animated.Value(0)).current;
     const closeAnimation = useRef(new Animated.Value(0)).current;
@@ -67,6 +69,10 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     const updateActiveMessages = (payload: IMessage[]) => {
         dispatch({ type: MarkerActionType.UPDATE_ACTIVE_MESSAGES, payload: payload });
+    };
+
+    const updateActiveConnectedUsers = (payload: string[]) => {
+        dispatch({ type: MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS, payload: payload });
     };
 
     const firestoreFetch = () => {
@@ -141,6 +147,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             });
 
             dispatch({ type: MarkerActionType.SET_NEW, payload: null });
+            setActiveWindow(WindowType.DEFAULT)
             return true;
         } catch (error) {
             console.error("Failed to add marker:", error);
@@ -148,7 +155,25 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
     };
 
-    const firestoreFetchActiveMessages = () => {
+    const firestoreAddActiveMessage = async (message: string) => {
+        if (user && state.active?.markerId) {
+            const messageData = {
+                content: message,
+                senderId: user.userId,
+                type: 'message',
+                createdAt: new Date().getTime(),
+            };
+
+            try {
+                const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
+                await addDoc(messagesCollection, messageData);
+            } catch (error) {
+                console.error("Error sending message:", error);
+            }
+        }
+    };
+
+    const firestoreManageActiveMessages = () => {
         const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
         const q = query(messagesCollection, orderBy("createdAt", "asc"));
 
@@ -185,20 +210,13 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (docSnapshot.exists()) {
                 const markerData = docSnapshot.data();
                 const connectedUserIds = markerData.connectedUserIds || [];
-                const subscriptionUserIds = markerData.subscriptionUserIds || [];
-
-                const allRelevantUserIds = Array.from(new Set([...connectedUserIds, ...subscriptionUserIds]));
-
                 const usersData = await Promise.all(
-                    allRelevantUserIds.map(async (userId) => {
+                    connectedUserIds.map(async (userId: string) => {
                         const userDoc = await getDoc(doc(firestore, "users", userId));
                         return userDoc.exists() ? { userId, ...userDoc.data() } : null;
                     })
                 );
-
-                const validUsers = usersData.filter(user => user !== null);
-
-                setParticipants(validUsers as IUser[]);
+                updateActiveConnectedUsers(usersData);
             }
         });
 
@@ -208,41 +226,49 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
     }
 
-    const firestoreAddActiveMessage = async (payload: string) => {
-        if (user && state.active?.markerId) {
-            const messageData = {
-                content: payload,
-                senderId: user.userId,
-                type: 'message',
-                createdAt: new Date().getTime(),
-            };
-
-            try {
-                const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
-                await addDoc(messagesCollection, messageData);
-            } catch (error) {
-                console.error("Error sending message:", error);
-            }
-        }
-    };
-
     const firestoreManageActiveConnection = () => {
+
         const markerRef = doc(firestore, "markers", state.active!.markerId);
 
         const connectUser = async () => {
-            try {
-                await updateDoc(markerRef, {
-                    connectedUserIds: arrayUnion(user!.userId),
-                });
-            } catch (error) {
-                console.error("Erreur lors de l'ajout de l'utilisateur aux utilisateurs connectés:", error);
+            if (!state.active!.connectedUserIds.includes(user!.userId)) {
+                try {
+                    await runTransaction(firestore, async (transaction) => {
+                        const markerDoc = await transaction.get(markerRef);
+                        if (!markerDoc.exists()) {
+                            throw new Error("Le document du marker n'existe pas.");
+                        }
+
+                        const currentConnectedUsers = markerDoc.data()?.connectedUserIds || [];
+
+                        if (!currentConnectedUsers.includes(user)) {
+                            transaction.update(markerRef, {
+                                connectedUserIds: [...currentConnectedUsers, user!.userId],
+                            });
+                        }
+                    });
+                } catch (error) {
+                    console.error("Erreur lors de l'ajout de l'utilisateur aux utilisateurs connectés:", error);
+                }
             }
         };
 
         const disconnectUser = async () => {
             try {
-                await updateDoc(markerRef, {
-                    connectedUserIds: arrayRemove(user!.userId),
+                await runTransaction(firestore, async (transaction) => {
+                    const markerDoc = await transaction.get(markerRef);
+                    if (!markerDoc.exists()) {
+                        throw new Error("Le document du marker n'existe pas.");
+                    }
+
+                    const currentConnectedUsers = markerDoc.data()?.connectedUserIds || [];
+
+                    // Retire l'utilisateur uniquement s'il est présent
+                    if (currentConnectedUsers.includes(user!.userId)) {
+                        transaction.update(markerRef, {
+                            connectedUserIds: currentConnectedUsers.filter((id: string) => id !== user!.userId),
+                        });
+                    }
                 });
             } catch (error) {
                 console.error("Erreur lors de la suppression de l'utilisateur des utilisateurs connectés:", error);
@@ -314,6 +340,8 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         await startAnimation(100, 0, () => resetAnimation())
     };
 
+
+
     useEffect(() => {
         user && firestoreFetch();
     }, [user]);
@@ -321,12 +349,15 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     useEffect(() => {
         if (user && state.active) {
-            setParticipants([])
             setIsSubscribed(state.active.subscribedUserIds.includes(user.userId))
-            firestoreFetchActiveMessages()
-            firestoreManageActiveConnection()
+            firestoreManageActiveMessages()
+            const unsubscribe = firestoreManageActiveConnection();
+            return () => {
+                unsubscribe();
+            };
         }
     }, [state.active?.markerId]);
+
 
     return (
         <MarkerContext.Provider value={{
@@ -334,8 +365,9 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             dotAnimation,
             closeAnimation,
             mapbuttons,
-            participants,
             isSubscribed,
+            isChatBottomWindowShowed,
+            isChatBottomWindowFinished,
             setNew,
             updateNew,
             setActive,
@@ -344,6 +376,8 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             firestoreManageActiveSubscription,
             enteringAnimation,
             exitingAnimation,
+            setIsChatBottomWindowShowed,
+            setIsChatBottomWindowFinished
         }}>
             {children}
         </MarkerContext.Provider>

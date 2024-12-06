@@ -52,6 +52,7 @@ export enum MarkerActionType {
     UPDATE_NEW = "UPDATE_NEW",
     SET_ACTIVE = "SET_ACTIVE",
     UPDATE_ACTIVE_MESSAGES = "UPDATE_ACTIVE_MESSAGES",
+    UPDATE_ACTIVE_CONNECTED_USERS = "UPDATE_ACTIVE_CONNECTED_USERS",
 }
 
 export type MarkerAction =
@@ -62,4 +63,5 @@ export type MarkerAction =
     | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
     | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
     | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
+    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS; payload: string[] }
 
