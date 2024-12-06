@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated, { ZoomIn, ZoomOut, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
@@ -91,7 +91,11 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
                         <View style={styles.connectedWrapper}>
                             <Ionicons name="people-circle-outline" size={24} color={THEME.colors.grayscale.darker_3x} />
                             <View style={styles.badgeContainer}>
-                                <Text style={styles.badgeText}>{markerState.active.connectedUserIds.length}</Text>
+                                {
+                                    markerState.active.connectedUserIds.length > 0 ?
+                                        <Text style={styles.badgeText}>{markerState.active.connectedUserIds.length}</Text> :
+                                        <ActivityIndicator size="small" color={THEME.colors.grayscale.lighter_2x} style={{ position: 'absolute', transform: [{ scale: 0.6 }] }} />
+                                }
                             </View>
                         </View>
                     </TouchableOpacity>

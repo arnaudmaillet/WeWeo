@@ -99,7 +99,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
                 {
                     markerState.active && markerState.active.messages && <FlatList
                         ref={flatListRef}
-                        data={combineMessages(markerState.active.messages)}
+                        data={markerState.active.messages}
                         renderItem={({ item, index }) => {
                             // Check if there is a previous message and if it is from the same sender
                             const previousMessage = index > 0 ? markerState.active!.messages[index - 1] : null;

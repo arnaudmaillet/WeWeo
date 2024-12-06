@@ -36,14 +36,9 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
         if (item.type === 'sticker') {
             return <Image source={{ uri: item.content }} style={styles.sticker} />;
         } else {
-            // Append current message content to the previous message content if it's the same sender
-            const combinedContent = previousMessage && previousMessage.senderId === item.senderId
-                ? `${previousMessage.content}\n${item.content}`
-                : item.content;
-
             return (
                 <Animated.Text style={isCurrentUser ? styles.messageTextCurrentUser : styles.messageText} entering={FadeIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}>
-                    {combinedContent}
+                    {item.content}
                 </Animated.Text>
             );
         }
@@ -61,23 +56,27 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
         >
             {!isCurrentUser ? (
                 <View style={styles.senderInfoContainer}>
-                    <Text style={styles.senderUsername}>
-                        {senderInfo?.username}
-                    </Text>
+                    {
+                        previousMessage?.senderId !== item.senderId && <Text style={styles.senderUsername}>
+                            {senderInfo?.username}
+                        </Text>
+                    }
                     <View style={styles.messageContentWrapper}>
-                        <Animated.View
-                            style={styles.avatarContainer}
-                            entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
-                        >
-                            <View style={styles.senderAvatar}>
-                                <Text style={styles.avatarText}>
-                                    {initials}
-                                </Text>
-                                <Text style={styles.flagContainer}>
-                                    {locales.data.find(locale => locale.value === senderInfo?.locale)?.flag}
-                                </Text>
-                            </View>
-                        </Animated.View>
+                        {
+                            previousMessage?.senderId !== item.senderId && <Animated.View
+                                style={styles.avatarContainer}
+                                entering={BounceIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
+                            >
+                                <View style={styles.senderAvatar}>
+                                    <Text style={styles.avatarText}>
+                                        {initials}
+                                    </Text>
+                                    <Text style={styles.flagContainer}>
+                                        {locales.data.find(locale => locale.value === senderInfo?.locale)?.flag}
+                                    </Text>
+                                </View>
+                            </Animated.View>
+                        }
                         <Animated.View
                             entering={FadeIn.springify().stiffness(150).damping(100).delay(300).randomDelay()}
                             style={[styles.messageBubble, { alignSelf: 'flex-start' }, item.type === 'sticker' ? { backgroundColor: 'transparent' } : { backgroundColor: THEME.colors.grayscale.darker_1x }]}

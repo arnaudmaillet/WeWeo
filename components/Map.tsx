@@ -25,7 +25,7 @@ const Map: React.FC<IMap> = () => {
     const screenDimensions = Dimensions.get('window');
 
     const { mapRef, setCamera } = useMap();
-    const { setActive: setActiveWindow } = useWindow()
+    const { state: windowState, setActive: setActiveWindow } = useWindow()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -179,7 +179,6 @@ const Map: React.FC<IMap> = () => {
     useEffect(() => {
         if (markerState.active && mapRef.current) {
             setMarkerSnap(markerState.active);
-            setClosestMarker(markerState.active);
 
             mapRef.current.animateCamera(
                 {
@@ -188,7 +187,7 @@ const Map: React.FC<IMap> = () => {
                         longitude: markerState.active.coordinates.long,
                     },
                 },
-                { duration: 1000 }
+                { duration: 300 }
             );
         }
 
@@ -202,7 +201,7 @@ const Map: React.FC<IMap> = () => {
                         longitude: markerSnap.coordinates.long,
                     },
                 },
-                { duration: 1000 }
+                { duration: 300 }
             );
             setMarkerSnap(null);
         }
@@ -243,7 +242,7 @@ const Map: React.FC<IMap> = () => {
     }, [scaleAnimations, markerState.list]);
 
     const findClosestMarker = (center: { lat: number; lon: number }) => {
-        let closest = null;
+        let closest: IMarker | null = null;
         let minDistance = Infinity;
 
         markerState.list.forEach((marker: IMarker) => {
@@ -261,6 +260,10 @@ const Map: React.FC<IMap> = () => {
 
     useEffect(() => {
         if (closestMarker) {
+            if (windowState.active === WindowType.CHAT && closestMarker.markerId !== markerState.active?.markerId) {
+                impactAsync(ImpactFeedbackStyle.Light)
+                setActiveMarker(closestMarker)
+            }
             animateToClosestMarker(closestMarker.markerId);
         }
     }, [closestMarker]);
