@@ -20,15 +20,21 @@ export const stickers: IFile[] = [
 
 interface StickerListProps {
     isHorizontal: boolean
+    dimensions?: IDimensions
     onClickItem: (url: string) => void
 }
 
-const StickersList: React.FC<StickerListProps> = ({ isHorizontal, onClickItem }) => {
+interface IDimensions {
+    height: number,
+    width: number
+}
+
+const StickersList: React.FC<StickerListProps> = ({ isHorizontal, onClickItem, dimensions }) => {
 
     const renderSticker = ({ item }: { item: IFile }) => (
         <TouchableOpacity onPress={() => onClickItem(item.url)}>
             <Animated.View entering={BounceIn.springify().damping(17).delay(500).randomDelay()}>
-                <Image source={{ uri: item.url }} style={styles.sticker} />
+                <Image source={{ uri: item.url }} style={[styles.sticker, { height: dimensions ? dimensions.height : 50, width: dimensions ? dimensions.width : 60 }]} />
             </Animated.View>
         </TouchableOpacity>
     );
@@ -52,8 +58,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sticker: {
-        width: 60,
-        height: 50,
         margin: 5,
     },
 });

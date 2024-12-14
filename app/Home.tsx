@@ -17,16 +17,15 @@ import MarkerChatBottom from '~/components/marker/MarketChatBottom';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
-const _MULTI_WINDOWS_OFFSET = 5
 
 const MainScreen = () => {
     const offset = useSharedValue(0);
     const insets = useSafeAreaInsets();
-    const translateSheetYBottomOffset = useSharedValue(0)
     const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
     const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
     const keyboardHeight = useSharedValue(0);
+    const backdropOpacity = useSharedValue(0)
 
     const { keyboardProps } = useKeyboard();
     const { state: windowState, setActive: setActiveWindow } = useWindow()
@@ -39,16 +38,9 @@ const MainScreen = () => {
     };
 
     const translateSheetY = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: offset.value }]
-        };
+        return { transform: [{ translateY: offset.value }] }
     })
 
-    const translateSheetYBottom = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: translateSheetYBottomOffset.value }]
-        };
-    })
 
     const translateSearchMenuY = useAnimatedStyle(() => {
         return {
@@ -60,20 +52,6 @@ const MainScreen = () => {
         setActiveMarker(point);
         !point && setActiveWindow(WindowType.DEFAULT);
     }
-
-    const panTranslateSheetYBottom = Gesture.Pan()
-        .onChange((event) => {
-            const currentY = event.translationY;
-            translateSheetYBottomOffset.value = currentY > 0 ? currentY : withSpring(Math.max(-(_MAX_GESTURE_VERTICAL_OFFSET), currentY));
-        })
-        .onFinalize(() => {
-            if (translateSheetYBottomOffset.value > 30) {
-                translateSheetYBottomOffset.value = withSpring(0, {}, () => {
-                    runOnJS(setIsChatBottomWindowShowed)(false)
-                })
-            }
-            translateSheetYBottomOffset.value = withSpring(0);
-        });
 
     const pan = Gesture.Pan()
         .onChange((event) => {
@@ -89,23 +67,14 @@ const MainScreen = () => {
             offset.value = withSpring(0);
         });
 
-
-    const customAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: offset.value }
-        ]
-    }))
-
-    const allPoints = markerState.list;
-
     // Fonction pour aller au point suivant
     const goToNextPoint = () => {
         if (markerState.active) {
-            if (allPoints) {
-                const currentIndex = allPoints.findIndex((point: IMarker) => point.markerId === markerState.active?.markerId);
+            if (markerState.list) {
+                const currentIndex = markerState.list.findIndex((point: IMarker) => point.markerId === markerState.active?.markerId);
                 if (currentIndex !== undefined && currentIndex !== -1) {
-                    const nextIndex = (currentIndex + 1) % allPoints.length;  // Boucle au début après le dernier point
-                    setActiveMarker(allPoints[nextIndex]);
+                    const nextIndex = (currentIndex + 1) % markerState.list.length;  // Boucle au début après le dernier point
+                    setActiveMarker(markerState.list[nextIndex]);
                 }
             }
         }
@@ -114,11 +83,11 @@ const MainScreen = () => {
     // Fonction pour aller au point précédent
     const goToPreviousPoint = () => {
         if (markerState.active) {
-            const currentIndex = allPoints?.findIndex((point: IMarker) => point.markerId === markerState.active?.markerId);
-            if (currentIndex !== undefined && currentIndex !== -1) {
-                const previousIndex = (currentIndex - 1 + (allPoints?.length || 0)) % (allPoints?.length || 1);  // Boucle à la fin après le premier point
-                if (allPoints) {
-                    setActiveMarker(allPoints[previousIndex]);
+            if (markerState.list) {
+                const currentIndex = markerState.list.findIndex((point: IMarker) => point.markerId === markerState.active?.markerId);
+                if (currentIndex !== undefined && currentIndex !== -1) {
+                    const previousIndex = (currentIndex - 1 + (markerState.list.length || 0)) % (markerState.list.length || 1);  // Boucle à la fin après le premier point
+                    setActiveMarker(markerState.list[previousIndex]);
                 }
             }
         }
@@ -137,18 +106,7 @@ const MainScreen = () => {
         .onEnd((event) => {
             const isVerticalSwipe = Math.abs(event.translationY) > Math.abs(event.translationX);
             if (isVerticalSwipe) {
-                if (offset.value > -100) {
-                    // Si le swipe vers le haut n'est pas suffisant, revenir à 0
-                    offset.value = withSpring(0);
-                } else {
-                    runOnJS(runOnJSSetSelectedMarker)(null);
-                    // Si le swipe vers le haut est suffisant, fermer le marqueur
-                    // offset.value = withTiming(-1000, {}, (finished) => {
-                    //     if (finished && markerState.active) {
-                    //         runOnJS(runOnJSSetSelectedMarker)(null);
-                    //     }
-                    // });
-                }
+                offset.value > -100 ? offset.value = withSpring(0) : runOnJS(runOnJSSetSelectedMarker)(null)
             } else {
                 runOnJS(dismissKeyboard)();
                 if (Math.abs(event.translationX) > Math.abs(event.translationY)) {
@@ -162,8 +120,12 @@ const MainScreen = () => {
         })
 
     useEffect(() => {
-        offset.value = 0
-    }, [markerState.active?.markerId])
+        if (markerState.active?.markerId) {
+            offset.value = 0;
+            backdropOpacity.value = withTiming(1, { duration: 2000 });
+        }
+    }, [markerState.active?.markerId]);
+
 
 
     useEffect(() => {
@@ -181,16 +143,9 @@ const MainScreen = () => {
                 return (
                     markerState.active && (
                         <>
-                            {/* <AnimatedPressable
-                                style={styles.backdrop}
-                                onPress={() => {
-                                    dismissKeyboard();
-                                    //setMarker(null);
-                                    //setWindowToDisplay(WindowType.DEFAULT);
-                                }}
-                            /> */}
+                            <View style={styles.backdrop} />
                             <GestureDetector gesture={panGesture}>
-                                <Animated.View style={[translateSheetY, styles.sheet, { top: insets.top, height: screenHeight * .75 - insets.top - _MULTI_WINDOWS_OFFSET }]}>
+                                <Animated.View style={[translateSheetY, styles.sheet, { bottom: insets.bottom, height: screenHeight - (insets.top + insets.bottom) }]}>
                                     <KeyboardAvoidingView
                                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                                         keyboardVerticalOffset={65}
@@ -198,21 +153,6 @@ const MainScreen = () => {
                                     >
                                         <MarkerChat />
                                     </KeyboardAvoidingView>
-                                </Animated.View>
-                            </GestureDetector>
-                            <GestureDetector gesture={panTranslateSheetYBottom}>
-                                <Animated.View
-                                    pointerEvents={isChatBottomWindowShowed ? 'auto' : 'none'}
-                                    key={isChatBottomWindowShowed.toString()}
-                                    style={[styles.sheet, { bottom: insets.bottom, height: screenHeight * .25 - insets.bottom - _MULTI_WINDOWS_OFFSET }]}
-                                    entering={FadeInDown.springify()}
-                                    exiting={FadeOutDown.springify()}>
-                                    {
-                                        isChatBottomWindowShowed &&
-                                        <Animated.View style={[translateSheetYBottom, { flex: 1 }]}>
-                                            <MarkerChatBottom />
-                                        </Animated.View>
-                                    }
                                 </Animated.View>
                             </GestureDetector>
                         </>
@@ -232,7 +172,7 @@ const MainScreen = () => {
                         )}
                         <GestureDetector gesture={pan}>
                             <Animated.View
-                                style={[styles.bottomSheet, customAnimatedStyle, { bottom: insets.bottom }]}
+                                style={[styles.bottomSheet, translateSheetY, { bottom: insets.bottom }]}
                             >
                                 <KeyboardAvoidingView
                                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -301,7 +241,7 @@ const styles = StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
         zIndex: 1,
     },
     bottomSheet: {

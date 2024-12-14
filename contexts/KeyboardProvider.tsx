@@ -17,14 +17,14 @@ export const KeyboardProvider = ({ children }: PropsWithChildren<{}>) => {
     const [keyboardProps, setKeyboardProps] = useState({});
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
+        const keyboardWillShowListener = Keyboard.addListener(
+            'keyboardWillShow',
             () => {
                 setKeyboardVisible(true); // Le clavier est visible
             }
         );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
+        const keyboardWillHideListener = Keyboard.addListener(
+            'keyboardWillHide',
             () => {
                 setKeyboardVisible(false); // Le clavier est caché
             }
@@ -32,14 +32,14 @@ export const KeyboardProvider = ({ children }: PropsWithChildren<{}>) => {
 
         // Nettoyage des écouteurs lors du démontage
         return () => {
-            keyboardDidHideListener.remove();
-            keyboardDidShowListener.remove();
+            keyboardWillHideListener.remove();
+            keyboardWillShowListener.remove();
         };
     }, [])
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
+        const keyboardWillShowListener = Keyboard.addListener(
+            'keyboardWillShow',
             (e) => {
                 setKeyboardProps(e);
             }
@@ -47,7 +47,7 @@ export const KeyboardProvider = ({ children }: PropsWithChildren<{}>) => {
 
         // Nettoyage des écouteurs lors du démontage
         return () => {
-            keyboardDidShowListener.remove();
+            keyboardWillShowListener.remove();
         };
     }, [keyboardPropsOnClick])
 

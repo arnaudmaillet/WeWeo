@@ -17,7 +17,6 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
     const [showSettings, setShowSettings] = useState(true);
     const [showBookmark, setShowBookmark] = useState(true);
     const [showNotifications, setShowNotifications] = useState(true);
-    const [showConnected, setShowConnected] = useState(true);
 
     if (!markerState.active || !user) return null;
 
@@ -44,6 +43,18 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
 
     return (
         <View style={styles.container}>
+            <Animated.View style={[hideAnimation, { height: 20 }]}>
+                {showNotifications && (isCreator || isSubscribed) && (
+                    <Animated.View
+                        entering={ZoomIn.springify().damping(100)}
+                        exiting={ZoomOut}
+                    >
+                        <TouchableOpacity>
+                            <Ionicons name="notifications" size={20} color={THEME.colors.grayscale.darker_3x} />
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
+            </Animated.View>
             {showSettings && isCreator && (
                 <Animated.View
                     entering={ZoomIn.springify()}
@@ -55,7 +66,6 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
                 </Animated.View>
             )}
             {showBookmark && !isCreator && (
-
                 <Animated.View
                     entering={ZoomIn.springify()}
                     exiting={ZoomOut.springify().withCallback(() => runOnJS(setShowBookmark)(!showBookmark))}
@@ -69,38 +79,6 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
                     </TouchableOpacity>
                 </Animated.View>
             )}
-
-            <Animated.View style={[hideAnimation, { height: 20 }]}>
-                {showNotifications && (isCreator || isSubscribed) && (
-                    <Animated.View
-                        entering={ZoomIn.springify().damping(100)}
-                        exiting={ZoomOut}
-                    >
-                        <TouchableOpacity>
-                            <Ionicons name="notifications" size={20} color={THEME.colors.grayscale.darker_3x} />
-                        </TouchableOpacity>
-                    </Animated.View>
-                )}
-            </Animated.View>
-            {showConnected && (
-                <Animated.View
-                    entering={ZoomIn.springify()}
-                    exiting={ZoomOut.springify().withCallback(() => runOnJS(setShowConnected)(!showConnected))}
-                >
-                    <TouchableOpacity>
-                        <View style={styles.connectedWrapper}>
-                            <Ionicons name="people-circle-outline" size={24} color={THEME.colors.grayscale.darker_3x} />
-                            <View style={styles.badgeContainer}>
-                                {
-                                    markerState.active.connectedUserIds.length > 0 ?
-                                        <Text style={styles.badgeText}>{markerState.active.connectedUserIds.length}</Text> :
-                                        <ActivityIndicator size="small" color={THEME.colors.grayscale.lighter_2x} style={{ position: 'absolute', transform: [{ scale: 0.6 }] }} />
-                                }
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
         </View>
     );
 };
@@ -108,17 +86,8 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        borderRadius: 10,
         alignItems: 'center',
-        paddingHorizontal: 5,
         gap: 5,
-        marginTop: 5,
-        marginBottom: 15,
-    },
-    connectedWrapper: {
-        position: 'relative',
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     badgeContainer: {
         position: 'absolute',

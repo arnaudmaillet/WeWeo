@@ -50,7 +50,7 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
         <View
             key={`${item.senderId}-${item.createdAt}-${item.content}`}
             style={[
-                styles.messageContainer,
+                { marginVertical: previousMessage?.senderId === item.senderId ? 1 : 2 },
                 isCurrentUser ? styles.currentUserContainer : styles.otherUserContainer,
             ]}
         >
@@ -98,17 +98,11 @@ const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => 
 }
 
 const styles = StyleSheet.create({
-    messageContainer: {
-        marginVertical: 2,
-        flexDirection: 'row',
-    },
     currentUserContainer: {
         flexDirection: 'row-reverse',
-        marginVertical: 2,
     },
     otherUserContainer: {
         flexDirection: 'row',
-        marginVertical: 2,
     },
     senderInfoContainer: {
         flex: 1,
