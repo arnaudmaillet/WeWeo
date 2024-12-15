@@ -6,6 +6,7 @@ import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-ic
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
 import { useAuth } from '~/contexts/AuthProvider';
+import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 interface SettingsWrapperProps { }
 
@@ -16,42 +17,23 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
     // Contrôle de la visibilité pour chaque bouton
     const [showSettings, setShowSettings] = useState(true);
     const [showBookmark, setShowBookmark] = useState(true);
-    const [showNotifications, setShowNotifications] = useState(true);
+    const [notification, setNotification] = useState<boolean>(false);
 
     if (!markerState.active || !user) return null;
 
     const isCreator = markerState.active.creatorId === user.userId;
-    const offsetX = useSharedValue(0);
-    const opacity = useSharedValue(0);
-
-    useEffect(() => {
-        if (isSubscribed) {
-            offsetX.value = 20
-            opacity.value = 1
-        } else {
-            offsetX.value = 0
-            opacity.value = 0
-        }
-    }, [isSubscribed])
-
-    const hideAnimation = useAnimatedStyle(() => {
-        return {
-            width: withSpring(offsetX.value, { damping: 100 }),
-            opacity: withSpring(opacity.value),
-        };
-    })
 
     return (
         <View style={styles.container}>
-            <Animated.View style={[hideAnimation, { height: 20 }]}>
-                {showNotifications && (isCreator || isSubscribed) && (
+            <Animated.View style={{ height: 20 }}>
+                {(isCreator || isSubscribed) && (
                     <Animated.View
                         entering={ZoomIn.springify().damping(100)}
                         exiting={ZoomOut}
                     >
-                        <TouchableOpacity>
-                            <Ionicons name="notifications" size={20} color={THEME.colors.grayscale.darker_3x} />
-                        </TouchableOpacity>
+                        <TouchableWithoutFeedback onPress={() => setNotification(!notification)}>
+                            <Ionicons name={notification ? "notifications" : "notifications-off"} size={20} color={THEME.colors.grayscale.darker_3x} />
+                        </TouchableWithoutFeedback>
                     </Animated.View>
                 )}
             </Animated.View>

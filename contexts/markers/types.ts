@@ -6,15 +6,17 @@ export enum MarkerType {
     CHAT = 'CHAT',
 }
 
-export interface IMessage {
-    messageId: string,
+export interface INewMessage {
     senderId: string,
+    content: string,
+    type: string,
+    createdAt: number,
+}
+
+export interface IMessage extends INewMessage {
+    messageId: string,
     senderInfo: IUser,
     markerId: string,
-    content: string,
-    createdAt: number,
-    type: string,
-    combinedKey?: string
 }
 
 export interface IPolicy {
@@ -35,8 +37,10 @@ export interface IMarker extends INewMarker {
     creatorId: string;
     minZoom: number;
     subscribedUserIds: string[];
-    connectedUserIds: string[];
-    messages: IMessage[]
+    connections: IUser[] | null;
+    views: number;
+    messages: IMessage[];
+    isLoading: boolean
 }
 export interface MarkerState {
     list: IMarker[];
@@ -51,8 +55,10 @@ export enum MarkerActionType {
     SET_NEW = "SET_NEW",
     UPDATE_NEW = "UPDATE_NEW",
     SET_ACTIVE = "SET_ACTIVE",
+    UPDATE_ACTIVE_LOADING = "UPDATE_ACTIVE_LOADING",
     UPDATE_ACTIVE_MESSAGES = "UPDATE_ACTIVE_MESSAGES",
-    UPDATE_ACTIVE_CONNECTED_USERS = "UPDATE_ACTIVE_CONNECTED_USERS",
+    UPDATE_ACTIVE_CONNECTIONS = "UPDATE_ACTIVE_CONNECTIONS",
+    UPDATE_ACTIVE_VIEWS = "UPDATE_ACTIVE_VIEWS"
 }
 
 export type MarkerAction =
@@ -62,6 +68,8 @@ export type MarkerAction =
     | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
     | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
     | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
+    | { type: MarkerActionType.UPDATE_ACTIVE_LOADING; payload: boolean }
     | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
-    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS; payload: string[] }
+    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTIONS; payload: IUser[] }
+    | { type: MarkerActionType.UPDATE_ACTIVE_VIEWS; payload: number }
 

@@ -45,20 +45,50 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
                     marker.markerId === updatedActiveMarker.markerId ? updatedActiveMarker : marker
                 ),
             };
-        case MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS:
+        case MarkerActionType.UPDATE_ACTIVE_CONNECTIONS:
             if (!state.active) {
                 //throw new Error("No active marker to update connected users");
                 return state
             }
-            const updatedActiveWithConnectedUsers = {
+            const updatedActiveConnections = {
                 ...state.active,
-                connectedUserIds: action.payload,
+                connections: action.payload,
             };
             return {
                 ...state,
-                active: updatedActiveWithConnectedUsers,
+                active: updatedActiveConnections,
                 list: state.list.map(marker =>
-                    marker.markerId === updatedActiveWithConnectedUsers.markerId ? updatedActiveWithConnectedUsers : marker
+                    marker.markerId === updatedActiveConnections.markerId ? updatedActiveConnections : marker
+                ),
+            };
+        case MarkerActionType.UPDATE_ACTIVE_VIEWS:
+            if (!state.active) {
+                throw new Error("No active marker to update viewers users");
+            }
+            const updatedActiveViews = {
+                ...state.active,
+                views: action.payload,
+            };
+            return {
+                ...state,
+                active: updatedActiveViews,
+                list: state.list.map(marker =>
+                    marker.markerId === updatedActiveViews.markerId ? updatedActiveViews : marker
+                ),
+            };
+        case MarkerActionType.UPDATE_ACTIVE_LOADING: 
+            if (!state.active) {
+                throw new Error("No active marker to set loading users");
+            }
+            const updatedActiveLoading = {
+                ...state.active,
+                isLoading: action.payload,
+            };
+            return {
+                ...state,
+                active: updatedActiveLoading,
+                list: state.list.map(marker =>
+                    marker.markerId === updatedActiveLoading.markerId ? updatedActiveLoading : marker
                 ),
             };
         default:

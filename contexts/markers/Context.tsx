@@ -7,11 +7,12 @@ import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/windows/Context"
 import { useAuth } from "../AuthProvider";
 import { initialMarkerState, markerReducer } from "./reducer";
-import { IMarker, IMessage, INewMarker, MarkerActionType, MarkerState } from "./types";
-import { addDoc, arrayRemove, arrayUnion, collection, doc, GeoPoint, getDoc, onSnapshot, orderBy, query, runTransaction, updateDoc, where } from "firebase/firestore";
+import { IMarker, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, runTransaction, setDoc, updateDoc, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
 import { IUser } from "~/types/UserInterfaces";
+import { FirestoreAction } from "~/types/FirestoreAction";
 
 const MarkerContext = createContext({});
 
@@ -26,8 +27,9 @@ export interface MarkerContextProps {
     updateNew: (payload: Partial<INewMarker | IMarker>) => void
     setActive: (payload: IMarker | null) => void
     firestoreAdd: () => void
-    firestoreAddActiveMessage: (message: string) => Promise<void>
+    firestoreManageActiveMessages: (action: FirestoreAction, payload?: INewMessage) => Promise<void>
     firestoreManageActiveSubscription: () => Promise<void>
+    firestoreManageActiveViews: (action: FirestoreAction) => Promise<void>
     enteringAnimation: () => Promise<void>
     exitingAnimation: (setActiveWindow: WindowType) => Promise<void>
     setIsChatBottomWindowShowed: (payload: boolean) => void
@@ -67,19 +69,26 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         dispatch({ type: MarkerActionType.SET_ACTIVE, payload: payload });
     };
 
+    const updateActiveLoading = (payload: boolean) => {
+        dispatch({ type: MarkerActionType.UPDATE_ACTIVE_LOADING, payload: payload });
+    }
+
     const updateActiveMessages = (payload: IMessage[]) => {
         dispatch({ type: MarkerActionType.UPDATE_ACTIVE_MESSAGES, payload: payload });
     };
 
-    const updateActiveConnectedUsers = (payload: string[]) => {
-        dispatch({ type: MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS, payload: payload });
+    const updateActiveConnections = (payload: IUser[]) => {
+        dispatch({ type: MarkerActionType.UPDATE_ACTIVE_CONNECTIONS, payload: payload });
     };
+
+    const updateActiveViews = (payload: number) => {
+        dispatch({ type: MarkerActionType.UPDATE_ACTIVE_VIEWS, payload: payload });
+    }
 
     const firestoreFetch = () => {
         if (!user?.userId) return;
 
         const markersCollection = collection(firestore, "markers");
-        const userMarkersQuery = query(markersCollection, where("policy.show", "array-contains", user.userId));
         const publicMarkersQuery = query(markersCollection, where("policy.isPrivate", "==", false));
         const unsubscribes: (() => void)[] = [];
 
@@ -91,11 +100,13 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 const coordinates = data.coordinates;
                 allMarkers.set(doc.id, {
                     markerId: doc.id,
+                    isLoading: false,
+                    connections: null,
                     ...data,
                     coordinates: {
                         lat: coordinates.latitude,
                         long: coordinates.longitude,
-                    },
+                    } as ICoordinates,
                 });
             });
             dispatch({ type: MarkerActionType.SET, payload: Array.from(allMarkers.values()) });
@@ -112,6 +123,8 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                 allMarkers.set(doc.id, {
                     markerId: doc.id,
                     subscribedUserIds: data.subscribedUserIds,
+                    isLoading: false,
+                    connections: null,
                     ...data,
                     coordinates: {
                         lat: coordinates.latitude,
@@ -131,7 +144,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     const firestoreAdd = async (): Promise<boolean> => {
-
         if (!user || !state.new) return false;
         try {
             const { coordinates, ...rest } = state.new;
@@ -155,146 +167,151 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
     };
 
-    const firestoreAddActiveMessage = async (message: string) => {
-        if (user && state.active?.markerId) {
-            const messageData = {
-                content: message,
-                senderId: user.userId,
-                type: 'message',
-                createdAt: new Date().getTime(),
-            };
-
-            try {
-                const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
-                await addDoc(messagesCollection, messageData);
-            } catch (error) {
-                console.error("Error sending message:", error);
-            }
-        }
-    };
-
-    const firestoreManageActiveMessages = () => {
+    const firestoreManageActiveMessages = async (action: FirestoreAction, payload?: INewMessage) => {
         const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
-        const q = query(messagesCollection, orderBy("createdAt", "asc"));
 
-        const unsubscribeMessages = onSnapshot(q, async (snapshot) => {
-            const newMessages = await Promise.all(
-                snapshot.docs.map(async (docRef) => {
-                    const messageData = docRef.data();
-                    const { senderId } = messageData;
-                    let userInfo = null;
+        switch (action) {
+            case FirestoreAction.SUBSCRIBE:
+                const q = query(messagesCollection, orderBy("createdAt", "asc"));
 
-                    if (senderId) {
-                        const userDoc = await getDoc(doc(firestore, "users", senderId));
-                        userInfo = userDoc.exists() ? userDoc.data() : null;
-                    }
+                const unsubscribeMessages = onSnapshot(q, async (snapshot) => {
+                    const onNewMessages = await Promise.all(
+                        snapshot.docs.map(async (docRef) => {
+                            const messageData = docRef.data();
+                            const { senderId } = messageData;
+                            let userInfo = null;
 
-                    const message: IMessage = {
-                        messageId: docRef.id,
-                        senderInfo: userInfo as IUser,
-                        markerId: state.active!.markerId,
-                        senderId: senderId,
-                        content: messageData.content,
-                        type: messageData.type,
-                        createdAt: messageData.createdAt,
-                    };
+                            if (senderId) {
+                                const userDoc = await getDoc(doc(firestore, "users", senderId));
+                                userInfo = userDoc.exists() ? userDoc.data() : null;
+                            }
 
-                    return message;
-                })
-            );
-            updateActiveMessages(newMessages)
-        });
+                            const message: IMessage = {
+                                messageId: docRef.id,
+                                senderInfo: userInfo as IUser,
+                                markerId: state.active!.markerId,
+                                senderId: senderId,
+                                content: messageData.content,
+                                type: messageData.type,
+                                createdAt: messageData.createdAt,
+                            };
 
-        const markerDocRef = doc(firestore, `markers/${state.active!.markerId}`);
-        const unsubscribeMarker = onSnapshot(markerDocRef, async (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                const markerData = docSnapshot.data();
-                const connectedUserIds = markerData.connectedUserIds || [];
-                const usersData = await Promise.all(
-                    connectedUserIds.map(async (userId: string) => {
-                        const userDoc = await getDoc(doc(firestore, "users", userId));
-                        return userDoc.exists() ? { userId, ...userDoc.data() } : null;
-                    })
-                );
-                updateActiveConnectedUsers(usersData);
-            }
-        });
+                            return message;
+                        })
+                    );
+                    updateActiveMessages(onNewMessages)
+                });
 
-        return () => {
-            unsubscribeMessages();
-            unsubscribeMarker();
-        };
-    }
-
-    const firestoreManageActiveConnection = () => {
-
-        const markerRef = doc(firestore, "markers", state.active!.markerId);
-
-        const connectUser = async () => {
-            if (!state.active!.connectedUserIds.includes(user!.userId)) {
-                try {
-                    await runTransaction(firestore, async (transaction) => {
-                        const markerDoc = await transaction.get(markerRef);
-                        if (!markerDoc.exists()) {
-                            throw new Error("Le document du marker n'existe pas.");
-                        }
-
-                        const currentConnectedUsers = markerDoc.data()?.connectedUserIds || [];
-
-                        if (!currentConnectedUsers.includes(user)) {
-                            transaction.update(markerRef, {
-                                connectedUserIds: [...currentConnectedUsers, user!.userId],
-                            });
-                        }
-                    });
-                } catch (error) {
-                    console.error("Erreur lors de l'ajout de l'utilisateur aux utilisateurs connectés:", error);
-                }
-            }
-        };
-
-        const disconnectUser = async () => {
-            try {
-                await runTransaction(firestore, async (transaction) => {
-                    const markerDoc = await transaction.get(markerRef);
-                    if (!markerDoc.exists()) {
-                        throw new Error("Le document du marker n'existe pas.");
-                    }
-
-                    const currentConnectedUsers = markerDoc.data()?.connectedUserIds || [];
-
-                    // Retire l'utilisateur uniquement s'il est présent
-                    if (currentConnectedUsers.includes(user!.userId)) {
-                        transaction.update(markerRef, {
-                            connectedUserIds: currentConnectedUsers.filter((id: string) => id !== user!.userId),
-                        });
+                const markerDocRef = doc(firestore, `markers/${state.active!.markerId}`);
+                const unsubscribeMarker = onSnapshot(markerDocRef, async (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const markerData = docSnapshot.data();
+                        const connectedUserIds = markerData.connectedUserIds || [];
+                        const usersData = await Promise.all(
+                            connectedUserIds.map(async (userId: string) => {
+                                const userDoc = await getDoc(doc(firestore, "users", userId));
+                                return userDoc.exists() ? { userId, ...userDoc.data() } : null;
+                            })
+                        );
+                        updateActiveConnections(usersData);
                     }
                 });
-            } catch (error) {
-                console.error("Erreur lors de la suppression de l'utilisateur des utilisateurs connectés:", error);
-            }
-        };
 
-        connectUser();
+                return () => {
+                    unsubscribeMessages();
+                    unsubscribeMarker();
+                };
+            case FirestoreAction.ADD:
+                if (user && state.active?.markerId && payload) {
+                    try {
+                        const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
+                        await addDoc(messagesCollection, payload);
+                    } catch (error) {
+                        console.error("Error sending message:", error);
+                    }
+                }
+            default:
+                console.log(`FirestoreAction: ${action} is not implemented`)
+                return
+        }
+    }
 
-        return () => {
-            disconnectUser();
-        };
+    const firestoreManageActiveConnection = (action: FirestoreAction) => {
+        switch (action) {
+            case FirestoreAction.SUBSCRIBE:
+                if (!state.active || !state.active.markerId || !user?.userId) {
+                    console.warn("Impossible de gérer la connexion : état ou utilisateur manquant.");
+                    return;
+                }
+
+                const userRef = doc(firestore, `users/${user.userId}`);
+                const connectionsDocRef = doc(
+                    firestore,
+                    `markers/${state.active.markerId}/connections`,
+                    user.userId
+                );
+                const connectionsCollectionRef = collection(
+                    firestore,
+                    `markers/${state.active.markerId}/connections`
+                );
+
+                const connectUser = async () => {
+                    try {
+                        await setDoc(connectionsDocRef, {
+                            userRef,
+                            connectedAt: new Date(),
+                        });
+                    } catch (error) {
+                        console.error("Erreur lors de la connexion :", error);
+                    }
+                };
+
+                const disconnectUser = async () => {
+                    try {
+                        await deleteDoc(connectionsDocRef);
+                    } catch (error) {
+                        console.error("Erreur lors de la déconnexion :", error);
+                    }
+                };
+
+                const unsubscribe = onSnapshot(connectionsCollectionRef, async (querySnapshot) => {
+                    if (!querySnapshot.empty) {
+                        const users = await Promise.all(
+                            querySnapshot.docs.map(async (doc) => {
+                                const userSnapshot = await getDoc(doc.data().userRef);
+                                const userData = userSnapshot.exists() ? userSnapshot.data() : {};
+                                return { userId: userSnapshot.id, ...(userData as object) } as IUser;
+                            })
+                        );
+                        updateActiveConnections(users)
+                    } else {
+                        updateActiveConnections([])
+                    }
+                });
+
+                connectUser();
+
+                return () => {
+                    unsubscribe();
+                    disconnectUser();
+                };
+            default:
+                console.log(`FirestoreAction: ${action} is not implemented`)
+                return
+        }
     };
 
     const firestoreManageActiveSubscription = async () => {
         if (user && state.active!.markerId) {
+            setIsSubscribed(!isSubscribed)
             try {
                 const markerRef = doc(firestore, "markers", state.active!.markerId);
-                setIsSubscribed(!isSubscribed)
+                const userRef = doc(firestore, "users", user.userId);
 
                 if (isSubscribed) {
                     await updateDoc(markerRef, {
                         subscribedUserIds: arrayRemove(user.userId),
                     });
-
-                    const userRef = doc(firestore, "users", user.userId);
-
                     await updateDoc(userRef, {
                         subscribedTo: arrayRemove(state.active!.markerId),
                     });
@@ -302,8 +319,6 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                     await updateDoc(markerRef, {
                         subscribedUserIds: arrayUnion(user.userId),
                     });
-
-                    const userRef = doc(firestore, "users", user.userId);
                     await updateDoc(userRef, {
                         subscribedTo: arrayUnion(state.active!.markerId),
                     });
@@ -313,6 +328,25 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         }
     };
+
+    const firestoreManageActiveViews = async (action: FirestoreAction) => {
+        const viewersCollectionRef = collection(firestore, `markers/${state.active!.markerId}/views`);
+        switch (action) {
+            case FirestoreAction.GET:
+                const snapshot = await getDocs(viewersCollectionRef)
+                updateActiveViews(snapshot.size)
+                return
+            case FirestoreAction.ADD:
+                await addDoc(viewersCollectionRef, {
+                    userId: user!.userId,
+                    viewedAt: new Date().toISOString()
+                });
+                return
+            default:
+                console.log(`FirestoreAction: ${action} is not implemented`)
+                return
+        }
+    }
 
     const startAnimation = async (duration: number, toValue: number, callback?: () => void) => {
         Animated.stagger(duration, [
@@ -340,21 +374,39 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         await startAnimation(100, 0, () => resetAnimation())
     };
 
-
-
     useEffect(() => {
         user && firestoreFetch();
     }, [user]);
 
-
     useEffect(() => {
         if (user && state.active) {
-            setIsSubscribed(state.active.subscribedUserIds.includes(user.userId))
-            firestoreManageActiveMessages()
-            const unsubscribe = firestoreManageActiveConnection();
-            return () => {
-                unsubscribe();
+            const manageAsyncTasks = async () => {
+                updateActiveLoading(true);
+                try {
+                    setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
+
+                    await Promise.all([
+                        firestoreManageActiveMessages(FirestoreAction.SUBSCRIBE),
+                        firestoreManageActiveViews(FirestoreAction.ADD),
+                    ]);
+
+                    return firestoreManageActiveConnection(FirestoreAction.SUBSCRIBE);
+                } catch (error) {
+                    console.error("Erreur lors de la gestion des tâches Firestore :", error);
+                } finally {
+                    updateActiveLoading(false);
+                }
             };
+
+            let cleanupFn: (() => void) | undefined;
+
+            manageAsyncTasks()
+                .then((cleanup) => {
+                    cleanupFn = cleanup;
+                })
+                .catch((error) => console.error(error));
+
+            return () => { cleanupFn && cleanupFn() };
         }
     }, [state.active?.markerId]);
 
@@ -372,8 +424,9 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             updateNew,
             setActive,
             firestoreAdd,
-            firestoreAddActiveMessage,
+            firestoreManageActiveMessages,
             firestoreManageActiveSubscription,
+            firestoreManageActiveViews,
             enteringAnimation,
             exitingAnimation,
             setIsChatBottomWindowShowed,

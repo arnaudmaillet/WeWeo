@@ -1,9 +1,9 @@
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Text, Dimensions } from 'react-native'
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Dimensions } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Map from '../components/Map'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
-import Animated, { FadeInDown, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import SearchMenuWindow from '~/windows/SearchMenu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useWindow } from '~/contexts/windows/Context'
@@ -13,7 +13,6 @@ import { WindowType } from '~/contexts/windows/types'
 import { useMarker } from '~/contexts/markers/Context'
 import MarkerChat from '~/components/marker/MarkerChat'
 import { IMarker } from '~/contexts/markers/types'
-import MarkerChatBottom from '~/components/marker/MarketChatBottom';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
