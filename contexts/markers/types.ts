@@ -1,5 +1,5 @@
 import { ICoordinates } from "~/types/MapInterfaces";
-import { IUser } from "~/types/UserInterfaces";
+import { IUser } from "../user/types";
 
 export enum MarkerType {
     DEFAULT = 'DEFAULT',
@@ -44,6 +44,7 @@ export interface IMarker extends INewMarker {
 }
 export interface MarkerState {
     list: IMarker[];
+    filteredList: IMarker[];
     new: INewMarker | IMarker | null;
     active: IMarker | null
 }
@@ -52,6 +53,9 @@ export enum MarkerActionType {
     SET = "SET",
     REMOVE = "REMOVE",
     UPDATE = "UPDATE",
+    SET_FILTERED = "SET_FILTERED",
+    ADD_FILTERED = "ADD_FILTERED",
+    REMOVE_FILTERED = "REMOVE_FILTERED",
     SET_NEW = "SET_NEW",
     UPDATE_NEW = "UPDATE_NEW",
     SET_ACTIVE = "SET_ACTIVE",
@@ -65,6 +69,9 @@ export type MarkerAction =
     | { type: MarkerActionType.SET; payload: IMarker[] }
     | { type: MarkerActionType.REMOVE; payload: string }
     | { type: MarkerActionType.UPDATE; payload: IMarker }
+    | { type: MarkerActionType.SET_FILTERED; payload: IMarker[] }
+    | { type: MarkerActionType.ADD_FILTERED; payload: IMarker }
+    | { type: MarkerActionType.REMOVE_FILTERED; payload: IMarker }
     | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
     | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
     | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
@@ -72,4 +79,6 @@ export type MarkerAction =
     | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
     | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTIONS; payload: IUser[] }
     | { type: MarkerActionType.UPDATE_ACTIVE_VIEWS; payload: number }
+
+export { IUser };
 

@@ -1,12 +1,12 @@
 import React, { createContext, useState, ReactNode, useRef, useEffect } from 'react';
 import { IFile, IMessage } from '~/types/MarkerInterfaces';
 
-import { IUser } from '~/types/UserInterfaces';
-import { useAuth } from './AuthProvider';
 import { useMap } from './MapProvider';
 
 import { collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { firestore } from '~/firebase';
+import { useUser } from './user/Context';
+import { IUser } from './user/types';
 
 interface MarkerContextProps {
     message: string;
@@ -36,7 +36,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [isLoading, setIsLoading] = useState(false);
 
 
-    const { user } = useAuth();
+    const { user } = useUser();
     const { marker } = useMap();
 
     const markerId = marker?.markerId;
@@ -76,7 +76,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         return () => {
             disconnectUser();
         };
-    }, [user, marker]);
+    }, [user?.userId, marker]);
 
     // Écoute des nouveaux messages en temps réel
     useEffect(() => {

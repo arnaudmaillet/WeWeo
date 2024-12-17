@@ -2,6 +2,7 @@ import { MarkerState, MarkerAction, MarkerActionType } from "./types";
 
 export const initialMarkerState: MarkerState = {
     list: [],
+    filteredList: [],
     new: null,
     active: null
 };
@@ -18,6 +19,15 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
                 list: state.list.map(marker =>
                     marker.markerId === action.payload.markerId ? action.payload : marker
                 ),
+            };
+        case MarkerActionType.SET_FILTERED:
+            return { ...state, filteredList: action.payload };
+        case MarkerActionType.ADD_FILTERED:
+            return { ...state, filteredList: [...state.filteredList, action.payload] };
+        case MarkerActionType.REMOVE_FILTERED:
+            return {
+                ...state,
+                filteredList: state.filteredList.filter(marker => marker.markerId !== action.payload.markerId)
             };
         case MarkerActionType.SET_NEW:
             return { ...state, new: action.payload };
@@ -47,8 +57,7 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
             };
         case MarkerActionType.UPDATE_ACTIVE_CONNECTIONS:
             if (!state.active) {
-                //throw new Error("No active marker to update connected users");
-                return state
+                return state;
             }
             const updatedActiveConnections = {
                 ...state.active,

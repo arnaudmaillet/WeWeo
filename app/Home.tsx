@@ -4,7 +4,7 @@ import Map from '../components/Map'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
-import SearchMenuWindow from '~/windows/SearchMenu'
+import MenuWindow from '~/windows/Menu/Menu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useWindow } from '~/contexts/windows/Context'
 
@@ -28,7 +28,7 @@ const MainScreen = () => {
 
     const { keyboardProps } = useKeyboard();
     const { state: windowState, setActive: setActiveWindow } = useWindow()
-    const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation, isChatBottomWindowShowed, setIsChatBottomWindowShowed } = useMarker()
+    const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation } = useMarker()
 
     const screenHeight = Dimensions.get('window').height;
 
@@ -41,7 +41,7 @@ const MainScreen = () => {
     })
 
 
-    const translateSearchMenuY = useAnimatedStyle(() => {
+    const translateMenuY = useAnimatedStyle(() => {
         return {
             transform: [{ translateY: withTiming(isInputFocused ? -keyboardHeight.value : 0, { duration: 300 }) }], // Animation fluide avec withTiming
         };
@@ -197,14 +197,14 @@ const MainScreen = () => {
                             />
                         )}
                         <Animated.View
-                            style={[styles.bottomSheet, translateSearchMenuY, { bottom: insets.bottom }]}
+                            style={[styles.bottomSheet, translateMenuY, { bottom: insets.bottom }]}
                         >
                             <KeyboardAvoidingView
                                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                                 keyboardVerticalOffset={380}
                                 style={styles.keyboardAvoidingView}
                             >
-                                <SearchMenuWindow onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                                <MenuWindow onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
                             </KeyboardAvoidingView>
                         </Animated.View>
                     </>

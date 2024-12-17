@@ -1,11 +1,10 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useRef } from 'react';
-
-import { useAuth } from './AuthProvider';
 import { IMarker, INewMarker } from '~/types/MarkerInterfaces';
 import { collection, addDoc, onSnapshot, GeoPoint, where, query } from "firebase/firestore";
 import { firestore } from '~/firebase';
 import MapView, { Camera } from 'react-native-maps';
 import { ICoordinates } from '~/types/MapInterfaces';
+import { useUser } from './user/Context';
 
 export interface MapContextProps {
     mapRef: React.MutableRefObject<MapView | null>;
@@ -26,7 +25,7 @@ const MapContext = createContext<MapContextProps | undefined>(undefined);
 
 export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { user } = useAuth();
+    const { user } = useUser();
 
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
     const [markers, setMarkers] = useState<IMarker[] | null>(null); // markers to display on the map
@@ -38,8 +37,8 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const [camera, setCamera] = useState<Camera>({
         center: {
-            latitude: user?.location.lat || 0,
-            longitude: user?.location.long || 0,
+            latitude: user?.location?.lat || 0,
+            longitude: user?.location?.long || 0,
         },
         zoom: 0,
         pitch: 60,
@@ -55,7 +54,7 @@ export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setCategory(1);
             setDisplayMarkersForUser(null);
         }
-    }, [user]);
+    }, [user?.userId]);
 
     const fetchMarkers = () => {
         if (!user?.userId) return () => { };

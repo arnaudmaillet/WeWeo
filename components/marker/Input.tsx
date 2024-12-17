@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import Animated, { runOnJS, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import Animated, { FadeIn, runOnJS, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import { THEME } from '~/constants/constants'
 import { TextInput, TouchableOpacity } from 'react-native-gesture-handler'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -52,27 +52,20 @@ const MarkerInput: React.FC<IMarkerInput> = ({ showStickers, setShowStickers }) 
     return (
         <View style={styles.container}>
             <View style={styles.containerWrapper}>
-                {showConnected && (
-                    <Animated.View
-                        entering={ZoomIn.springify()}
-                        exiting={ZoomOut.springify().withCallback(() => runOnJS(setShowConnected)(!showConnected))}
-                        style={{ justifyContent: 'center', marginTop: 10 }}
-                    >
-                        <TouchableOpacity>
-                            <View style={styles.connectedWrapper}>
-                                <Ionicons name="people-circle-outline" size={24} color={THEME.colors.grayscale.darker_3x} />
-                                <View style={styles.badgeContainer}>
+                <View style={{ justifyContent: 'center', marginTop: 10 }}>
+                    <TouchableOpacity>
+                        <View style={styles.connectedWrapper}>
+                            <Ionicons name="people-circle-outline" size={30} color={THEME.colors.grayscale.darker_3x} />
+                            {
+                                (markerState.active.connections && markerState.active.connections.length > 0) &&
+                                <Animated.View style={styles.badgeContainer} entering={ZoomIn.springify()}>
+                                    <Text style={styles.badgeText}>{formatNumber(markerState.active.connections.length)}</Text>
+                                </Animated.View>
+                            }
 
-                                    {
-                                        markerState.active.connections && markerState.active.connections.length > 0 ?
-                                            <Text style={styles.badgeText}>{formatNumber(markerState.active.connections.length)}</Text> :
-                                            <ActivityIndicator size="small" color={THEME.colors.grayscale.lighter_2x} style={{ position: 'absolute', transform: [{ scale: 0.6 }] }} />
-                                    }
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    </Animated.View>
-                )}
+                        </View>
+                    </TouchableOpacity>
+                </View>
                 <View style={styles.messageInputWrapper}>
                     <TextInput
                         ref={inputRef}

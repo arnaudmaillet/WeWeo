@@ -77,7 +77,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                             exiting={FadeOut}
                         >
                             <Text style={styles.friendsPickerText}>Pick some friends</Text>
-                            <FriendsList selected={markerState.new.policy.show} setSelected={handleUpdateFriends} />
+                            {/* <FriendsList selected={markerState.new.policy.show} setSelected={handleUpdateFriends} /> */}
                         </Animated.View>
                     </View>
                 )}
@@ -236,7 +236,6 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     friendsPickerContent: {
-        backgroundColor: THEME.colors.grayscale.lighter_1x,
         borderRadius: 10,
         flexDirection: 'column',
         gap: 10,

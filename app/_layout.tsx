@@ -8,30 +8,32 @@ import { WindowProvider } from '~/contexts/windows/Context';
 import { MapProvider } from '~/contexts/MapProvider';
 import { MarkerProvider as Deprecated } from '~/contexts/MarkerProvider';
 import { MarkerProvider } from '~/contexts/markers/Context'
+import { UserProvider } from '~/contexts/user/Context';
 
 export default function Layout() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
-          <AuthProvider>
-            <WindowProvider>
-              <MapProvider>
-                <Deprecated>
-                  <MarkerProvider>
-                    <Stack>
-                      <Stack.Screen name="Login" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
-                      <Stack.Screen name="Signup" options={{ title: 'Signup', headerShown: false }} />
-                      <Stack.Screen name="Home" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
-                    </Stack>
-                  </MarkerProvider>
-                </Deprecated>
-              </MapProvider>
-            </WindowProvider>
-          </AuthProvider>
+          <UserProvider>
+            <AuthProvider>
+              <WindowProvider>
+                <MapProvider>
+                  <Deprecated>
+                    <MarkerProvider>
+                      <Stack>
+                        <Stack.Screen name="Login" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
+                        <Stack.Screen name="Signup" options={{ title: 'Signup', headerShown: false }} />
+                        <Stack.Screen name="Home" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
+                      </Stack>
+                    </MarkerProvider>
+                  </Deprecated>
+                </MapProvider>
+              </WindowProvider>
+            </AuthProvider>
+          </UserProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
-
   );
 }
