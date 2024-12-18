@@ -4,9 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firestore } from '~/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, DocumentData } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged, updateProfile } from "firebase/auth";
-import { IMarker, IUser } from './markers/types';
+import { IMarker } from './markers/types';
 import { useUser } from './user/Context';
-import { IFriend } from './user/types';
+import { IFriend, IUser } from './user/types';
+import { ICoordinates } from '~/types/MapInterfaces';
 
 interface AuthContextProps {
     isLoading: boolean;
@@ -95,6 +96,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         }
                     }
 
+                    // Récupérer les markers depuis la collection "subscribedTo"
+                    const subscribedToCollection = collection(firestore, "users", firebaseUser.uid, "subscribedTo");
+                    const subscribedToSnapshot = await getDocs(subscribedToCollection);
+
+                    const subscribedTo: IMarker[] = [];
+                    if (!subscribedToSnapshot.empty) {
+                        for (const subscribedDoc of subscribedToSnapshot.docs) {
+                            const subscribedData = subscribedDoc.data();
+                            const markerRef = subscribedData.markerRef;
+
+                            // Récupérer les données marker depuis la référence
+                            const markerSnapshot = await getDoc(markerRef);
+                            if (markerSnapshot.exists()) {
+                                const markerDetails = markerSnapshot.data() as DocumentData;
+                                subscribedTo.push({
+                                    markerId: markerRef.id,
+                                    subscribedUserIds: markerDetails.subscribedUserIds,
+                                    isLoading: false,
+                                    connections: null,
+                                    ...markerDetails,
+                                    coordinates: {
+                                        lat: markerDetails.coordinates.latitude,
+                                        long: markerDetails.coordinates.longitude,
+                                    } as ICoordinates,
+                                } as IMarker)
+                            }
+                        }
+                    }
                     // Mise à jour de l'état utilisateur
                     setUser({
                         userId: firebaseUser.uid,
@@ -103,7 +132,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         birthdate: userData.birthdate,
                         locale: userData.locale,
                         friends: friends,
-                        subscribedTo: userData.subscribedTo,
+                        subscribedTo: subscribedTo,
                         ownerOf: ownerOf,
                         location: {
                             lat: fakeUserLocation.lat,
@@ -141,20 +170,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
             const userData: IUser = {
-                ownerOf: [],
                 userId: firebaseUser.uid,
                 username,
                 email,
                 birthdate,
                 locale,
-                friends: [],
-                subscribedTo: [],
                 location: {
                     lat: fakeUserLocation.lat,
                     long: fakeUserLocation.long,
                     latDelta: fakeUserLocation.latDelta,
                     longDelta: fakeUserLocation.longDelta,
-                }
+                },
+                ownerOf: []
             };
 
             await updateProfile(firebaseUser, {
@@ -199,7 +226,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         const userSnapshot = await getDoc(userRef);
                         if (userSnapshot.exists()) {
                             const userDetails = userSnapshot.data() as DocumentData;
-                            console.log(userDetails);
                             friends.push({
                                 userId: userRef.id,
                                 email: userDetails.email,
@@ -238,6 +264,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     }
                 }
 
+                // Récupérer les markers depuis la collection "subscribedTo"
+                const subscribedToCollection = collection(firestore, "users", firebaseUser.uid, "subscribedTo");
+                const subscribedToSnapshot = await getDocs(subscribedToCollection);
+
+                const subscribedTo: IMarker[] = [];
+                if (!subscribedToSnapshot.empty) {
+                    for (const subscribedDoc of subscribedToSnapshot.docs) {
+                        const subscribedData = subscribedDoc.data();
+                        const markerRef = subscribedData.markerRef;
+
+                        // Récupérer les données marker depuis la référence
+                        const markerSnapshot = await getDoc(markerRef);
+                        if (markerSnapshot.exists()) {
+                            const markerDetails = markerSnapshot.data() as DocumentData;
+                            subscribedTo.push({
+                                markerId: markerRef.id,
+                                createdAt: markerDetails.createdAt,
+                                creatorId: markerDetails.creatorId,
+                                minZoom: markerDetails.minZoom,
+                                subscribedUserIds: markerDetails.subscribedUserIds,
+                                connections: markerDetails.connections || null,
+                                views: markerDetails.views,
+                                messages: markerDetails.messages,
+                                isLoading: false, // Par défaut
+                            } as IMarker);
+                        }
+                    }
+                }
+
                 // Mise à jour de l'état utilisateur
                 setUser({
                     userId: firebaseUser.uid,
@@ -246,7 +301,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     birthdate: userData.birthdate,
                     locale: userData.locale,
                     friends: friends,
-                    subscribedTo: userData.subscribedTo,
+                    subscribedTo: subscribedTo,
                     ownerOf: ownerOf,
                     location: {
                         lat: fakeUserLocation.lat,

@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import Animated, { BounceIn, FadeIn } from 'react-native-reanimated';
 import { IMessage } from '~/types/MarkerInterfaces';
-import { useAuth } from '~/contexts/AuthProvider';
-import { IUser } from '~/types/UserInterfaces';
 import { firestore } from '~/firebase';
 import { doc, getDoc } from "firebase/firestore";
 
 import locales from '~/data/locales.json';
 import { THEME } from '~/constants/constants';
+import { useUser } from '~/contexts/user/Context';
+import { IUser } from '~/contexts/user/types';
 
 interface MessageComponentProps {
     item: IMessage;
@@ -16,7 +16,7 @@ interface MessageComponentProps {
 }
 
 const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => {
-    const { user } = useAuth();
+    const { user } = useUser();
     const [senderInfo, setSenderInfo] = useState<IUser | null>(null);
 
     const isCurrentUser = user?.userId === item.senderId;

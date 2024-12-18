@@ -4,15 +4,15 @@ import Animated, { FadeOutUp, StretchInY } from 'react-native-reanimated'
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
-import Message from '../Message';
+import Message from './Message';
 
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
-import { useAuth } from '~/contexts/AuthProvider';
 
 import { useKeyboard } from '~/contexts/KeyboardProvider';
 import MarkerHeader from './Header';
 import MarkerInput from './Input';
+import { useUser } from '~/contexts/user/Context';
 
 export interface IMarkerChatScreen { }
 
@@ -20,7 +20,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
 
     const flatListRef = useRef<FlatList>(null);
 
-    const { user } = useAuth()
+    const { user } = useUser()
     const { state: markerState } = useMarker()
     const { isKeyboardVisible } = useKeyboard()
 

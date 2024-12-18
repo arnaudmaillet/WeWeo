@@ -1,4 +1,4 @@
-import { IMarker } from "~/contexts/markers/types";
+import { IMarker, IMarkerHistory } from "~/contexts/markers/types";
 import { ICoodinatesWithZoom } from "~/types/MapInterfaces";
 
 interface IUser {
@@ -7,10 +7,11 @@ interface IUser {
     email: string,
     locale: string,
     birthdate: string,
-    subscribedTo: string[],
     ownerOf: IMarker[],
+    subscribedTo?: IMarker[],
     location?: ICoodinatesWithZoom
     friends?: IFriend[],
+    history?: IMarkerHistory[]
 }
 
 interface IFriend extends IUser {
@@ -20,14 +21,16 @@ interface IFriend extends IUser {
 enum UserActionType {
     SET = "SET",
     UPDATE = "UPDATE",
-    UPDATE_FRIENDS = "UPDATE_FRIENDS",
+    SET_FRIENDS = "SET_FRIENDS",
+    SET_HISTORY = "SET_HISTORY",
     LOGOUT = "LOGOUT",
 }
 
 type UserAction =
     | { type: UserActionType.SET; payload: IUser }
     | { type: UserActionType.UPDATE; payload: IUser }
-    | { type: UserActionType.UPDATE_FRIENDS; payload: IFriend[] }
+    | { type: UserActionType.SET_FRIENDS; payload: IFriend[] }
+    | { type: UserActionType.SET_HISTORY; payload: IMarkerHistory[] }
     | { type: UserActionType.LOGOUT }
 
 

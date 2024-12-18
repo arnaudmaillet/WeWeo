@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import Animated, { ZoomIn, ZoomOut, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, { ZoomIn, ZoomOut, runOnJS } from 'react-native-reanimated';
 import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
-import { useAuth } from '~/contexts/AuthProvider';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import { useUser } from '~/contexts/user/Context';
 
 interface SettingsWrapperProps { }
 
 const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { state: markerState, isSubscribed, firestoreManageActiveSubscription } = useMarker();
 
     // Contrôle de la visibilité pour chaque bouton

@@ -1,8 +1,21 @@
-import { MarkerState, MarkerAction, MarkerActionType } from "./types";
+import { IUser } from "../user/types";
+import { MarkerState, MarkerActionType, IMarker, INewMarker, IMessage } from "./types";
+
+export type MarkerAction =
+    | { type: MarkerActionType.SET; payload: IMarker[] }
+    | { type: MarkerActionType.REMOVE; payload: string }
+    | { type: MarkerActionType.UPDATE; payload: IMarker }
+    | { type: MarkerActionType.SET_FILTERED; payload: IMarker[] | undefined}
+    | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
+    | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
+    | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
+    | { type: MarkerActionType.UPDATE_ACTIVE_LOADING; payload: boolean }
+    | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
+    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTIONS; payload: IUser[] }
+    | { type: MarkerActionType.UPDATE_ACTIVE_VIEWS; payload: number }
 
 export const initialMarkerState: MarkerState = {
     list: [],
-    filteredList: [],
     new: null,
     active: null
 };
@@ -22,13 +35,6 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
             };
         case MarkerActionType.SET_FILTERED:
             return { ...state, filteredList: action.payload };
-        case MarkerActionType.ADD_FILTERED:
-            return { ...state, filteredList: [...state.filteredList, action.payload] };
-        case MarkerActionType.REMOVE_FILTERED:
-            return {
-                ...state,
-                filteredList: state.filteredList.filter(marker => marker.markerId !== action.payload.markerId)
-            };
         case MarkerActionType.SET_NEW:
             return { ...state, new: action.payload };
         case MarkerActionType.UPDATE_NEW:

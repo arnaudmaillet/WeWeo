@@ -4,7 +4,7 @@ import Map from '../components/Map'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
-import MenuWindow from '~/windows/Menu/Menu'
+import MenuWindow from '~/windows/Menu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useWindow } from '~/contexts/windows/Context'
 
@@ -27,7 +27,7 @@ const MainScreen = () => {
     const backdropOpacity = useSharedValue(0)
 
     const { keyboardProps } = useKeyboard();
-    const { state: windowState, setActive: setActiveWindow } = useWindow()
+    const { window, setActive: setActiveWindow } = useWindow()
     const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation } = useMarker()
 
     const screenHeight = Dimensions.get('window').height;
@@ -137,7 +137,7 @@ const MainScreen = () => {
 
 
     const renderWindow = () => {
-        switch (windowState.active) {
+        switch (window.active) {
             case WindowType.CHAT:
                 return (
                     markerState.active && (

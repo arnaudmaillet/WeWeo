@@ -77,17 +77,23 @@ const Map: React.FC<IMap> = () => {
     const [iconAnimations, setIconAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(1)));
     const [textAnimations, setTextAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(0)));
 
-    const points: PointFeature<AnyProps>[] = useMemo(() => markerState.list.map((marker) => ({
-        type: 'Feature',
-        geometry: {
-            type: 'Point',
-            coordinates: [marker.coordinates.long, marker.coordinates.lat],
-        },
-        properties: {
-            cluster: false,
-            payload: marker
-        },
-    })), [markerState.list]);
+    const points: PointFeature<AnyProps>[] = useMemo(() => {
+        const markers = markerState.list
+        const filteredMarkers = markerState.filteredList
+            ? markers.filter(marker => markerState.filteredList!.some(criterion => criterion.markerId === marker.markerId))
+            : markers;
+        return filteredMarkers.map((marker) => ({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [marker.coordinates.long, marker.coordinates.lat],
+            },
+            properties: {
+                cluster: false,
+                payload: marker
+            },
+        }))
+    }, [markerState.list, markerState.filteredList]);
 
     const getTopMarker = (clusterMarkers: PointFeature<AnyProps>[]) => {
         return clusterMarkers.reduce((prev, current) => prev.properties.payload.subscribedUserIds.length > current.properties.payload.subscribedUserIds.length ? prev : current);

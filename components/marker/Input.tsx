@@ -1,6 +1,6 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import Animated, { FadeIn, runOnJS, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import { StyleSheet, Text, View } from 'react-native'
+import React, { useRef, useState } from 'react'
+import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated'
 import { THEME } from '~/constants/constants'
 import { TextInput, TouchableOpacity } from 'react-native-gesture-handler'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -9,8 +9,8 @@ import { useMarker } from '~/contexts/markers/Context'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { INewMessage } from '~/contexts/markers/types'
 import { FirestoreAction } from '~/types/FirestoreAction'
-import { useAuth } from '~/contexts/AuthProvider'
 import useNumberFormatter from '~/hooks/useNumberFormatter'
+import { useUser } from '~/contexts/user/Context'
 
 interface IMarkerInput {
     showStickers: boolean,
@@ -18,7 +18,7 @@ interface IMarkerInput {
 }
 
 const MarkerInput: React.FC<IMarkerInput> = ({ showStickers, setShowStickers }) => {
-    const { user } = useAuth()
+    const { user } = useUser()
     if (!user) return
     const { state: markerState, firestoreManageActiveMessages } = useMarker()
     const { isKeyboardVisible } = useKeyboard()

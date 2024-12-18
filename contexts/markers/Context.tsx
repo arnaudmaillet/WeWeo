@@ -1,19 +1,20 @@
-import { createContext, Dispatch, ReactNode, SetStateAction, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Animated } from "react-native";
-import { MenuType, WindowType } from "~/contexts/windows/types";
+import { WindowType } from "~/contexts/windows/types";
 import { IAnimatedButton } from "~/types/ButtonInterface";
 import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/windows/Context"
-import { useAuth } from "../AuthProvider";
 import { initialMarkerState, markerReducer } from "./reducer";
-import { IMarker, IMessage, INewMarker, INewMessage, IUser, MarkerActionType, MarkerState } from "./types";
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, DocumentData, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, runTransaction, setDoc, updateDoc, where } from "firebase/firestore";
+import { IMarker, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, DocumentData, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
 import { FirestoreAction } from "~/types/FirestoreAction";
 import { useUser } from "../user/Context";
-import { IFriend } from "../user/types";
+import { IFriend, IUser } from "../user/types";
+import { MenuType } from "~/contexts/menu/types";
+import { useMenu } from "../menu/Context";
 
 const MarkerContext = createContext({});
 
@@ -27,6 +28,7 @@ interface MarkerContextProps {
     setNew: (payload: INewMarker | IMarker | null) => void
     updateNew: (payload: Partial<INewMarker | IMarker>) => void
     setActive: (payload: IMarker | null) => void
+    setFiltered: (payload: IMarker[] | undefined) => void
     firestoreFetchOwnedBy: (friends: IFriend[]) => Promise<IMarker[]>
     firestoreAdd: () => void
     firestoreManageActiveMessages: (action: FirestoreAction, payload?: INewMessage) => Promise<void>
@@ -35,13 +37,13 @@ interface MarkerContextProps {
     enteringAnimation: () => Promise<void>
     exitingAnimation: (setActiveWindow: WindowType) => Promise<void>
     setIsChatBottomWindowShowed: (payload: boolean) => void
-    getFromFriends: (friends: IFriend) => void
 }
 
 const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { user } = useUser();
-    const { state: windowState, setActive: setActiveWindow } = useWindow()
+    const { user, setFriends, firestoreManageHistory: firestoreManageUserHistory } = useUser();
+    const { window, setActive: setActiveWindow } = useWindow()
+    const { setLoading: setLoadingMenu } = useMenu()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
     const [isSubscribed, setIsSubscribed] = useState<boolean>()
@@ -64,10 +66,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.SET, payload: payload });
     }
 
-    const update = (payload: IMarker) => {
-        dispatch({ type: MarkerActionType.UPDATE, payload: payload });
-    };
-
     const setNew = (payload: INewMarker | IMarker | null) => {
         dispatch({ type: MarkerActionType.SET_NEW, payload: payload });
     };
@@ -76,16 +74,8 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.UPDATE_NEW, payload: payload });
     };
 
-    const setFiltered = (payload: IMarker[]) => {
+    const setFiltered = (payload: IMarker[] | undefined) => {
         dispatch({ type: MarkerActionType.SET_FILTERED, payload: payload });
-    }
-
-    const addFiltered = (payload: IMarker) => {
-        dispatch({ type: MarkerActionType.ADD_FILTERED, payload: payload });
-    }
-
-    const removeFiltered = (payload: IMarker) => {
-        dispatch({ type: MarkerActionType.REMOVE_FILTERED, payload: payload });
     }
 
     const setActive = (payload: IMarker | null) => {
@@ -108,9 +98,13 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.UPDATE_ACTIVE_VIEWS, payload: payload });
     }
 
+    const fetchSubs = () => {
+        user?.subscribedTo && setList(user.subscribedTo)
+    }
+
     const firestoreFetch = async () => {
         if (!user?.userId) return;
-
+        setLoadingMenu(MenuType.DISCOVER, true)
         try {
             const markersCollection = collection(firestore, "markers");
             const publicMarkersQuery = query(markersCollection, where("policy.isPrivate", "==", false));
@@ -149,21 +143,31 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 } as IMarker);
             });
             setList(Array.from(allMarkers.values()));
+            setLoadingMenu(MenuType.DISCOVER, false)
         } catch (error) {
+            setLoadingMenu(MenuType.DISCOVER, true)
             console.error("Error fetching markers:", error);
         }
     };
 
     const firestoreFetchFriends = async () => {
-        const ownedMarkers: IMarker[] = [];
+        const friendsWithMarkers: IFriend[] = []; // Stocke les amis avec leurs marqueurs
 
-        if (!user || !user.friends) return
+        if (!user || !user.friends) return;
+        setLoadingMenu(MenuType.FRIENDS, true)
         for (const friend of user.friends) {
             try {
-                // Récupérer les markers possédés par chaque ami
+                // Initialiser l'objet IFriend avec les propriétés actuelles de l'ami
+                const friendData: IFriend = {
+                    ...friend, // Copie les propriétés actuelles de l'ami
+                    ownerOf: [], // Initialise le tableau des marqueurs possédés
+                };
+
+                // Collection "ownerOf" pour l'ami
                 const ownerOfCollection = collection(firestore, "users", friend.userId, "ownerOf");
                 const ownerOfSnapshot = await getDocs(ownerOfCollection);
 
+                // Si "ownerOf" contient des documents, traiter chaque document
                 if (!ownerOfSnapshot.empty) {
                     for (const markerDoc of ownerOfSnapshot.docs) {
                         const markerData = markerDoc.data();
@@ -173,32 +177,39 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         if (markerData.markerRef) {
                             const markerRefSnapshot = await getDoc(markerData.markerRef);
                             if (markerRefSnapshot.exists()) {
-                                markerDetails = markerRefSnapshot.data() as DocumentData; // Cast explicite
-
+                                markerDetails = markerRefSnapshot.data() as DocumentData;
                             } else {
                                 console.warn(`MarkerRef ${markerData.markerRef.id} does not exist.`);
                                 continue;
                             }
                         }
-                        const coordinates = markerDetails.coordinates;
-                        ownedMarkers.push({
+
+                        // Ajouter l'objet IMarker au tableau ownedBy de l'ami
+                        friendData.ownerOf?.push({
                             markerId: markerDoc.id,
                             isLoading: false,
                             connections: null,
                             ...markerDetails,
                             coordinates: {
-                                lat: coordinates.latitude,
-                                long: coordinates.longitude,
+                                lat: markerDetails.coordinates.latitude,
+                                long: markerDetails.coordinates.longitude,
                             } as ICoordinates,
                         } as IMarker);
                     }
+                } else {
+                    friendData.ownerOf = [];
                 }
+
+                // Ajouter l'ami avec ses marqueurs au tableau final
+                friendsWithMarkers.push(friendData);
             } catch (error) {
                 console.error(`Error fetching ownerOf for friend ${friend.userId}:`, error);
             }
         }
-        console.log(user.friends)
-        setList(ownedMarkers)
+        const markers = friendsWithMarkers.flatMap(friend => friend.ownerOf);
+        setList(markers)
+        setFriends(friendsWithMarkers)
+        setLoadingMenu(MenuType.FRIENDS, false)
     };
 
     const firestoreAdd = async (): Promise<boolean> => {
@@ -361,24 +372,31 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const firestoreManageActiveSubscription = async () => {
         if (user && state.active!.markerId) {
-            setIsSubscribed(!isSubscribed)
+            setIsSubscribed(!isSubscribed);
             try {
                 const markerRef = doc(firestore, "markers", state.active!.markerId);
-                const userRef = doc(firestore, "users", user.userId);
+                const userSubscribedToCollection = collection(firestore, "users", user.userId, "subscribedTo");
 
                 if (isSubscribed) {
+                    // Supprimer l'utilisateur de la liste des abonnés dans le marqueur
                     await updateDoc(markerRef, {
                         subscribedUserIds: arrayRemove(user.userId),
                     });
-                    await updateDoc(userRef, {
-                        subscribedTo: arrayRemove(state.active!.markerId),
-                    });
+
+                    // Supprimer l'abonnement de l'utilisateur dans la collection `subscribedTo`
+                    const subscriptionDocRef = doc(userSubscribedToCollection, state.active!.markerId);
+                    await deleteDoc(subscriptionDocRef);
                 } else {
+                    // Ajouter l'utilisateur à la liste des abonnés dans le marqueur
                     await updateDoc(markerRef, {
                         subscribedUserIds: arrayUnion(user.userId),
                     });
-                    await updateDoc(userRef, {
-                        subscribedTo: arrayUnion(state.active!.markerId),
+
+                    // Ajouter un abonnement dans la collection `subscribedTo`
+                    const subscriptionDocRef = doc(userSubscribedToCollection, state.active!.markerId);
+                    await setDoc(subscriptionDocRef, {
+                        markerRef: markerRef, // Stocke la référence au marker
+                        subscribedAt: new Date(), // Optionnel : Ajouter la date d'abonnement
                     });
                 }
             } catch (error) {
@@ -390,7 +408,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const firestoreManageActiveViews = async (action: FirestoreAction) => {
         const viewersCollectionRef = collection(firestore, `markers/${state.active!.markerId}/views`);
         switch (action) {
-            case FirestoreAction.GET:
+            case FirestoreAction.FETCH:
                 const snapshot = await getDocs(viewersCollectionRef)
                 updateActiveViews(snapshot.size)
                 return
@@ -404,13 +422,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 console.log(`FirestoreAction: ${action} is not implemented`)
                 return
         }
-    }
-
-    const getFromFriends = (friends: IFriend[]) => {
-        friends.map(friend => {
-            console.log(friend)
-            friend.ownerOf || [].flat()
-        })
     }
 
     const startAnimation = async (duration: number, toValue: number, callback?: () => void) => {
@@ -440,21 +451,28 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     useEffect(() => {
-        switch (windowState.menu) {
+        switch (window.menu) {
             case MenuType.DISCOVER:
                 firestoreFetch()
                 break
             case MenuType.FRIENDS:
                 firestoreFetchFriends()
                 break
+            case MenuType.SUBS:
+                fetchSubs()
+                break
+            case MenuType.HISTORY:
+                firestoreManageUserHistory(FirestoreAction.FETCH)
+                break
             default: setList([])
         }
-    }, [user?.userId, windowState.menu])
+    }, [user?.userId, window.menu])
 
     useEffect(() => {
         if (user && state.active) {
             const manageAsyncTasks = async () => {
                 updateActiveLoading(true);
+                firestoreManageUserHistory(FirestoreAction.ADD, state.active!.markerId)
                 try {
                     setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
 
@@ -496,6 +514,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setNew,
             updateNew,
             setActive,
+            setFiltered,
             firestoreAdd,
             firestoreFetchFriends,
             firestoreManageActiveMessages,
@@ -505,7 +524,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             exitingAnimation,
             setIsChatBottomWindowShowed,
             setIsChatBottomWindowFinished,
-            getFromFriends
         }}>
             {children}
         </MarkerContext.Provider>

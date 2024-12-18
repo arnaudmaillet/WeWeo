@@ -1,37 +1,37 @@
 import { ICoordinates } from "~/types/MapInterfaces";
 import { IUser } from "../user/types";
 
-export enum MarkerType {
+enum MarkerType {
     DEFAULT = 'DEFAULT',
     CHAT = 'CHAT',
 }
 
-export interface INewMessage {
+interface INewMessage {
     senderId: string,
     content: string,
     type: string,
     createdAt: number,
 }
 
-export interface IMessage extends INewMessage {
+interface IMessage extends INewMessage {
     messageId: string,
     senderInfo: IUser,
     markerId: string,
 }
 
-export interface IPolicy {
+interface IPolicy {
     isPrivate: boolean,
     show: string[]
 }
 
-export interface INewMarker {
+interface INewMarker {
     coordinates: ICoordinates;
     type: MarkerType;
     icon: string;
     label: string;
     policy: IPolicy;
 }
-export interface IMarker extends INewMarker {
+interface IMarker extends INewMarker {
     markerId: string;
     createdAt: number;
     creatorId: string;
@@ -42,14 +42,18 @@ export interface IMarker extends INewMarker {
     messages: IMessage[];
     isLoading: boolean
 }
-export interface MarkerState {
+
+interface IMarkerHistory extends IMarker {
+    viewedAt: number
+}
+interface MarkerState {
     list: IMarker[];
-    filteredList: IMarker[];
+    filteredList?: IMarker[];
     new: INewMarker | IMarker | null;
     active: IMarker | null
 }
 
-export enum MarkerActionType {
+enum MarkerActionType {
     SET = "SET",
     REMOVE = "REMOVE",
     UPDATE = "UPDATE",
@@ -65,20 +69,4 @@ export enum MarkerActionType {
     UPDATE_ACTIVE_VIEWS = "UPDATE_ACTIVE_VIEWS"
 }
 
-export type MarkerAction =
-    | { type: MarkerActionType.SET; payload: IMarker[] }
-    | { type: MarkerActionType.REMOVE; payload: string }
-    | { type: MarkerActionType.UPDATE; payload: IMarker }
-    | { type: MarkerActionType.SET_FILTERED; payload: IMarker[] }
-    | { type: MarkerActionType.ADD_FILTERED; payload: IMarker }
-    | { type: MarkerActionType.REMOVE_FILTERED; payload: IMarker }
-    | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
-    | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
-    | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
-    | { type: MarkerActionType.UPDATE_ACTIVE_LOADING; payload: boolean }
-    | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
-    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTIONS; payload: IUser[] }
-    | { type: MarkerActionType.UPDATE_ACTIVE_VIEWS; payload: number }
-
-export { IUser };
-
+export { MarkerType, INewMessage, IMessage, IPolicy, INewMarker, IMarker, MarkerState, MarkerActionType, IMarkerHistory }

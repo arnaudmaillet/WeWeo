@@ -1,5 +1,5 @@
 export enum FirestoreAction {
-    GET = "GET",
+    FETCH = "FETCH",
     ADD = "ADD",
     UPDATE = "UPDATE",
     DELETE = "DELETE",
