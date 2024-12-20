@@ -1,5 +1,5 @@
+import { IUser } from "~/contexts/user/types";
 import { ICoordinates } from "./MapInterfaces";
-import { IUser } from "./UserInterfaces";
 
 export enum MarkerType {
     DEFAULT = 'init',

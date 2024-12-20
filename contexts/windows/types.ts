@@ -1,19 +1,23 @@
-export enum WindowType {
+import { MenuType } from "~/contexts/menu/types";
+
+enum WindowType {
     DEFAULT = 'DEFAULT',
     NEW_MARKER = 'NEW_MARKER',
     CHAT = 'CHAT',
 }
-
-export interface WindowState {
+interface IWindow {
     active: WindowType;
     isLoaded: boolean;
 }
 
-export enum WindowActionType {
+enum WindowActionType {
     SET_ACTIVE = "SET_ACTIVE",
-    SET_LOADED = "SET_LOADED"
+    SET_LOADED = "SET_LOADED",
 }
 
-export type WindowAction =
+type WindowAction =
     | { type: WindowActionType.SET_ACTIVE; payload: WindowType }
     | { type: WindowActionType.SET_LOADED; payload: boolean }
+
+
+export { WindowType, IWindow, WindowActionType, WindowAction }

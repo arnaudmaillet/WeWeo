@@ -1,39 +1,41 @@
 import React, { createContext, useContext, useReducer } from "react";
-import { reducer, initialState } from "./reducer";
-import { WindowActionType, WindowState, WindowType } from "./types";
+import { windowReducer, initialWindow } from "./reducer";
+import { WindowActionType, IWindow, WindowType } from "./types";
 
 interface ContextProps {
-    state: WindowState;
-    setActive: (window: WindowType) => void;
-    setLoaded: (isLoaded: boolean) => void;
+    window: IWindow;
+    setActive: (payload: WindowType) => void;
+    setLoaded: (payload: boolean) => void;
 }
 
 const WindowContext = createContext<ContextProps | undefined>(undefined);
 
-export const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [state, dispatch] = useReducer(reducer, initialState);
+const WindowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [window, dispatch] = useReducer(windowReducer, initialWindow);
 
     // don'4t forget to setWindowLoaded to true on the exiting callback animations (reanimated)
-    const setActive = (window: WindowType) => {
+    const setActive = (payload: WindowType) => {
         setLoaded(false)
-        dispatch({ type: WindowActionType.SET_ACTIVE, payload: window })
+        dispatch({ type: WindowActionType.SET_ACTIVE, payload: payload })
     }
 
-    const setLoaded = (isLoaded: boolean) => {
-        dispatch({ type: WindowActionType.SET_LOADED, payload: isLoaded })
+    const setLoaded = (payload: boolean) => {
+        dispatch({ type: WindowActionType.SET_LOADED, payload: payload })
     }
 
     return (
-        <WindowContext.Provider value={{ state, setActive, setLoaded }}>
+        <WindowContext.Provider value={{ window, setActive, setLoaded }}>
             {children}
         </WindowContext.Provider>
     );
 };
 
-export const useWindow = () => {
+const useWindow = () => {
     const context = useContext(WindowContext);
     if (!context) {
         throw new Error("useWindow must be used within a WindowProvider");
     }
     return context;
 };
+
+export { WindowProvider, useWindow }

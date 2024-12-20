@@ -1,67 +1,72 @@
 import { ICoordinates } from "~/types/MapInterfaces";
-import { IUser } from "~/types/UserInterfaces";
+import { IUser } from "../user/types";
 
-export enum MarkerType {
+enum MarkerType {
     DEFAULT = 'DEFAULT',
     CHAT = 'CHAT',
 }
 
-export interface IMessage {
-    messageId: string,
+interface INewMessage {
     senderId: string,
-    senderInfo: IUser,
-    markerId: string,
     content: string,
-    createdAt: number,
     type: string,
-    combinedKey?: string
+    createdAt: number,
 }
 
-export interface IPolicy {
+interface IMessage extends INewMessage {
+    messageId: string,
+    senderInfo: IUser,
+    markerId: string,
+}
+
+interface IPolicy {
     isPrivate: boolean,
     show: string[]
 }
 
-export interface INewMarker {
+interface INewMarker {
     coordinates: ICoordinates;
     type: MarkerType;
     icon: string;
     label: string;
     policy: IPolicy;
 }
-export interface IMarker extends INewMarker {
+interface IMarker extends INewMarker {
     markerId: string;
     createdAt: number;
     creatorId: string;
     minZoom: number;
     subscribedUserIds: string[];
-    connectedUserIds: string[];
-    messages: IMessage[]
+    connections: IUser[] | null;
+    views: number;
+    messages: IMessage[];
+    isLoading: boolean
 }
-export interface MarkerState {
+
+interface IMarkerHistory extends IMarker {
+    viewedAt: number
+}
+interface MarkerState {
     list: IMarker[];
+    filteredList?: IMarker[];
     new: INewMarker | IMarker | null;
     active: IMarker | null
 }
 
-export enum MarkerActionType {
+enum MarkerActionType {
     SET = "SET",
     REMOVE = "REMOVE",
     UPDATE = "UPDATE",
+    SET_FILTERED = "SET_FILTERED",
+    ADD_FILTERED = "ADD_FILTERED",
+    REMOVE_FILTERED = "REMOVE_FILTERED",
     SET_NEW = "SET_NEW",
     UPDATE_NEW = "UPDATE_NEW",
     SET_ACTIVE = "SET_ACTIVE",
+    UPDATE_ACTIVE_LOADING = "UPDATE_ACTIVE_LOADING",
     UPDATE_ACTIVE_MESSAGES = "UPDATE_ACTIVE_MESSAGES",
-    UPDATE_ACTIVE_CONNECTED_USERS = "UPDATE_ACTIVE_CONNECTED_USERS",
+    UPDATE_ACTIVE_CONNECTIONS = "UPDATE_ACTIVE_CONNECTIONS",
+    UPDATE_ACTIVE_VIEWS = "UPDATE_ACTIVE_VIEWS"
 }
 
-export type MarkerAction =
-    | { type: MarkerActionType.SET; payload: IMarker[] }
-    | { type: MarkerActionType.REMOVE; payload: string }
-    | { type: MarkerActionType.UPDATE; payload: IMarker }
-    | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
-    | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
-    | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
-    | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
-    | { type: MarkerActionType.UPDATE_ACTIVE_CONNECTED_USERS; payload: string[] }
-
+export { MarkerType, INewMessage, IMessage, IPolicy, INewMarker, IMarker, MarkerState, MarkerActionType, IMarkerHistory }

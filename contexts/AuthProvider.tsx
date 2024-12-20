@@ -1,13 +1,15 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { ICurrentUser, IUser } from '~/types/UserInterfaces';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firestore } from '~/firebase';
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, getDocs, DocumentData } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged, updateProfile } from "firebase/auth";
+import { IMarker } from './markers/types';
+import { useUser } from './user/Context';
+import { IFriend, IUser } from './user/types';
+import { ICoordinates } from '~/types/MapInterfaces';
 
 interface AuthContextProps {
-    user: ICurrentUser | null;
     isLoading: boolean;
     signUp: (email: string, password: string, username: string, birthdate: string, locale: string) => Promise<boolean>;
     signIn: (email: string, password: string) => Promise<boolean>;
@@ -25,12 +27,13 @@ export const fakeUserLocation = {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<ICurrentUser | null>(null);
+    const { set: setUser, logout: logoutUser } = useUser()
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (firebaseUser) {
+                setIsLoading(true);
                 const token = await firebaseUser.getIdToken();
                 storeUser(firebaseUser.email || '', token);
 
@@ -41,19 +44,86 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
 
-                    // Récupérer les amis par leurs IDs
-                    const friendsIds = userData.friends || [];
-                    let friends: IUser[] = [];
-                    if (friendsIds.length > 0) {
-                        const friendsDocs = await Promise.all(
-                            friendsIds.map((id: string) => getDoc(doc(firestore, "users", id)))
-                        );
-                        friends = friendsDocs
-                            .filter((doc) => doc.exists())
-                            .map((doc) => doc.data() as IUser);
+                    // Récupérer les amis depuis la collection "friends"
+                    const friendsCollection = collection(firestore, "users", firebaseUser.uid, "friends");
+                    const friendsSnapshot = await getDocs(friendsCollection);
+
+                    const friends: IFriend[] = [];
+                    if (!friendsSnapshot.empty) {
+                        for (const friendDoc of friendsSnapshot.docs) {
+                            const friendData = friendDoc.data();
+                            const userRef = friendData.userRef;
+
+                            // Récupérer les données utilisateur depuis la référence
+                            const userSnapshot = await getDoc(userRef);
+                            if (userSnapshot.exists()) {
+                                const userDetails = userSnapshot.data() as DocumentData;
+                                friends.push({
+                                    userId: userRef.id,
+                                    email: userDetails.email,
+                                    username: userDetails.username,
+                                    birthdate: userDetails.birthdate,
+                                    locale: userDetails.locale,
+                                    addedAt: friendData.addedAt,
+                                    friends: [],
+                                    subscribedTo: userDetails.subscribedTo,
+                                    ownerOf: []
+                                } as IFriend);
+                            }
+                        }
                     }
 
+                    // Récupérer les markers possédés depuis la collection "ownerOf"
+                    const ownerOfCollection = collection(firestore, "users", firebaseUser.uid, "ownerOf");
+                    const ownerOfSnapshot = await getDocs(ownerOfCollection);
 
+                    const ownerOf: IMarker[] = [];
+                    if (!ownerOfSnapshot.empty) {
+                        for (const markerDoc of ownerOfSnapshot.docs) {
+                            const markerData = markerDoc.data();
+
+                            ownerOf.push({
+                                markerId: markerDoc.id,
+                                createdAt: markerData.createdAt,
+                                creatorId: markerData.creatorId,
+                                minZoom: markerData.minZoom,
+                                subscribedUserIds: markerData.subscribedUserIds,
+                                connections: markerData.connections || null,
+                                views: markerData.views,
+                                messages: markerData.messages,
+                                isLoading: false, // Par défaut
+                            } as IMarker);
+                        }
+                    }
+
+                    // Récupérer les markers depuis la collection "subscribedTo"
+                    const subscribedToCollection = collection(firestore, "users", firebaseUser.uid, "subscribedTo");
+                    const subscribedToSnapshot = await getDocs(subscribedToCollection);
+
+                    const subscribedTo: IMarker[] = [];
+                    if (!subscribedToSnapshot.empty) {
+                        for (const subscribedDoc of subscribedToSnapshot.docs) {
+                            const subscribedData = subscribedDoc.data();
+                            const markerRef = subscribedData.markerRef;
+
+                            // Récupérer les données marker depuis la référence
+                            const markerSnapshot = await getDoc(markerRef);
+                            if (markerSnapshot.exists()) {
+                                const markerDetails = markerSnapshot.data() as DocumentData;
+                                subscribedTo.push({
+                                    markerId: markerRef.id,
+                                    subscribedUserIds: markerDetails.subscribedUserIds,
+                                    isLoading: false,
+                                    connections: null,
+                                    ...markerDetails,
+                                    coordinates: {
+                                        lat: markerDetails.coordinates.latitude,
+                                        long: markerDetails.coordinates.longitude,
+                                    } as ICoordinates,
+                                } as IMarker)
+                            }
+                        }
+                    }
                     // Mise à jour de l'état utilisateur
                     setUser({
                         userId: firebaseUser.uid,
@@ -62,7 +132,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         birthdate: userData.birthdate,
                         locale: userData.locale,
                         friends: friends,
-                        subscribedTo: userData.subscribedTo,
+                        subscribedTo: subscribedTo,
+                        ownerOf: ownerOf,
                         location: {
                             lat: fakeUserLocation.lat,
                             long: fakeUserLocation.long,
@@ -70,12 +141,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             longDelta: fakeUserLocation.longDelta,
                         },
                     });
+                    setIsLoading(false);
                 } else {
                     console.error('User document not found in Firestore');
                     router.push('/Login');
                 }
             } else {
-                setUser(null);
                 router.push('/Login');
             }
         });
@@ -98,20 +169,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
-            const userData: ICurrentUser = {
+            const userData: IUser = {
                 userId: firebaseUser.uid,
                 username,
                 email,
                 birthdate,
                 locale,
-                friends: [],
-                subscribedTo: [],
                 location: {
                     lat: fakeUserLocation.lat,
                     long: fakeUserLocation.long,
                     latDelta: fakeUserLocation.latDelta,
                     longDelta: fakeUserLocation.longDelta,
-                }
+                },
+                ownerOf: []
             };
 
             await updateProfile(firebaseUser, {
@@ -142,16 +212,85 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (userDoc.exists()) {
                 const userData = userDoc.data();
 
-                // Récupérer les amis par leurs IDs
-                const friendsIds = userData.friends || [];
-                let friends: IUser[] = [];
-                if (friendsIds.length > 0) {
-                    const friendsDocs = await Promise.all(
-                        friendsIds.map((id: string) => getDoc(doc(firestore, "users", id)))
-                    );
-                    friends = friendsDocs
-                        .filter((doc) => doc.exists())
-                        .map((doc) => doc.data() as IUser);
+                // Récupérer les amis depuis la collection "friends"
+                const friendsCollection = collection(firestore, "users", firebaseUser.uid, "friends");
+                const friendsSnapshot = await getDocs(friendsCollection);
+
+                const friends: IFriend[] = [];
+                if (!friendsSnapshot.empty) {
+                    for (const friendDoc of friendsSnapshot.docs) {
+                        const friendData = friendDoc.data();
+                        const userRef = friendData.userRef;
+
+                        // Récupérer les données utilisateur depuis la référence
+                        const userSnapshot = await getDoc(userRef);
+                        if (userSnapshot.exists()) {
+                            const userDetails = userSnapshot.data() as DocumentData;
+                            friends.push({
+                                userId: userRef.id,
+                                email: userDetails.email,
+                                username: userDetails.username,
+                                birthdate: userDetails.birthdate,
+                                locale: userDetails.locale,
+                                addedAt: friendData.timestamp,
+                                friends: [],
+                                subscribedTo: userDetails.subscribedTo,
+                                ownerOf: []
+                            } as IFriend);
+                        }
+                    }
+                }
+
+                // Récupérer les markers possédés depuis la collection "ownerOf"
+                const ownerOfCollection = collection(firestore, "users", firebaseUser.uid, "ownerOf");
+                const ownerOfSnapshot = await getDocs(ownerOfCollection);
+
+                const ownerOf: IMarker[] = [];
+                if (!ownerOfSnapshot.empty) {
+                    for (const markerDoc of ownerOfSnapshot.docs) {
+                        const markerData = markerDoc.data();
+
+                        ownerOf.push({
+                            markerId: markerDoc.id,
+                            createdAt: markerData.createdAt,
+                            creatorId: markerData.creatorId,
+                            minZoom: markerData.minZoom,
+                            subscribedUserIds: markerData.subscribedUserIds,
+                            connections: markerData.connections || null,
+                            views: markerData.views,
+                            messages: markerData.messages,
+                            isLoading: false, // Par défaut
+                        } as IMarker);
+                    }
+                }
+
+                // Récupérer les markers depuis la collection "subscribedTo"
+                const subscribedToCollection = collection(firestore, "users", firebaseUser.uid, "subscribedTo");
+                const subscribedToSnapshot = await getDocs(subscribedToCollection);
+
+                const subscribedTo: IMarker[] = [];
+                if (!subscribedToSnapshot.empty) {
+                    for (const subscribedDoc of subscribedToSnapshot.docs) {
+                        const subscribedData = subscribedDoc.data();
+                        const markerRef = subscribedData.markerRef;
+
+                        // Récupérer les données marker depuis la référence
+                        const markerSnapshot = await getDoc(markerRef);
+                        if (markerSnapshot.exists()) {
+                            const markerDetails = markerSnapshot.data() as DocumentData;
+                            subscribedTo.push({
+                                markerId: markerRef.id,
+                                createdAt: markerDetails.createdAt,
+                                creatorId: markerDetails.creatorId,
+                                minZoom: markerDetails.minZoom,
+                                subscribedUserIds: markerDetails.subscribedUserIds,
+                                connections: markerDetails.connections || null,
+                                views: markerDetails.views,
+                                messages: markerDetails.messages,
+                                isLoading: false, // Par défaut
+                            } as IMarker);
+                        }
+                    }
                 }
 
                 // Mise à jour de l'état utilisateur
@@ -162,7 +301,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     birthdate: userData.birthdate,
                     locale: userData.locale,
                     friends: friends,
-                    subscribedTo: userData.subscribedTo,
+                    subscribedTo: subscribedTo,
+                    ownerOf: ownerOf,
                     location: {
                         lat: fakeUserLocation.lat,
                         long: fakeUserLocation.long,
@@ -187,12 +327,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
 
+
     const signOut = async () => {
         setIsLoading(true);
         try {
             await firebaseSignOut(auth);
             await AsyncStorage.removeItem('@user_token');
-            setUser(null);
+            logoutUser()
             router.push('/Login');
         } catch (error) {
             console.error('Failed to sign out:', error);
@@ -202,7 +343,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, signUp, signIn, signOut }}>
+        <AuthContext.Provider value={{ isLoading, signUp, signIn, signOut }}>
             {children}
         </AuthContext.Provider>
     );

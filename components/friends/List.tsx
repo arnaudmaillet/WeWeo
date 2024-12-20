@@ -1,59 +1,93 @@
-import React, { Dispatch, FC, SetStateAction, useState } from 'react';
-import { FlatList, StyleSheet, View, Text } from 'react-native';
+import React, { FC } from 'react';
+import { FlatList, StyleSheet, View, Text, StyleProp, ViewStyle } from 'react-native';
 import { useAuth } from '~/contexts/AuthProvider';
-import { IUser } from '~/types/UserInterfaces';
 import { THEME } from '~/constants/constants';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+    interpolateColor,
+} from 'react-native-reanimated';
+import { useUser } from '~/contexts/user/Context';
+import { IFriend } from '~/contexts/user/types';
 
 interface FriendsListProps {
-    selected: string[]
-    setSelected: (friendsIds: string[]) => void
+    selected: IFriend[];
+    setSelected: (friends: IFriend[]) => void;
+    style?: StyleProp<ViewStyle>;
 }
 
-const FriendsList: FC<FriendsListProps> = ({ selected, setSelected }) => {
+interface FriendItemProps {
+    friend: IFriend;
+    isSelected: boolean;
+    handleSelect: (friend: IFriend) => void;
+}
 
-    const { user } = useAuth()
+const FriendItem: FC<FriendItemProps> = ({ friend, isSelected, handleSelect }) => {
+    const animationValue = useSharedValue(isSelected ? 1 : 0);
 
-    if (!user) return
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            backgroundColor: interpolateColor(
+                animationValue.value,
+                [0, 1],
+                [THEME.colors.grayscale.darker_1x, THEME.colors.primary]
+            ),
+        };
+    });
 
-    const handleSelect = (friendId: string) => {
-        const updatedList = selected.includes(friendId)
-            ? selected.filter((id) => id !== friendId)
-            : [...selected, friendId];
-        setSelected(updatedList);
+    const handlePress = () => {
+        animationValue.value = withTiming(isSelected ? 0 : 1, { duration: 300 });
+        handleSelect(friend);
     };
 
-
-    const userItem = ({ item }: { item: IUser }) => {
-
-        const isSelected = selected.includes(item.userId);
-
-        return (
-            <View style={styles.flatListItem}>
-                <TouchableWithoutFeedback
-                    style={[styles.iconContainer, isSelected && styles.selected]}
-                    onPress={() => handleSelect(item.userId)}
-                >
+    return (
+        <View style={styles.flatListItem}>
+            <TouchableWithoutFeedback onPress={handlePress}>
+                <Animated.View style={[styles.iconContainer, animatedStyle]}>
                     <Text style={[styles.iconText, isSelected && styles.selectedText]}>
-                        {item.username.slice(0, 2).toUpperCase()}
+                        {friend.username.slice(0, 2).toUpperCase()}
                     </Text>
-                </TouchableWithoutFeedback>
-                <View>
-                    <Text style={styles.username}>
-                        {item.username.length > 6 ? item.username.slice(0, 6) + '...' : item.username}
-                    </Text>
-                </View>
+                </Animated.View>
+            </TouchableWithoutFeedback>
+            <View>
+                <Text style={styles.username}>
+                    {friend.username.length > 6
+                        ? `${friend.username.slice(0, 6)}...`
+                        : friend.username}
+                </Text>
             </View>
-        );
+        </View>
+    );
+};
+
+const FriendsList: FC<FriendsListProps> = ({ selected, setSelected, style }) => {
+    const { user } = useUser();
+
+    if (!user || !user.friends) return null;
+
+    const handleSelect = (friend: IFriend) => {
+        const updatedList = selected.includes(friend)
+            ? selected.filter(_ => _ !== friend)
+            : [...selected, friend];
+        setSelected(updatedList);
     };
 
     return (
         <FlatList
-            data={user?.friends}
-            horizontal={true}
-            keyExtractor={(user: IUser) => user.userId.toString()}
+            data={user.friends}
+            horizontal
+            keyExtractor={(friend: IFriend) => friend.userId.toString()}
             showsHorizontalScrollIndicator={false}
-            renderItem={userItem}
+            renderItem={({ item }) => (
+                <FriendItem
+                    friend={item}
+                    isSelected={selected.includes(item)}
+                    handleSelect={handleSelect}
+                />
+            )}
+            style={style}
         />
     );
 };
@@ -72,7 +106,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: THEME.colors.grayscale.darker_1x
     },
     iconText: {
         color: THEME.colors.primary,
@@ -81,16 +114,10 @@ const styles = StyleSheet.create({
     },
     username: {
         color: 'gray',
-        fontSize: 10
-    },
-    selected: {
-        backgroundColor: THEME.colors.accent,
-        borderColor: THEME.colors.primary,
-        borderWidth: 2,
+        fontSize: 10,
     },
     selectedText: {
-        color: THEME.colors.text.black,
-        fontWeight: 'bold',
+        color: THEME.colors.text.white,
     },
 });
 
