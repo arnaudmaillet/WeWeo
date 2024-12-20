@@ -1,6 +1,6 @@
 import { StyleSheet, TextInput, View, Text, ActivityIndicator } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import Animated, { ZoomIn, FadeInDown, FadeOutDown, runOnJS, FadeIn, FadeOut, useSharedValue, useAnimatedStyle, withTiming, withSpring } from 'react-native-reanimated'
+import Animated, { ZoomIn, FadeInDown, FadeOutDown, runOnJS, FadeIn, FadeOut, useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomOut } from 'react-native-reanimated'
 import { FontAwesome6, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { THEME } from '~/constants/constants';
 import { useWindow } from '~/contexts/windows/Context';
@@ -25,7 +25,7 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
     const { user } = useUser()
     const { menu, setMenu } = useMenu()
     const { window, setActive: setActiveWindow, setLoaded: setWindowLoaded } = useWindow()
-    const { setFiltered, setActive: setActiveMarker } = useMarker()
+    const { setFiltered, setActive: setActiveMarker, firestoreFetch: firestoreFetchMarkers } = useMarker()
     const [friends, setFriends] = useState<IFriend[]>([])
     const [buttonPressedEvent, setButtonPressedEvent] = useState<boolean>(false)
 
@@ -199,8 +199,8 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
                                     <TouchableOpacity onPress={() => {
                                         setMenu(button.type)
                                         setButtonPressedEvent(!buttonPressedEvent)
-                                    }}>
-                                        <View style={styles.buttonIcon}>
+                                    }} onLongPress={() => menu.active === button.type && firestoreFetchMarkers(button.type)}>
+                                        <Animated.View key={button.isLoading.toString()} style={styles.buttonIcon} entering={ZoomIn.springify()} exiting={ZoomOut}>
                                             {
                                                 button.isLoading ?
                                                     <ActivityIndicator color={THEME.colors.primary} /> :
@@ -208,7 +208,7 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
                                                         color: menu.active === button.type ? button.activeColor : button.color
                                                     })
                                             }
-                                        </View>
+                                        </Animated.View>
                                         <Text style={[{ color: menu.active === button.type ? button.activeColor : button.color }, styles.buttonMenu]}>{button.label}</Text>
                                         <Animated.View key={menu.active} entering={FadeIn.springify().duration(1000)} exiting={FadeOut.springify()} style={styles.buttonIndicatorContainer} >
                                             {menu.active === button.type && <View style={[styles.buttonIndicator, { backgroundColor: button.activeColor }]}></View>}
@@ -290,7 +290,9 @@ const styles = StyleSheet.create({
         fontSize: 10
     },
     buttonIcon: {
-        alignItems: 'center'
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 24
     },
     buttonIndicatorContainer: {
         height: 4,

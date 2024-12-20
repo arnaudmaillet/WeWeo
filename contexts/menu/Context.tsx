@@ -21,7 +21,7 @@ const initialMenu: IMenu = {
             isLoading: true,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(Ionicons, { name: "compass-outline", size: 20 }),
+            icon: React.createElement(Ionicons, { name: "compass-outline", size: 24 }),
         },
         {
             label: "Subs",
@@ -29,7 +29,7 @@ const initialMenu: IMenu = {
             isLoading: false,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(MaterialIcons, { name: "bookmark-outline", size: 20 }),
+            icon: React.createElement(MaterialIcons, { name: "bookmark-outline", size: 24 }),
         },
         {
             label: "Friends",
@@ -37,7 +37,7 @@ const initialMenu: IMenu = {
             isLoading: false,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(MaterialIcons, { name: "group", size: 20 }),
+            icon: React.createElement(MaterialIcons, { name: "group", size: 24 }),
         },
         {
             label: "History",
@@ -45,7 +45,7 @@ const initialMenu: IMenu = {
             isLoading: false,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(MaterialIcons, { name: "history", size: 20 }),
+            icon: React.createElement(MaterialIcons, { name: "history", size: 24 }),
         },
         {
             label: "New",
@@ -53,7 +53,7 @@ const initialMenu: IMenu = {
             isLoading: false,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(MaterialIcons, { name: "add-location-alt", size: 20 }),
+            icon: React.createElement(MaterialIcons, { name: "add-location-alt", size: 24 }),
         }
     ],
     active: MenuType.DISCOVER

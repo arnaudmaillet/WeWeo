@@ -8,9 +8,11 @@ interface IUser {
     locale: string,
     birthdate: string,
     ownerOf: IMarker[],
+    markers?: IMarker[],
     subscribedTo?: IMarker[],
-    location?: ICoodinatesWithZoom
+    location?: ICoodinatesWithZoom,
     friends?: IFriend[],
+    friendsMarkers?: IMarker[],
     history?: IMarkerHistory[]
 }
 
@@ -22,6 +24,8 @@ enum UserActionType {
     SET = "SET",
     UPDATE = "UPDATE",
     SET_FRIENDS = "SET_FRIENDS",
+    SET_MARKERS = "SET_MARKERS",
+    SET_FRIENDS_MARKERS = "SET_FRIENDS_MARKERS",
     SET_HISTORY = "SET_HISTORY",
     LOGOUT = "LOGOUT",
 }
@@ -29,7 +33,9 @@ enum UserActionType {
 type UserAction =
     | { type: UserActionType.SET; payload: IUser }
     | { type: UserActionType.UPDATE; payload: IUser }
+    | { type: UserActionType.SET_MARKERS; payload: IMarker[] }
     | { type: UserActionType.SET_FRIENDS; payload: IFriend[] }
+    | { type: UserActionType.SET_FRIENDS_MARKERS; payload: IMarker[] }
     | { type: UserActionType.SET_HISTORY; payload: IMarkerHistory[] }
     | { type: UserActionType.LOGOUT }
 

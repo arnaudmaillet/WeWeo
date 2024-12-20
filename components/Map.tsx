@@ -1,4 +1,4 @@
-import { Animated, Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
+import { Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Marker, Region, Heatmap } from 'react-native-maps';
 import haversine from "haversine-distance";
@@ -22,6 +22,7 @@ import { BBox } from 'geojson';
 import MapView from "react-native-maps";
 import Supercluster, { AnyProps, PointFeature } from 'supercluster';
 import useSupercluster from 'use-supercluster';
+import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 
 const calculateZoom = (latDelta: number, longDelta: number, screenWidth: number): number => {
     const TILE_SIZE = 256; // Taille de la tuile standard
@@ -70,12 +71,8 @@ const Map: React.FC<IMap> = () => {
     });
 
     const [markerSnap, setMarkerSnap] = useState<IMarker | null>(null); // to recenter the map on the selected point
-    const [closestMarker, setClosestMarker] = useState<IMarker | null>(null);
     const [zoom, setZoom] = useState(0);
     const [bounds, setBounds] = useState<BBox>()
-
-    const [iconAnimations, setIconAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(1)));
-    const [textAnimations, setTextAnimations] = useState<Animated.Value[]>((markerState.list || []).map(() => new Animated.Value(0)));
 
     const points: PointFeature<AnyProps>[] = useMemo(() => {
         const markers = markerState.list
@@ -97,67 +94,6 @@ const Map: React.FC<IMap> = () => {
 
     const getTopMarker = (clusterMarkers: PointFeature<AnyProps>[]) => {
         return clusterMarkers.reduce((prev, current) => prev.properties.payload.subscribedUserIds.length > current.properties.payload.subscribedUserIds.length ? prev : current);
-    };
-
-    const [scaleAnimations, setScaleAnimations] = useState<Animated.Value[]>(
-        markerState.list.map(() => new Animated.Value(0)) || []
-    ); // Initialiser les animations de scale
-
-    // useEffect(() => {
-    //     if (markerState.list) {
-    //         setIconAnimations(prev => [
-    //             ...prev,
-    //             ...markerState.list.slice(prev.length).map(() => new Animated.Value(1)),
-    //         ]);
-
-    //         setTextAnimations(prev => [
-    //             ...prev,
-    //             ...markerState.list.slice(prev.length).map(() => new Animated.Value(0)),
-    //         ]);
-
-    //         setScaleAnimations(prev => [
-    //             ...prev,
-    //             ...markerState.list.slice(prev.length).map(() => new Animated.Value(0)),
-    //         ]);
-    //     }
-    // }, [markerState.list]);
-
-    const animateToClosestMarker = (closestMarkerId: string) => {
-        markerState.list.forEach((marker: IMarker, index: number) => {
-            if (marker.markerId === closestMarkerId && marker.label.length > 0) {
-                if (iconAnimations[index] && textAnimations[index]) {
-                    // Animer pour faire apparaître le texte et disparaître l'icône
-                    Animated.parallel([
-                        Animated.timing(iconAnimations[index], {
-                            toValue: 0,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(textAnimations[index], {
-                            toValue: 1,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                    ]).start();
-                }
-            } else {
-                if (iconAnimations[index] && textAnimations[index]) {
-                    // Revenir à l'état d'origine (icône visible et texte invisible)
-                    Animated.parallel([
-                        Animated.timing(iconAnimations[index], {
-                            toValue: 1,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(textAnimations[index], {
-                            toValue: 0,
-                            duration: 300,
-                            useNativeDriver: true,
-                        }),
-                    ]).start();
-                }
-            }
-        });
     };
 
     const handlePressMarker = (point: IMarker) => {
@@ -194,108 +130,6 @@ const Map: React.FC<IMap> = () => {
             label: ""
         });
     };
-
-    // useEffect(() => {
-    //     if (markerState.active && mapRef.current) {
-    //         setMarkerSnap(markerState.active);
-
-    //         mapRef.current.animateCamera(
-    //             {
-    //                 center: {
-    //                     latitude: markerState.active.coordinates.lat,
-    //                     longitude: markerState.active.coordinates.long,
-    //                 },
-    //             },
-    //             { duration: 300 }
-    //         );
-    //     }
-
-
-    //     if (!markerState.active && markerSnap && mapRef.current) {
-
-    //         mapRef.current.animateCamera(
-    //             {
-    //                 center: {
-    //                     latitude: markerSnap.coordinates.lat,
-    //                     longitude: markerSnap.coordinates.long,
-    //                 },
-    //             },
-    //             { duration: 300 }
-    //         );
-    //         setMarkerSnap(null);
-    //     }
-    // }, [markerState.active?.markerId]);
-
-    // useEffect(() => {
-    //     const previousMarkers = previousMarkersRef.current;
-    //     const newMarkers = markerState.list.filter((marker: IMarker) =>
-    //         !previousMarkers.some(prevMarker => prevMarker.markerId === marker.markerId)
-    //     );
-
-    //     if (newMarkers && newMarkers.length > 0) {
-    //         const updatedAnimations = markerState.list.map((marker: IMarker, index: number) =>
-    //             newMarkers.some(newMarker => newMarker.markerId === marker.markerId)
-    //                 ? new Animated.Value(0)
-    //                 : scaleAnimations[index] || new Animated.Value(1)
-    //         );
-    //         setScaleAnimations(updatedAnimations || []);
-    //     }
-
-    //     if (markerState.list) {
-    //         previousMarkersRef.current = markerState.list;
-    //     }
-    // }, [markerState.list]);
-
-    // useEffect(() => {
-    //     scaleAnimations.forEach((animation, index) => {
-    //         setTimeout(() => {
-    //             Animated.spring(animation, {
-    //                 toValue: 1, // Apparition en zoom
-    //                 friction: 5, // Réglage pour adoucir l’animation
-    //                 tension: 40,
-    //                 useNativeDriver: true,
-    //             }).start();
-    //         }, 0); // Délai aléatoire
-    //     });
-    // }, [scaleAnimations, markerState.list]);
-
-    const findClosestMarker = (center: { lat: number; lon: number }) => {
-        let closest: IMarker | null = null;
-        let minDistance = Infinity;
-
-        markerState.list.forEach((marker: IMarker) => {
-            const distance = haversine(center, {
-                lat: marker.coordinates.lat,
-                lon: marker.coordinates.long
-            });
-            if (distance < minDistance) {
-                minDistance = distance;
-                closest = marker;
-            }
-        });
-        setClosestMarker(closest);
-    };
-
-    // useEffect(() => {
-    //     if (closestMarker) {
-    //         if (windowState.active === WindowType.CHAT && closestMarker.markerId !== markerState.active?.markerId) {
-    //             impactAsync(ImpactFeedbackStyle.Light)
-    //             setActiveMarker(closestMarker)
-    //         }
-    //         animateToClosestMarker(closestMarker.markerId);
-    //     }
-    // }, [closestMarker]);
-
-
-    // const handleRegionChangeComplete = (newRegion: {
-    //     lat: number;
-    //     long: number;
-    //     latDelta: number;
-    //     longDelta: number;
-    // }) => {
-    //     setRegion(newRegion);
-    //     updateClusters(newRegion);
-    // };
 
     const onRegionChangeComplete = async (region: Region, _?: object) => {
         setBounds(regionToBoundingBox(region));
@@ -354,31 +188,33 @@ const Map: React.FC<IMap> = () => {
                                 key={`cluster-${point.properties.cluster_id}`}
                                 coordinate={{ latitude: coordinates[1], longitude: coordinates[0] }}
                             >
-                                <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
-                                    {
-                                        marker.label.length > 0 && <View style={styles.pillTextContainer}>
-                                            <Text style={styles.pillText}>
-                                                {marker.label}
-                                            </Text>
-                                        </View>
-                                    }
-                                    {
-                                        marker.label.length > 0 ?
-                                            <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
-                                                    <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                </View>
-                                            </View> :
-                                            <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center', position: 'absolute', bottom: 0, right: 0, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
-                                                    <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                </View>
+                                <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
+                                    <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
+                                        {
+                                            marker.label.length > 0 && <View style={styles.pillTextContainer}>
+                                                <Text style={styles.pillText}>
+                                                    {marker.label}
+                                                </Text>
                                             </View>
-                                    }
+                                        }
+                                        {
+                                            marker.label.length > 0 ?
+                                                <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                    <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
+                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                    </View>
+                                                </View> :
+                                                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                    <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center', position: 'absolute', bottom: 0, right: 0, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
+                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                    </View>
+                                                </View>
+                                        }
 
-                                </TouchableOpacity>
+                                    </TouchableOpacity>
+                                </Animated.View>
                             </Marker>
                         );
                     } else {
@@ -392,19 +228,20 @@ const Map: React.FC<IMap> = () => {
                                     longitude: coordinates[0]
                                 }}
                             >
-
-                                <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
-                                    {
-                                        marker.label.length > 0 && <View style={styles.pillTextContainer}>
-                                            <Text style={styles.pillText}>
-                                                {marker.label}
-                                            </Text>
+                                <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
+                                    <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
+                                        {
+                                            marker.label.length > 0 && <View style={styles.pillTextContainer}>
+                                                <Text style={styles.pillText}>
+                                                    {marker.label}
+                                                </Text>
+                                            </View>
+                                        }
+                                        <View style={marker.label.length > 0 && { height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                            {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
                                         </View>
-                                    }
-                                    <View style={marker.label.length > 0 && { height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                    </View>
-                                </TouchableOpacity>
+                                    </TouchableOpacity>
+                                </Animated.View>
                             </Marker>
                         );
                     }

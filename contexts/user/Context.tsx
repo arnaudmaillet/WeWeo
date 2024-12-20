@@ -7,13 +7,15 @@ import { FirestoreAction } from "~/types/FirestoreAction";
 import { IMarker, IMarkerHistory } from "../markers/types";
 import { useMenu } from "../menu/Context";
 import { MenuType } from "../menu/types";
-import { ICoordinates } from "~/types/MapInterfaces";
 
 interface UserContextProps {
     user: IUser | null;
     set: (user: IUser) => void;
     update: (user: IUser) => void;
+    setMarkers: (markers: IMarker[]) => void;
     setFriends: (friends: IFriend[]) => void;
+    setFriendsMarkers: (markers: IMarker[]) => void;
+    setHistory: (markers: IMarkerHistory[]) => void
     firestoreManageHistory: (action: FirestoreAction, markerId?: string) => Promise<IMarkerHistory[] | void>
     logout: () => void;
 }
@@ -33,8 +35,16 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: UserActionType.UPDATE, payload: payload });
     };
 
+    const setMarkers = (markers: IMarker[]) => {
+        dispatch({ type: UserActionType.SET_MARKERS, payload: markers });
+    };
+
     const setFriends = (payload: IFriend[]) => {
         dispatch({ type: UserActionType.SET_FRIENDS, payload: payload });
+    };
+
+    const setFriendsMarkers = (payload: IMarker[]) => {
+        dispatch({ type: UserActionType.SET_FRIENDS_MARKERS, payload: payload });
     };
 
     const setHistory = (payload: IMarkerHistory[]) => {
@@ -79,13 +89,13 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         const userHistoryCollection = collection(firestore, "users", user.userId, "history");
                         const querySnapshot = await getDocs(userHistoryCollection);
 
-                        // Récupérer toutes les références à partir de l'historique
                         const markerPromises = querySnapshot.docs.map(async doc => {
                             const markerRef = doc.data().markerRef;
                             const markerSnapshot = await getDoc(markerRef);
-                            const markerData = markerSnapshot.data() as DocumentData
-                            const coordinates = markerData.coordinates;
+
                             if (markerSnapshot.exists()) {
+                                const markerData = markerSnapshot.data() as DocumentData;
+                                const coordinates = markerData.coordinates;
                                 return {
                                     ...markerData,
                                     markerId: markerSnapshot.id,
@@ -93,26 +103,24 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                                     coordinates: {
                                         lat: coordinates.latitude,
                                         long: coordinates.longitude,
-                                    }
-                                } as IMarkerHistory;
+                                    },
+                                };
                             } else {
-                                console.warn(`Le marqueur avec l'ID ${markerRef.id} n'existe pas.`);
+                                console.warn(`Marker with ID ${markerRef.id} does not exist.`);
                                 return null;
                             }
                         });
 
                         const historyWithNulls = await Promise.all(markerPromises);
-                        const history: IMarkerHistory[] = historyWithNulls.filter(
-                            (item): item is IMarkerHistory => item !== null
-                        );
+                        const history = historyWithNulls.filter((item): item is IMarkerHistory => item !== null);
 
-                        setHistory(history);
-                        setLoading(MenuType.HISTORY, false)
-                        return history
+                        setLoading(MenuType.HISTORY, false);
+                        return history;
                     } catch (error) {
-                        console.error("Erreur lors de la récupération de l'historique des marqueurs:", error);
+                        console.error("Error fetching history:", error);
                     }
-                    break
+                    break;
+
                 default:
                     console.error(`FirestoreAction: ${action} is not implemented`)
             }
@@ -125,7 +133,7 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
 
     return (
-        <UserContext.Provider value={{ user, set, update, setFriends, logout, firestoreManageHistory }}>
+        <UserContext.Provider value={{ user, set, update, setMarkers, setFriends, setFriendsMarkers, setHistory, logout, firestoreManageHistory }}>
             {children}
         </UserContext.Provider>
     );
