@@ -19,9 +19,11 @@ interface IButton {
 
 interface IMenu {
    buttons: IButton[]
+   active: MenuType
 }
 
 enum MenuActionType {
+    SET_ACTIVE = "SET_ACTIVE",
     SET_BUTTONS = "SET_BUTTONS",
     SET_LOADING = "TOGGLE_BUTTON_LOADING",
 }

@@ -1,5 +1,5 @@
 import { IUser } from "../user/types";
-import { MarkerState, MarkerActionType, IMarker, INewMarker, IMessage } from "./types";
+import { MarkerState, MarkerActionType, IMarker, INewMarker, IMessage, IMarkerHistory } from "./types";
 
 export type MarkerAction =
     | { type: MarkerActionType.SET; payload: IMarker[] }

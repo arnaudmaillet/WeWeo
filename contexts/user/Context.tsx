@@ -2,22 +2,27 @@ import React, { createContext, useReducer, useContext, ReactNode } from "react";
 import { IUser, IFriend, UserActionType } from "~/contexts/user/types";
 import { userReducer } from "./reducer";
 import { firestore } from "~/firebase";
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
 import { FirestoreAction } from "~/types/FirestoreAction";
 import { IMarker, IMarkerHistory } from "../markers/types";
+import { useMenu } from "../menu/Context";
+import { MenuType } from "../menu/types";
+import { ICoordinates } from "~/types/MapInterfaces";
 
 interface UserContextProps {
     user: IUser | null;
     set: (user: IUser) => void;
     update: (user: IUser) => void;
     setFriends: (friends: IFriend[]) => void;
-    firestoreManageHistory: (action: FirestoreAction, markerId?: string) => Promise<void>
+    firestoreManageHistory: (action: FirestoreAction, markerId?: string) => Promise<IMarkerHistory[] | void>
     logout: () => void;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
 const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+
+    const { setLoading } = useMenu()
     const [user, dispatch] = useReducer(userReducer, null);
 
     const set = (payload: IUser) => {
@@ -40,8 +45,9 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: UserActionType.LOGOUT });
     };
 
-    const firestoreManageHistory = async (action: FirestoreAction, markerId?: string) => {
+    const firestoreManageHistory = async (action: FirestoreAction, markerId?: string): Promise<IMarkerHistory[] | void> => {
         if (user) {
+            setLoading(MenuType.HISTORY, true)
             switch (action) {
                 case FirestoreAction.ADD:
                     if (!markerId) {
@@ -75,14 +81,19 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
                         // Récupérer toutes les références à partir de l'historique
                         const markerPromises = querySnapshot.docs.map(async doc => {
-                            const markerRef = doc.data().markerRef; // Référence au marqueur
-                            const markerSnapshot = await getDoc(markerRef); // Récupérer les données du marqueur
-
+                            const markerRef = doc.data().markerRef;
+                            const markerSnapshot = await getDoc(markerRef);
+                            const markerData = markerSnapshot.data() as DocumentData
+                            const coordinates = markerData.coordinates;
                             if (markerSnapshot.exists()) {
                                 return {
+                                    ...markerData,
                                     markerId: markerSnapshot.id,
-                                    ...markerSnapshot.data() as object,
                                     viewedAt: doc.data().viewedAt.toDate(),
+                                    coordinates: {
+                                        lat: coordinates.latitude,
+                                        long: coordinates.longitude,
+                                    }
                                 } as IMarkerHistory;
                             } else {
                                 console.warn(`Le marqueur avec l'ID ${markerRef.id} n'existe pas.`);
@@ -95,8 +106,9 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                             (item): item is IMarkerHistory => item !== null
                         );
 
-                        console.log("Historique récupéré :", history);
                         setHistory(history);
+                        setLoading(MenuType.HISTORY, false)
+                        return history
                     } catch (error) {
                         console.error("Erreur lors de la récupération de l'historique des marqueurs:", error);
                     }
@@ -104,10 +116,11 @@ const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 default:
                     console.error(`FirestoreAction: ${action} is not implemented`)
             }
-
+            setLoading(MenuType.HISTORY, false)
         } else {
             console.warn("Utilisateur non connecté, impossible de gérer l'historique.");
         }
+        return
     };
 
 

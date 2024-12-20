@@ -1,6 +1,6 @@
 import { Animated, Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Marker, Region } from 'react-native-maps';
+import { Marker, Region, Heatmap } from 'react-native-maps';
 import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
@@ -306,7 +306,7 @@ const Map: React.FC<IMap> = () => {
         points,
         bounds,
         zoom,
-        options: { radius: 50, maxZoom: 20 }
+        options: { radius: 40, maxZoom: 20 }
     });
 
     useEffect(() => {
@@ -337,6 +337,7 @@ const Map: React.FC<IMap> = () => {
                 onRegionChangeComplete={onRegionChangeComplete}
                 pitchEnabled={true}
             >
+
                 {clusters && clusters.map((point: PointFeature<AnyProps>, index) => {
                     let marker: IMarker | null = null
                     let cluster: AnyProps | null = null
@@ -362,10 +363,21 @@ const Map: React.FC<IMap> = () => {
                                         </View>
                                     }
                                     {
-                                        marker.icon && <View style={marker.label.length > 0 && { position: 'absolute', left: 0, transform: [{ translateX: -20 }] }}>
-                                            <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />
-                                        </View>
+                                        marker.label.length > 0 ?
+                                            <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
+                                                    <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                </View>
+                                            </View> :
+                                            <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center', position: 'absolute', bottom: 0, right: 0, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
+                                                    <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                </View>
+                                            </View>
                                     }
+
                                 </TouchableOpacity>
                             </Marker>
                         );
@@ -380,6 +392,7 @@ const Map: React.FC<IMap> = () => {
                                     longitude: coordinates[0]
                                 }}
                             >
+
                                 <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
                                     {
                                         marker.label.length > 0 && <View style={styles.pillTextContainer}>
@@ -388,11 +401,9 @@ const Map: React.FC<IMap> = () => {
                                             </Text>
                                         </View>
                                     }
-                                    {
-                                        marker.icon && <View style={marker.label.length > 0 && { position: 'absolute', left: 0, transform: [{ translateX: -20 }] }}>
-                                            <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />
-                                        </View>
-                                    }
+                                    <View style={marker.label.length > 0 && { height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                    </View>
                                 </TouchableOpacity>
                             </Marker>
                         );

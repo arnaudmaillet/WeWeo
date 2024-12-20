@@ -6,7 +6,7 @@ import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/windows/Context"
 import { initialMarkerState, markerReducer } from "./reducer";
-import { IMarker, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
+import { IMarker, IMarkerHistory, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
 import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, DocumentData, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
@@ -28,6 +28,7 @@ interface MarkerContextProps {
     setNew: (payload: INewMarker | IMarker | null) => void
     updateNew: (payload: Partial<INewMarker | IMarker>) => void
     setActive: (payload: IMarker | null) => void
+    setList: (payload: IMarker[]) => void
     setFiltered: (payload: IMarker[] | undefined) => void
     firestoreFetchOwnedBy: (friends: IFriend[]) => Promise<IMarker[]>
     firestoreAdd: () => void
@@ -42,8 +43,8 @@ interface MarkerContextProps {
 const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const { user, setFriends, firestoreManageHistory: firestoreManageUserHistory } = useUser();
-    const { window, setActive: setActiveWindow } = useWindow()
-    const { setLoading: setLoadingMenu } = useMenu()
+    const { setActive: setActiveWindow } = useWindow()
+    const { menu, setLoading: setLoadingMenu } = useMenu()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
     const [isSubscribed, setIsSubscribed] = useState<boolean>()
@@ -115,10 +116,10 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 const data = doc.data();
                 const coordinates = data.coordinates;
                 allMarkers.set(doc.id, {
+                    ...data,
                     markerId: doc.id,
                     isLoading: false,
                     connections: null,
-                    ...data,
                     coordinates: {
                         lat: coordinates.latitude,
                         long: coordinates.longitude,
@@ -131,11 +132,11 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 const data = doc.data();
                 const coordinates = data.coordinates;
                 allMarkers.set(doc.id, {
+                    ...data,
                     markerId: doc.id,
                     subscribedUserIds: data.subscribedUserIds,
                     isLoading: false,
                     connections: null,
-                    ...data,
                     coordinates: {
                         lat: coordinates.latitude,
                         long: coordinates.longitude,
@@ -451,22 +452,31 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     useEffect(() => {
-        switch (window.menu) {
-            case MenuType.DISCOVER:
-                firestoreFetch()
-                break
-            case MenuType.FRIENDS:
-                firestoreFetchFriends()
-                break
-            case MenuType.SUBS:
-                fetchSubs()
-                break
-            case MenuType.HISTORY:
-                firestoreManageUserHistory(FirestoreAction.FETCH)
-                break
-            default: setList([])
-        }
-    }, [user?.userId, window.menu])
+        const fetchData = async () => {
+            switch (menu.active) {
+                case MenuType.DISCOVER:
+                    await firestoreFetch();
+                    break;
+                case MenuType.FRIENDS:
+                    await firestoreFetchFriends();
+                    break;
+                case MenuType.SUBS:
+                    await fetchSubs();
+                    break;
+                case MenuType.HISTORY:
+                    const history = await firestoreManageUserHistory(FirestoreAction.FETCH);
+                    if (history) {
+                        setList(history);
+                    }
+                    break;
+                default:
+                    setList([]);
+            }
+        };
+
+        fetchData(); // Appel de la fonction asynchrone
+    }, [user?.userId, menu.active]);
+
 
     useEffect(() => {
         if (user && state.active) {
@@ -514,6 +524,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setNew,
             updateNew,
             setActive,
+            setList,
             setFiltered,
             firestoreAdd,
             firestoreFetchFriends,

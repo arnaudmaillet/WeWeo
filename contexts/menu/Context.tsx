@@ -8,6 +8,7 @@ interface MenuContextProps {
     menu: IMenu;
     setButtons: (buttons: IButton[]) => void;
     setLoading: (buttonType: MenuType, isLoading: boolean) => void;
+    setMenu: (menu: MenuType) => void
 }
 
 const MenuContext = createContext<MenuContextProps | undefined>(undefined);
@@ -55,13 +56,14 @@ const initialMenu: IMenu = {
             icon: React.createElement(MaterialIcons, { name: "add-location-alt", size: 20 }),
         }
     ],
+    active: MenuType.DISCOVER
 };
 
 const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [menu, dispatch] = useReducer(menuReducer, initialMenu);
 
     const setButtons = (buttons: IButton[]) => {
-        dispatch({ type: MenuActionType.SET_BUTTONS, payload: { buttons } });
+        dispatch({ type: MenuActionType.SET_BUTTONS, payload: buttons });
     };
 
     const setLoading = (buttonType: MenuType, isLoading: boolean) => {
@@ -71,8 +73,12 @@ const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         });
     };
 
+    const setMenu = (menu: MenuType) => {
+        dispatch({ type: MenuActionType.SET_ACTIVE, payload: menu })
+    }
+
     return (
-        <MenuContext.Provider value={{ menu, setButtons, setLoading }}>
+        <MenuContext.Provider value={{ menu, setMenu, setButtons, setLoading }}>
             {children}
         </MenuContext.Provider>
     );

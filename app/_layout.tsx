@@ -16,9 +16,9 @@ export default function Layout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
-          <UserProvider>
-            <AuthProvider>
-              <MenuProvider>
+          <MenuProvider>
+            <UserProvider>
+              <AuthProvider>
                 <WindowProvider>
                   <MapProvider>
                     <Deprecated>
@@ -32,9 +32,9 @@ export default function Layout() {
                     </Deprecated>
                   </MapProvider>
                 </WindowProvider>
-              </MenuProvider>
-            </AuthProvider>
-          </UserProvider>
+              </AuthProvider>
+            </UserProvider>
+          </MenuProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
