@@ -51,6 +51,7 @@ interface MarkerState {
     filteredList?: IMarker[];
     new: INewMarker | IMarker | null;
     active: IMarker | null
+    preview: IMarker | null
 }
 
 enum MarkerActionType {
@@ -63,6 +64,7 @@ enum MarkerActionType {
     SET_NEW = "SET_NEW",
     UPDATE_NEW = "UPDATE_NEW",
     SET_ACTIVE = "SET_ACTIVE",
+    SET_PREVIEW = "SET_PREVIEW",
     UPDATE_ACTIVE_LOADING = "UPDATE_ACTIVE_LOADING",
     UPDATE_ACTIVE_MESSAGES = "UPDATE_ACTIVE_MESSAGES",
     UPDATE_ACTIVE_CONNECTIONS = "UPDATE_ACTIVE_CONNECTIONS",

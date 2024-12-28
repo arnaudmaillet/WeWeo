@@ -8,6 +8,7 @@ export type MarkerAction =
     | { type: MarkerActionType.SET_FILTERED; payload: IMarker[] | undefined}
     | { type: MarkerActionType.SET_NEW; payload: INewMarker | IMarker | null }
     | { type: MarkerActionType.UPDATE_NEW; payload: Partial<INewMarker | IMarker> }
+    | { type: MarkerActionType.SET_PREVIEW; payload: IMarker | null }
     | { type: MarkerActionType.SET_ACTIVE; payload: IMarker | null }
     | { type: MarkerActionType.UPDATE_ACTIVE_LOADING; payload: boolean }
     | { type: MarkerActionType.UPDATE_ACTIVE_MESSAGES; payload: IMessage[] }
@@ -17,7 +18,8 @@ export type MarkerAction =
 export const initialMarkerState: MarkerState = {
     list: [],
     new: null,
-    active: null
+    active: null,
+    preview: null
 };
 
 export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerState => {
@@ -44,6 +46,8 @@ export const markerReducer = (state: MarkerState, action: MarkerAction): MarkerS
                     ? { ...state.new, ...action.payload }
                     : null,
             };
+        case MarkerActionType.SET_PREVIEW:
+            return { ...state, preview: action.payload };
         case MarkerActionType.SET_ACTIVE:
             return { ...state, active: action.payload };
         case MarkerActionType.UPDATE_ACTIVE_MESSAGES:

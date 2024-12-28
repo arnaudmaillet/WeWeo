@@ -3,6 +3,7 @@ import { IMenu, MenuType, IButton, MenuActionType } from "~/contexts/menu/types"
 type MenuAction =
     | { type: MenuActionType.SET_ACTIVE; payload: MenuType }
     | { type: MenuActionType.SET_BUTTONS; payload: IButton[] }
+    | { type: MenuActionType.SET_OPEN; payload: boolean }
     | { type: MenuActionType.SET_LOADING; payload: { buttonType: MenuType; isLoading: boolean } };
 
 const menuReducer = (menu: IMenu, action: MenuAction): IMenu => {
@@ -18,6 +19,12 @@ const menuReducer = (menu: IMenu, action: MenuAction): IMenu => {
             ...menu,
             buttons: action.payload,
         };
+
+        case MenuActionType.SET_OPEN:
+            return {
+                ...menu,
+                isOpen: action.payload,
+            };
     
         case MenuActionType.SET_LOADING:
         return {

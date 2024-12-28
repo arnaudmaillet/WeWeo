@@ -23,6 +23,11 @@ import MapView from "react-native-maps";
 import Supercluster, { AnyProps, PointFeature } from 'supercluster';
 import useSupercluster from 'use-supercluster';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
+import { useMenu } from '~/contexts/menu/Context';
+
+import KDBush from 'kdbush';
+
+import { around } from 'geokdbush';
 
 const calculateZoom = (latDelta: number, longDelta: number, screenWidth: number): number => {
     const TILE_SIZE = 256; // Taille de la tuile standard
@@ -49,6 +54,22 @@ const regionToBoundingBox = (region: Region): BBox => {
     ];
 };
 
+const labelSlicing = (label: string, slice: number): string | undefined => {
+    if (label.length === 0) return
+    if (label.length > slice) {
+        return `${label.slice(0, slice)}...`
+    } else {
+        return label
+    }
+}
+
+const edgePadding = {
+    top: 50,
+    bottom: 50,
+    left: 50,
+    right: 50
+}
+
 
 const Map: React.FC<IMap> = () => {
 
@@ -56,6 +77,7 @@ const Map: React.FC<IMap> = () => {
 
     const { mapRef, setCamera } = useMap();
     const { setActive: setActiveWindow } = useWindow()
+    const { menu } = useMenu()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -148,6 +170,29 @@ const Map: React.FC<IMap> = () => {
         setZoom(calculateZoom(region.latitudeDelta, region.longitudeDelta, screenDimensions.width)); // Initialise le zoom
     }, []);
 
+    useEffect(() => {
+        if (clusters && clusters.length > 0) {
+            const index = new KDBush(clusters.length)
+            clusters.forEach((cluster) => {
+                const [lon, lat] = cluster.geometry.coordinates;
+                index.add(lon, lat);
+            });
+            index.finish();
+            const closestIds = around(index, region.longitude, region.latitude, 10)
+            const closestClusters = closestIds.map((id: any) => {
+                const [lon, lat] = clusters[id].geometry.coordinates;
+                return { longitude: lon, latitude: lat };
+            });
+
+
+
+            console.log(closestClusters)
+            mapRef.current?.fitToCoordinates(closestClusters, {
+                edgePadding: edgePadding
+            });
+        }
+    }, [markerState.list])
+
 
     return (
         <View style={styles.map}>
@@ -189,30 +234,31 @@ const Map: React.FC<IMap> = () => {
                                 coordinate={{ latitude: coordinates[1], longitude: coordinates[0] }}
                             >
                                 <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
-                                    <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
-                                        {
-                                            marker.label.length > 0 && <View style={styles.pillTextContainer}>
-                                                <Text style={styles.pillText}>
-                                                    {marker.label}
-                                                </Text>
-                                            </View>
-                                        }
-                                        {
-                                            marker.label.length > 0 ?
-                                                <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                    <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
-                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                    </View>
-                                                </View> :
-                                                <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                    <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center', position: 'absolute', bottom: 0, right: 0, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
-                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                    </View>
+                                    <TouchableOpacity onPress={() => handlePressMarker(marker!)}>
+                                        <View className='w-[80] items-center'>
+                                            {
+                                                marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
+                                                    <Text className='text-xs text-white font-semibold'>
+                                                        {labelSlicing(marker.label, 50)}
+                                                    </Text>
                                                 </View>
-                                        }
-
+                                            }
+                                            {
+                                                marker.label.length > 0 ?
+                                                    <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                        <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
+                                                            <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                        </View>
+                                                    </View> :
+                                                    <View className='flex-row items-end'>
+                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                        <View className='absolute rounded-full p-[2] items-center bg-' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
+                                                            <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
+                                                        </View>
+                                                    </View>
+                                            }
+                                        </View>
                                     </TouchableOpacity>
                                 </Animated.View>
                             </Marker>
@@ -229,16 +275,18 @@ const Map: React.FC<IMap> = () => {
                                 }}
                             >
                                 <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
-                                    <TouchableOpacity style={styles.pillInnerContainer} onPress={() => handlePressMarker(marker!)}>
-                                        {
-                                            marker.label.length > 0 && <View style={styles.pillTextContainer}>
-                                                <Text style={styles.pillText}>
-                                                    {marker.label}
-                                                </Text>
+                                    <TouchableOpacity onPress={() => handlePressMarker(marker!)}>
+                                        <View className='w-[80] items-center'>
+                                            {
+                                                marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
+                                                    <Text className='text-xs text-white font-semibold'>
+                                                        {labelSlicing(marker.label, 50)}
+                                                    </Text>
+                                                </View>
+                                            }
+                                            <View className={`${marker.label.length > 0 && 'h-[20] absolute'}`} style={marker.label.length > 0 && { transform: [{ translateY: -16 }] }}>
+                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
                                             </View>
-                                        }
-                                        <View style={marker.label.length > 0 && { height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                            {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
                                         </View>
                                     </TouchableOpacity>
                                 </Animated.View>

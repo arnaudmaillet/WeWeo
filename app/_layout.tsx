@@ -11,6 +11,8 @@ import { MarkerProvider } from '~/contexts/markers/Context'
 import { UserProvider } from '~/contexts/user/Context';
 import { MenuProvider } from '~/contexts/menu/Context';
 
+import '../global.css'
+
 export default function Layout() {
   return (
     <SafeAreaProvider>

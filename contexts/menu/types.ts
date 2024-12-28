@@ -5,7 +5,7 @@ enum MenuType {
     FRIENDS = "FRIENDS",
     SUBS = "SUBS",
     HISTORY = "HISTORY",
-    NEW = "NEW"
+    SEARCH = "SEARCH",
 }
 
 interface IButton {
@@ -20,12 +20,14 @@ interface IButton {
 interface IMenu {
    buttons: IButton[]
    active: MenuType
+   isOpen: boolean
 }
 
 enum MenuActionType {
     SET_ACTIVE = "SET_ACTIVE",
     SET_BUTTONS = "SET_BUTTONS",
     SET_LOADING = "TOGGLE_BUTTON_LOADING",
+    SET_OPEN = "SET_OPEN"
 }
 
 

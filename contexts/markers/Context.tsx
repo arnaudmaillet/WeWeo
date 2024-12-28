@@ -28,6 +28,7 @@ interface MarkerContextProps {
     setNew: (payload: INewMarker | IMarker | null) => void
     updateNew: (payload: Partial<INewMarker | IMarker>) => void
     setActive: (payload: IMarker | null) => void
+    setPreview: (payload: IMarker | null) => void
     setList: (payload: IMarker[]) => void
     setFiltered: (payload: IMarker[] | undefined) => void
     firestoreFetch: (menuType: MenuType) => Promise<void>
@@ -79,6 +80,10 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.SET_FILTERED, payload: payload });
     }
 
+    const setPreview = (payload: IMarker | null) => {
+        dispatch({ type: MarkerActionType.SET_PREVIEW, payload: payload });
+    };
+
     const setActive = (payload: IMarker | null) => {
         dispatch({ type: MarkerActionType.SET_ACTIVE, payload: payload });
     };
@@ -128,7 +133,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         break;
                     }
                     case MenuType.SUBS: break
-                    case MenuType.NEW: break
+                    case MenuType.SEARCH: break
                     default:
                         console.error(`${menuType} is not a valid MenuType`);
                 }
@@ -511,8 +516,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 break;
             case MenuType.SUBS: setList(user?.subscribedTo || [])
                 break;
-            case MenuType.NEW: setList([])
-                break;
+            case MenuType.SEARCH: break
             default: console.error(`${menu.active} is not a type of MenuType`)
         }
     }, [menu.active])
@@ -564,6 +568,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setNew,
             updateNew,
             setActive,
+            setPreview,
             setList,
             setFiltered,
             firestoreAdd,

@@ -8,6 +8,7 @@ interface MenuContextProps {
     menu: IMenu;
     setButtons: (buttons: IButton[]) => void;
     setLoading: (buttonType: MenuType, isLoading: boolean) => void;
+    setOpen: (isOpen: boolean) => void
     setMenu: (menu: MenuType) => void
 }
 
@@ -48,15 +49,16 @@ const initialMenu: IMenu = {
             icon: React.createElement(MaterialIcons, { name: "history", size: 24 }),
         },
         {
-            label: "New",
-            type: MenuType.NEW,
+            label: "Search",
+            type: MenuType.SEARCH,
             isLoading: false,
             color: "gray",
             activeColor: THEME.colors.primary,
-            icon: React.createElement(MaterialIcons, { name: "add-location-alt", size: 24 }),
+            icon: React.createElement(MaterialIcons, { name: "search", size: 24 }),
         }
     ],
-    active: MenuType.DISCOVER
+    active: MenuType.DISCOVER,
+    isOpen: false
 };
 
 const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -65,6 +67,10 @@ const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const setButtons = (buttons: IButton[]) => {
         dispatch({ type: MenuActionType.SET_BUTTONS, payload: buttons });
     };
+
+    const setOpen = (isOpen: boolean) => {
+        dispatch({ type: MenuActionType.SET_OPEN, payload: isOpen });
+    }
 
     const setLoading = (buttonType: MenuType, isLoading: boolean) => {
         dispatch({
@@ -78,7 +84,7 @@ const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
 
     return (
-        <MenuContext.Provider value={{ menu, setMenu, setButtons, setLoading }}>
+        <MenuContext.Provider value={{ menu, setMenu, setOpen, setButtons, setLoading }}>
             {children}
         </MenuContext.Provider>
     );
