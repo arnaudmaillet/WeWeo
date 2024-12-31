@@ -75,3 +75,8 @@ export const queryOptions = {
     staleTime: 5 * 60 * 1000, // Cache les données pendant 5 minutes
     retry: 1
 }
+
+export enum QueryKey {
+    FRIENDS = "friends",
+    HISTORY = "history"
+}

@@ -15,7 +15,8 @@ import { TabType } from "~/types/navbarTypes";
 import { useNavbarStore } from "~/store/navbarStore";
 import { useUserStore } from "~/store/userStore";
 import { useHistory } from "~/hooks/useHistory";
-import { IFriend, IUser } from "~/types/userTypes";
+import { IUser } from "~/types/userTypes";
+import { useFriends } from "~/hooks/useFriends";
 
 const MarkerContext = createContext({});
 
@@ -45,7 +46,8 @@ interface MarkerContextProps {
 const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const { user, setMarkers, setHistory, setFriends, setFriendsMarkers } = useUserStore()
-    const { data: history, createHistory } = useHistory(user)
+    const { historyQuery, createHistory } = useHistory(user)
+    const { friendsQuery } = useFriends(user)
     const { setActive: setActiveWindow } = useWindow()
     const { active: activeTab, setLoading: setTabLoading } = useNavbarStore()
 
@@ -119,16 +121,14 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         break;
                     }
                     case TabType.FRIENDS: {
-                        const friends = await firestoreFetchFriends();
-                        if (friends) {
-                            setFriendsMarkers(friends);
-                            setList(friends);
+                        if (friendsQuery.data) {
+                            setList(friendsQuery.data);
                         }
                         break;
                     }
                     case TabType.HISTORY: {
-                        if (history) {
-                            setList(history);
+                        if (historyQuery.data) {
+                            setList(historyQuery.data);
                         }
                         break;
                     }
@@ -139,16 +139,12 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 }
             } else {
                 const markersPromise = firestoreFetchAll();
-                const friendsPromise = firestoreFetchFriends();
 
                 const markers = await markersPromise;
                 if (markers) {
                     setMarkers(markers);
                     setList(markers);
                 }
-
-                const friends = await friendsPromise;
-                friends && setFriendsMarkers(friends);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -205,57 +201,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setTabLoading(TabType.DISCOVER, false);
             console.error("Error fetching markers:", error);
             return;
-        }
-    };
-
-    const firestoreFetchFriends = async (): Promise<IMarker[] | undefined> => {
-        if (!user || !user.friends) return;
-        setTabLoading(TabType.FRIENDS, true);
-
-        try {
-            const friendsWithMarkers = await Promise.all(user.friends.map(async friend => {
-                const friendData: IFriend = { ...friend, ownerOf: [] };
-
-                const ownerOfCollection = collection(firestore, "users", friend.userId, "ownerOf");
-                const ownerOfSnapshot = await getDocs(ownerOfCollection);
-
-                if (!ownerOfSnapshot.empty) {
-                    for (const markerDoc of ownerOfSnapshot.docs) {
-                        const markerData = markerDoc.data();
-                        let markerDetails = markerData;
-
-                        if (markerData.markerRef) {
-                            const markerRefSnapshot = await getDoc(markerData.markerRef);
-                            if (markerRefSnapshot.exists()) {
-                                markerDetails = markerRefSnapshot.data() as DocumentData;
-                            } else {
-                                console.warn(`MarkerRef ${markerData.markerRef.id} does not exist.`);
-                                continue;
-                            }
-                        }
-
-                        friendData.ownerOf?.push({
-                            ...markerDetails,
-                            markerId: markerDoc.id,
-                            isLoading: false,
-                            connections: null,
-                            coordinates: {
-                                lat: markerDetails.coordinates.latitude,
-                                long: markerDetails.coordinates.longitude,
-                            } as ICoordinates,
-                        } as IMarker);
-                    }
-                }
-                return friendData;
-            }));
-
-            const markers = friendsWithMarkers.flatMap((friend: IFriend) => friend.ownerOf);
-            setFriends(friendsWithMarkers);
-            setTabLoading(TabType.FRIENDS, false);
-            return markers;
-        } catch (error) {
-            setTabLoading(TabType.FRIENDS, false);
-            console.error("Error fetching friends' markers:", error);
         }
     };
 

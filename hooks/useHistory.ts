@@ -7,6 +7,7 @@ import { IUser } from "~/types/userTypes";
 
 import { fetchHistory } from "~/services/history/fetch";
 import { createHistory } from "~/services/history/create";
+import { IMarkerHistory } from "~/contexts/markers/types";
 
 interface AddToHistoryParams {
     postId: string;
@@ -16,7 +17,7 @@ interface AddToHistoryParams {
 const useHistory = (user?: IUser) => {
     const { setLoading } = useNavbarStore();
 
-    const queryResult = useQuery({
+    const queryResult = useQuery<IMarkerHistory[] | null, Error>({
         queryKey: ["history"],
         queryFn: () => fetchHistory(user?.userId),
         enabled: !!user,
@@ -42,7 +43,7 @@ const useHistory = (user?: IUser) => {
     });
 
     return { 
-        ...queryResult, 
+        historyQuery: queryResult, 
         createHistory: (postId: string, overrideUser?: IUser) => { mutation.mutate({ postId, user: overrideUser ?? user }) }
     };
 };
