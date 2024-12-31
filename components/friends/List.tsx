@@ -9,8 +9,8 @@ import Animated, {
     withTiming,
     interpolateColor,
 } from 'react-native-reanimated';
-import { useUser } from '~/contexts/user/Context';
 import { IFriend } from '~/contexts/user/types';
+import { useUserStore } from '~/store/userStore';
 
 interface FriendsListProps {
     selected: IFriend[];
@@ -63,7 +63,7 @@ const FriendItem: FC<FriendItemProps> = ({ friend, isSelected, handleSelect }) =
 };
 
 const FriendsList: FC<FriendsListProps> = ({ selected, setSelected, style }) => {
-    const { user } = useUser();
+    const { user } = useUserStore()
 
     if (!user || !user.friends) return null;
 

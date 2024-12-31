@@ -4,7 +4,7 @@ import { collection, addDoc, onSnapshot, GeoPoint, where, query } from "firebase
 import { firestore } from '~/firebase';
 import MapView, { Camera } from 'react-native-maps';
 import { ICoordinates } from '~/types/MapInterfaces';
-import { useUser } from './user/Context';
+import { useUserStore } from '~/store/userStore';
 
 export interface MapContextProps {
     mapRef: React.MutableRefObject<MapView | null>;
@@ -25,7 +25,7 @@ const MapContext = createContext<MapContextProps | undefined>(undefined);
 
 export const MapProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { user } = useUser();
+    const { user } = useUserStore();
 
     const mapRef = useRef<MapView | null>(null); // Référence à la MapView
     const [markers, setMarkers] = useState<IMarker[] | null>(null); // markers to display on the map

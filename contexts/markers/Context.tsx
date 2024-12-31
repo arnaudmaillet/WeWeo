@@ -6,15 +6,16 @@ import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
 import { useWindow } from "~/contexts/windows/Context"
 import { initialMarkerState, markerReducer } from "./reducer";
-import { IMarker, IMarkerHistory, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
+import { IMarker, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
 import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, DocumentData, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
 import { FirestoreAction } from "~/types/FirestoreAction";
-import { useUser } from "../user/Context";
-import { IFriend, IUser } from "../user/types";
-import { MenuType } from "~/contexts/menu/types";
-import { useMenu } from "../menu/Context";
+import { TabType } from "~/types/navbarTypes";
+import { useNavbarStore } from "~/store/navbarStore";
+import { useUserStore } from "~/store/userStore";
+import { useHistory } from "~/hooks/useHistory";
+import { IFriend, IUser } from "~/types/userTypes";
 
 const MarkerContext = createContext({});
 
@@ -31,7 +32,7 @@ interface MarkerContextProps {
     setPreview: (payload: IMarker | null) => void
     setList: (payload: IMarker[]) => void
     setFiltered: (payload: IMarker[] | undefined) => void
-    firestoreFetch: (menuType: MenuType) => Promise<void>
+    firestoreFetch: (tabType: TabType) => Promise<void>
     firestoreAdd: () => void
     firestoreManageActiveMessages: (action: FirestoreAction, payload?: INewMessage) => Promise<void>
     firestoreManageActiveSubscription: () => Promise<void>
@@ -43,9 +44,10 @@ interface MarkerContextProps {
 
 const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { user, setMarkers, setFriends, setFriendsMarkers, setHistory, firestoreManageHistory: firestoreManageUserHistory } = useUser();
+    const { user, setMarkers, setHistory, setFriends, setFriendsMarkers } = useUserStore()
+    const { data: history, createHistory } = useHistory(user)
     const { setActive: setActiveWindow } = useWindow()
-    const { menu, setLoading: setLoadingMenu } = useMenu()
+    const { active: activeTab, setLoading: setTabLoading } = useNavbarStore()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
     const [isSubscribed, setIsSubscribed] = useState<boolean>()
@@ -104,11 +106,11 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.UPDATE_ACTIVE_VIEWS, payload: payload });
     }
 
-    const firestoreFetch = async (menuType?: MenuType): Promise<void> => {
+    const firestoreFetch = async (tab?: TabType): Promise<void> => {
         try {
-            if (menuType) {
-                switch (menuType) {
-                    case MenuType.DISCOVER: {
+            if (tab) {
+                switch (tab) {
+                    case TabType.DISCOVER: {
                         const markers = await firestoreFetchAll();
                         if (markers) {
                             setMarkers(markers);
@@ -116,7 +118,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         }
                         break;
                     }
-                    case MenuType.FRIENDS: {
+                    case TabType.FRIENDS: {
                         const friends = await firestoreFetchFriends();
                         if (friends) {
                             setFriendsMarkers(friends);
@@ -124,23 +126,20 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                         }
                         break;
                     }
-                    case MenuType.HISTORY: {
-                        const history = await firestoreManageUserHistory(FirestoreAction.FETCH);
+                    case TabType.HISTORY: {
                         if (history) {
-                            setHistory(history);
                             setList(history);
                         }
                         break;
                     }
-                    case MenuType.SUBS: break
-                    case MenuType.SEARCH: break
+                    case TabType.SUBS: break
+                    case TabType.SEARCH: break
                     default:
-                        console.error(`${menuType} is not a valid MenuType`);
+                        console.error(`${TabType} is not a valid MenuType`);
                 }
             } else {
                 const markersPromise = firestoreFetchAll();
                 const friendsPromise = firestoreFetchFriends();
-                const historyPromise = firestoreManageUserHistory(FirestoreAction.FETCH);
 
                 const markers = await markersPromise;
                 if (markers) {
@@ -150,9 +149,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
                 const friends = await friendsPromise;
                 friends && setFriendsMarkers(friends);
-
-                const history = await historyPromise;
-                history && setHistory(history);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -161,7 +157,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const firestoreFetchAll = async (): Promise<IMarker[] | undefined> => {
         if (!user?.userId) return;
-        setLoadingMenu(MenuType.DISCOVER, true);
+        setTabLoading(TabType.DISCOVER, true);
         try {
             const markersCollection = collection(firestore, "markers");
             const publicMarkersQuery = query(markersCollection, where("policy.isPrivate", "==", false));
@@ -203,10 +199,10 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 } as IMarker);
             });
 
-            setLoadingMenu(MenuType.DISCOVER, false);
+            setTabLoading(TabType.DISCOVER, false);
             return Array.from(allMarkers.values());
         } catch (error) {
-            setLoadingMenu(MenuType.DISCOVER, false);
+            setTabLoading(TabType.DISCOVER, false);
             console.error("Error fetching markers:", error);
             return;
         }
@@ -214,7 +210,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     const firestoreFetchFriends = async (): Promise<IMarker[] | undefined> => {
         if (!user || !user.friends) return;
-        setLoadingMenu(MenuType.FRIENDS, true);
+        setTabLoading(TabType.FRIENDS, true);
 
         try {
             const friendsWithMarkers = await Promise.all(user.friends.map(async friend => {
@@ -253,12 +249,12 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 return friendData;
             }));
 
-            const markers = friendsWithMarkers.flatMap(friend => friend.ownerOf);
+            const markers = friendsWithMarkers.flatMap((friend: IFriend) => friend.ownerOf);
             setFriends(friendsWithMarkers);
-            setLoadingMenu(MenuType.FRIENDS, false);
+            setTabLoading(TabType.FRIENDS, false);
             return markers;
         } catch (error) {
-            setLoadingMenu(MenuType.FRIENDS, false);
+            setTabLoading(TabType.FRIENDS, false);
             console.error("Error fetching friends' markers:", error);
         }
     };
@@ -507,26 +503,26 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
 
     useEffect(() => {
-        switch (menu.active) {
-            case MenuType.DISCOVER: setList(user?.markers || [])
+        switch (activeTab) {
+            case TabType.DISCOVER: setList(user?.markers || [])
                 break;
-            case MenuType.FRIENDS: setList(user?.friendsMarkers || [])
+            case TabType.FRIENDS: setList(user?.friendsMarkers || [])
                 break;
-            case MenuType.HISTORY: setList(user?.history || [])
+            case TabType.HISTORY: setList(user?.history || [])
                 break;
-            case MenuType.SUBS: setList(user?.subscribedTo || [])
+            case TabType.SUBS: setList(user?.subscribedTo || [])
                 break;
-            case MenuType.SEARCH: break
-            default: console.error(`${menu.active} is not a type of MenuType`)
+            case TabType.SEARCH: break
+            default: console.error(`${activeTab} is not a type of MenuType`)
         }
-    }, [menu.active])
+    }, [activeTab])
 
 
     useEffect(() => {
         if (user && state.active) {
             const manageAsyncTasks = async () => {
                 updateActiveLoading(true);
-                firestoreManageUserHistory(FirestoreAction.ADD, state.active!.markerId)
+                createHistory(state.active!.markerId, user)
                 try {
                     setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
 

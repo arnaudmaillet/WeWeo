@@ -21,7 +21,7 @@ import { useMarker } from '~/contexts/markers/Context';
 import { Image } from 'expo-image';
 import StickersList from '~/components/stickers/List';
 import FriendsList from '~/components/friends/List';
-import { useUser } from '~/contexts/user/Context';
+import { useUserStore } from '~/store/userStore';
 
 interface NewMarkerWindowProps { }
 
@@ -31,7 +31,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
     const [isStickersOpen, setIsStickersOpen] = useState<boolean>(false);
     const [canFriendsDisplayed, setCanFriendsDisplayed] = useState<boolean>(false) // equivalent to windowState.isLoaded but this one works idkw
 
-    const { user } = useUser()
+    const { user } = useUserStore()
     const { window, setLoaded: setWindowLoaded } = useWindow();
     const { state: markerState, updateNew: updateNewMarker, firestoreAdd: addNewMarker, } = useMarker();
 

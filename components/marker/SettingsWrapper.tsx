@@ -6,12 +6,12 @@ import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-ic
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
-import { useUser } from '~/contexts/user/Context';
+import { useUserStore } from '~/store/userStore';
 
 interface SettingsWrapperProps { }
 
 const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
-    const { user } = useUser();
+    const { user } = useUserStore();
     const { state: markerState, isSubscribed, firestoreManageActiveSubscription } = useMarker();
 
     // Contrôle de la visibilité pour chaque bouton

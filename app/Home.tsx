@@ -4,7 +4,6 @@ import Map from '../components/Map'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
-import MenuWindow from '~/windows/Menu'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { useWindow } from '~/contexts/windows/Context'
 
@@ -13,6 +12,7 @@ import { WindowType } from '~/contexts/windows/types'
 import { useMarker } from '~/contexts/markers/Context'
 import MarkerChat from '~/components/marker/MarkerChat'
 import { IMarker } from '~/contexts/markers/types'
+import NavbarWindow from '~/windows/Navbar';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
@@ -204,7 +204,7 @@ const MainScreen = () => {
                                 keyboardVerticalOffset={380}
                                 style={styles.keyboardAvoidingView}
                             >
-                                <MenuWindow onBlurInput={() => setIsInputFocused(false)} onFocusInput={() => setIsInputFocused(true)} />
+                                <NavbarWindow />
                             </KeyboardAvoidingView>
                         </Animated.View>
                     </>

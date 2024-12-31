@@ -19,6 +19,7 @@
     "@react-native-firebase/firestore": "^21.4.1",
     "@react-native-picker/picker": "2.6.1",
     "@react-navigation/native": "^7.0.0",
+    "@tanstack/react-query": "^5.62.11",
     "@types/geojson": "^7946.0.15",
     "@types/geokdbush": "^1.1.5",
     "eas-cli": "^0.24.1",
@@ -53,7 +54,8 @@
     "supercluster": "^8.0.1",
     "tailwindcss": "^3.4.17",
     "use-supercluster": "^1.2.0",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

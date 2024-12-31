@@ -5,9 +5,9 @@ import { auth, firestore } from '~/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, DocumentData } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged, updateProfile } from "firebase/auth";
 import { IMarker } from './markers/types';
-import { useUser } from './user/Context';
-import { IFriend, IUser } from './user/types';
 import { ICoordinates } from '~/types/MapInterfaces';
+import { useUserStore } from '~/store/userStore';
+import { IFriend, IUser } from '~/types/userTypes';
 
 interface AuthContextProps {
     isLoading: boolean;
@@ -27,7 +27,7 @@ export const fakeUserLocation = {
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { set: setUser, logout: logoutUser } = useUser()
+    const { set: setUser, logout: logoutUser } = useUserStore()
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {

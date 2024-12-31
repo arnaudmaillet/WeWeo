@@ -5,8 +5,8 @@ import { useMap } from './MapProvider';
 
 import { collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { firestore } from '~/firebase';
-import { useUser } from './user/Context';
 import { IUser } from './user/types';
+import { useUserStore } from '~/store/userStore';
 
 interface MarkerContextProps {
     message: string;
@@ -36,7 +36,7 @@ export const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [isLoading, setIsLoading] = useState(false);
 
 
-    const { user } = useUser();
+    const { user } = useUserStore();
     const { marker } = useMap();
 
     const markerId = marker?.markerId;

@@ -1,6 +1,6 @@
 import { Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Marker, Region, Heatmap } from 'react-native-maps';
+import { Marker, Region } from 'react-native-maps';
 import haversine from "haversine-distance";
 
 import { IMap } from '../types/MapInterfaces';
@@ -23,11 +23,11 @@ import MapView from "react-native-maps";
 import Supercluster, { AnyProps, PointFeature } from 'supercluster';
 import useSupercluster from 'use-supercluster';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
-import { useMenu } from '~/contexts/menu/Context';
+import { useNavbarStore } from '~/store/navbarStore';
 
-import KDBush from 'kdbush';
+//import KDBush from 'kdbush';
 
-import { around } from 'geokdbush';
+//import { around } from 'geokdbush';
 
 const calculateZoom = (latDelta: number, longDelta: number, screenWidth: number): number => {
     const TILE_SIZE = 256; // Taille de la tuile standard
@@ -77,7 +77,6 @@ const Map: React.FC<IMap> = () => {
 
     const { mapRef, setCamera } = useMap();
     const { setActive: setActiveWindow } = useWindow()
-    const { menu } = useMenu()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -170,28 +169,28 @@ const Map: React.FC<IMap> = () => {
         setZoom(calculateZoom(region.latitudeDelta, region.longitudeDelta, screenDimensions.width)); // Initialise le zoom
     }, []);
 
-    useEffect(() => {
-        if (clusters && clusters.length > 0) {
-            const index = new KDBush(clusters.length)
-            clusters.forEach((cluster) => {
-                const [lon, lat] = cluster.geometry.coordinates;
-                index.add(lon, lat);
-            });
-            index.finish();
-            const closestIds = around(index, region.longitude, region.latitude, 10)
-            const closestClusters = closestIds.map((id: any) => {
-                const [lon, lat] = clusters[id].geometry.coordinates;
-                return { longitude: lon, latitude: lat };
-            });
+    // useEffect(() => {
+    //     if (clusters && clusters.length > 0) {
+    //         const index = new KDBush(clusters.length)
+    //         clusters.forEach((cluster) => {
+    //             const [lon, lat] = cluster.geometry.coordinates;
+    //             index.add(lon, lat);
+    //         });
+    //         index.finish();
+    //         const closestIds = around(index, region.longitude, region.latitude, 10)
+    //         const closestClusters = closestIds.map((id: any) => {
+    //             const [lon, lat] = clusters[id].geometry.coordinates;
+    //             return { longitude: lon, latitude: lat };
+    //         });
 
 
 
-            console.log(closestClusters)
-            mapRef.current?.fitToCoordinates(closestClusters, {
-                edgePadding: edgePadding
-            });
-        }
-    }, [markerState.list])
+    //         console.log(closestClusters)
+    //         mapRef.current?.fitToCoordinates(closestClusters, {
+    //             edgePadding: edgePadding
+    //         });
+    //     }
+    // }, [markerState.list])
 
 
     return (

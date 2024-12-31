@@ -1,5 +1,4 @@
 import { IWindow, WindowAction, WindowType, WindowActionType } from "./types";
-import { MenuType } from "~/contexts/menu/types";
 
 const initialWindow: IWindow = {
     active: WindowType.DEFAULT,

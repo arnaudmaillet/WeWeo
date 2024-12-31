@@ -5,28 +5,27 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { THEME } from '~/constants/constants';
 import { useWindow } from '~/contexts/windows/Context';
 import { useMarker } from '~/contexts/markers/Context';
-import { useUser } from '~/contexts/user/Context';
-import { IFriend } from '~/contexts/user/types';
-import { useMenu } from '~/contexts/menu/Context';
-import { FlatList, Gesture, GestureDetector, TouchableOpacity } from 'react-native-gesture-handler';
+import { FlatList, TouchableOpacity } from 'react-native-gesture-handler';
 import { Image } from 'expo-image';
-import { MenuType } from '~/contexts/menu/types';
 import FriendsList from '~/components/friends/List';
+import { useNavbarStore } from '~/store/navbarStore';
+import { TabType, ITab } from '~/types/navbarTypes';
+import { useUserStore } from '~/store/userStore';
+import { IFriend } from '~/types/userTypes';
+import { useHistory } from '~/hooks/useHistory';
 
-interface MenuWindowProps {
-    onFocusInput: () => void;
-    onBlurInput: () => void;
-}
+interface NavbarWindowProps { }
 
-const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) => {
+const NavbarWindow: React.FC<NavbarWindowProps> = () => {
     const [searchContent, setSearchContent] = React.useState<string>('')
 
-    const { user } = useUser()
-    const { menu, setMenu, setOpen } = useMenu()
+    const { user } = useUserStore()
+    const { data: history } = useHistory()
+    const { tabs, active: activeTab, setActive: setActiveTab, isOpen: isTabOpen, setOpen: setTabOpen } = useNavbarStore()
     const { window, setActive: setActiveWindow, setLoaded: setWindowLoaded } = useWindow()
     const { state: markerState, setFiltered, setPreview: setPreviewMarker, firestoreFetch: firestoreFetchMarkers } = useMarker()
     const [friends, setFriends] = useState<IFriend[]>([])
-    const [buttonPressedEvent, setButtonPressedEvent] = useState<boolean>(false)
+    const [tabPressedEvent, setTabPressedEvent] = useState<boolean>(false)
     const [selectedHistoryIndex, setSelectedHistoryIndex] = useState<number | null>(null);
 
     const containerHeight = useSharedValue(0);
@@ -93,8 +92,8 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
     }, [friends]);
 
     useEffect(() => {
-        if (menu.active === MenuType.HISTORY) {
-            if (menu.isOpen) {
+        if (activeTab === TabType.HISTORY) {
+            if (isTabOpen) {
                 containerHeight.value = withSpring(HISTORY_CONTAINER_HEIGHT, {
                     damping: 15,
                     stiffness: 120,
@@ -104,8 +103,8 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
                 containerOpacity.value = withTiming(0, { duration: 150 })
                 containerHeight.value = withTiming(0);
             }
-        } else if (menu.active === MenuType.FRIENDS) {
-            if (menu.isOpen) {
+        } else if (activeTab === TabType.FRIENDS) {
+            if (isTabOpen) {
                 containerHeight.value = withSpring(FRIENDS_CONTAINER_HEIGHT, {
                     damping: 15,
                     stiffness: 120,
@@ -118,9 +117,9 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
         } else {
             containerOpacity.value = withTiming(0, { duration: 150 })
             containerHeight.value = withTiming(0);
-            setButtonPressedEvent(false)
+            setTabPressedEvent(false)
         }
-    }, [buttonPressedEvent])
+    }, [tabPressedEvent])
 
 
     return (
@@ -131,19 +130,19 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
             exiting={FadeOutDown.springify().withCallback(() => runOnJS(setWindowLoaded)(true))}
         >
 
-            <Animated.View key={menu.active} style={animatedContainerStyle} entering={FadeIn.springify().delay(300)} exiting={FadeOut.springify().duration(300)}>
+            <Animated.View key={activeTab} style={animatedContainerStyle} entering={FadeIn.springify().delay(300)} exiting={FadeOut.springify().duration(300)}>
                 {
-                    menu.active === MenuType.FRIENDS &&
+                    activeTab === TabType.FRIENDS &&
                     <View className='mb-4'>
                         <FriendsList selected={friends} setSelected={setFriends} style={{ paddingHorizontal: 15 }} />
                     </View>
                 }
                 {
-                    menu.active === MenuType.HISTORY &&
+                    activeTab === TabType.HISTORY &&
                     <View className='mb-4 mx-5'>
                         <View className='bg-primary/75 h-[2] w-[20] ml-[15] rounded-xl'></View>
                         <FlatList
-                            data={user?.history?.slice().reverse()}
+                            data={history?.slice().reverse()}
                             contentContainerStyle={{ alignItems: 'center' }}
                             horizontal
                             className='h-[50]'
@@ -193,35 +192,37 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
             </Animated.View>
             <View className='flex-row'>
                 {
-                    menu.buttons.map(button => (
-                        <View className='items-center flex-1' key={button.type}>
+                    tabs.map((tab: ITab) => (
+                        <View className='items-center flex-1' key={tab.type}>
                             <TouchableOpacity onPress={() => {
-                                if (menu.active === button.type) {
-                                    setOpen(!menu.isOpen)
-                                } else if (button.type === MenuType.HISTORY) {
-                                    setOpen(true)
-                                    setMenu(button.type)
-                                } else if (button.type === MenuType.FRIENDS) {
-                                    setOpen(true)
-                                    setMenu(button.type)
+                                if (activeTab === tab.type) {
+                                    setTabOpen(!isTabOpen)
+                                } else if (tab.type === TabType.HISTORY) {
+                                    setTabOpen(true)
+                                    setActiveTab(tab.type)
+                                } else if (tab.type === TabType.FRIENDS) {
+                                    setTabOpen(true)
+                                    setActiveTab(tab.type)
                                 } else {
-                                    setMenu(button.type)
+                                    setActiveTab(tab.type)
                                 }
-                                setButtonPressedEvent(!buttonPressedEvent)
-                            }} onLongPress={() => menu.active === button.type && firestoreFetchMarkers(button.type)}>
-                                <Animated.View className='h-[25] items-center justify-center' key={button.isLoading.toString()} entering={ZoomIn.springify()} exiting={ZoomOut}>
+                                setTabPressedEvent(!tabPressedEvent)
+                            }} onLongPress={() => activeTab === tab.type && firestoreFetchMarkers(tab.type)}>
+                                <Animated.View className='h-[25] items-center justify-center' key={tab.isLoading.toString()} entering={ZoomIn.springify()} exiting={ZoomOut}>
                                     {
-                                        button.isLoading ?
+                                        tab.isLoading ?
                                             <ActivityIndicator color={THEME.colors.primary} /> :
-                                            React.cloneElement(button.icon, {
-                                                color: menu.active === button.type ? button.activeColor : button.color
+                                            React.cloneElement(tab.icon, {
+                                                color: activeTab === tab.type ? tab.activeColor : tab.color
                                             })
                                     }
                                 </Animated.View>
-                                <Text className='text-xs' style={[{ color: menu.active === button.type ? button.activeColor : button.color }]}>{button.label}</Text>
-                                <Animated.View className='h-1 items-center justify-end' key={menu.active} entering={FadeIn.springify().duration(1000)} exiting={FadeOut.springify()}>
-                                    {menu.active === button.type && <View className='w-[20] h-[2] rounded-3xl opacity-50' style={{ backgroundColor: button.activeColor }}></View>}
-                                </Animated.View>
+                                <Text className='text-xs' style={[{ color: activeTab === tab.type ? tab.activeColor : tab.color }]}>{tab.label}</Text>
+                                <View className='translate-y-[2]'>
+                                    <Animated.View className='h-[5] items-center justify-end' key={activeTab} entering={ZoomIn.springify()} exiting={ZoomOut.springify()}>
+                                        {activeTab === tab.type && <View className='w-[5] h-[5] rounded-3xl opacity-50' style={{ backgroundColor: tab.activeColor }}></View>}
+                                    </Animated.View>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     ))
@@ -231,4 +232,4 @@ const MenuWindow: React.FC<MenuWindowProps> = ({ onFocusInput, onBlurInput }) =>
     )
 }
 
-export default MenuWindow
+export default NavbarWindow

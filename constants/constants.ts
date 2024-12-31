@@ -70,3 +70,8 @@ export const INPUT = {
         first_message: 30
     }
 };
+
+export const queryOptions = {
+    staleTime: 5 * 60 * 1000, // Cache les données pendant 5 minutes
+    retry: 1
+}

@@ -7,8 +7,8 @@ import { doc, getDoc } from "firebase/firestore";
 
 import locales from '~/data/locales.json';
 import { THEME } from '~/constants/constants';
-import { useUser } from '~/contexts/user/Context';
 import { IUser } from '~/contexts/user/types';
+import { useUserStore } from '~/store/userStore';
 
 interface MessageComponentProps {
     item: IMessage;
@@ -16,7 +16,7 @@ interface MessageComponentProps {
 }
 
 const Message: React.FC<MessageComponentProps> = ({ item, previousMessage }) => {
-    const { user } = useUser();
+    const { user } = useUserStore();
     const [senderInfo, setSenderInfo] = useState<IUser | null>(null);
 
     const isCurrentUser = user?.userId === item.senderId;

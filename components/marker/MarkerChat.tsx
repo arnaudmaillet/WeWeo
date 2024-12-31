@@ -12,7 +12,7 @@ import { useMarker } from '~/contexts/markers/Context';
 import { useKeyboard } from '~/contexts/KeyboardProvider';
 import MarkerHeader from './Header';
 import MarkerInput from './Input';
-import { useUser } from '~/contexts/user/Context';
+import { useUserStore } from '~/store/userStore';
 
 export interface IMarkerChatScreen { }
 
@@ -20,7 +20,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
 
     const flatListRef = useRef<FlatList>(null);
 
-    const { user } = useUser()
+    const { user } = useUserStore()
     const { state: markerState } = useMarker()
     const { isKeyboardVisible } = useKeyboard()
 

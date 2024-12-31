@@ -10,7 +10,7 @@ import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { INewMessage } from '~/contexts/markers/types'
 import { FirestoreAction } from '~/types/FirestoreAction'
 import useNumberFormatter from '~/hooks/useNumberFormatter'
-import { useUser } from '~/contexts/user/Context'
+import { useUserStore } from '~/store/userStore'
 
 interface IMarkerInput {
     showStickers: boolean,
@@ -18,7 +18,7 @@ interface IMarkerInput {
 }
 
 const MarkerInput: React.FC<IMarkerInput> = ({ showStickers, setShowStickers }) => {
-    const { user } = useUser()
+    const { user } = useUserStore()
     if (!user) return
     const { state: markerState, firestoreManageActiveMessages } = useMarker()
     const { isKeyboardVisible } = useKeyboard()
