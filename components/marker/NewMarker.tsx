@@ -5,10 +5,10 @@ import { FontAwesome } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { THEME } from '~/constants/constants';
-import { WindowType } from '~/contexts/windows/types';
 import { useMarker } from '~/contexts/markers/Context'
-import { useWindow } from '~/contexts/windows/Context';
 import { MarkerType } from '~/contexts/markers/types';
+import { useWindowStore } from '~/store/useWindowStore';
+import { WindowType } from '~/types/windowTypes';
 
 const NewMarker = () => {
     const { state: markerState, updateNew: updateNewMarker } = useMarker()
@@ -19,7 +19,7 @@ const NewMarker = () => {
         enteringAnimation: enteringNewMarkerAnimation,
         exitingAnimation: exitingNewMarkerAnimation
     } = useMarker();
-    const { setActive: setActiveWindow } = useWindow()
+    const { set: setWindow } = useWindowStore()
     const [columns, setColumns] = useState(2);
 
     useEffect(() => {
@@ -36,10 +36,10 @@ const NewMarker = () => {
 
             if (markerState.new?.type === type) {
                 updateNewMarker({ type: MarkerType.DEFAULT });
-                setActiveWindow(WindowType.DEFAULT)
+                setWindow(WindowType.NAVBAR)
             } else {
                 updateNewMarker({ type: type });
-                setActiveWindow(WindowType.NEW_MARKER)
+                setWindow(WindowType.NAVBAR)
             }
         },
         [markerState.new, updateNewMarker]
@@ -92,7 +92,7 @@ const NewMarker = () => {
                 <Animated.View style={{ opacity: closeAnimation, transform: [{ scale: closeAnimation }] }}>
                     <TouchableOpacity
                         style={styles.closeButton}
-                        onPress={() => exitingNewMarkerAnimation(WindowType.DEFAULT)}
+                        onPress={() => exitingNewMarkerAnimation(WindowType.NAVBAR)}
                     >
                         <FontAwesome name="times" size={15} style={styles.closeIcon} />
                     </TouchableOpacity>

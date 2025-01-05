@@ -10,7 +10,7 @@ import { useKeyboard } from '~/contexts/KeyboardProvider'
 import { INewMessage } from '~/contexts/markers/types'
 import { FirestoreAction } from '~/types/FirestoreAction'
 import useNumberFormatter from '~/hooks/useNumberFormatter'
-import { useUserStore } from '~/store/userStore'
+import { useUserStore } from '~/store/useUserStore'
 
 interface IMarkerInput {
     showStickers: boolean,

@@ -1,22 +1,22 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Animated } from "react-native";
-import { WindowType } from "~/contexts/windows/types";
 import { IAnimatedButton } from "~/types/ButtonInterface";
 import { Fontisto } from "@expo/vector-icons";
 import { THEME } from "~/constants/constants";
-import { useWindow } from "~/contexts/windows/Context"
 import { initialMarkerState, markerReducer } from "./reducer";
 import { IMarker, IMessage, INewMarker, INewMessage, MarkerActionType, MarkerState } from "./types";
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, DocumentData, GeoPoint, getDoc, getDocs, onSnapshot, orderBy, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, orderBy, query, setDoc, updateDoc } from "firebase/firestore";
 import { firestore } from "~/firebase";
-import { ICoordinates } from "~/types/MapInterfaces";
 import { FirestoreAction } from "~/types/FirestoreAction";
 import { TabType } from "~/types/navbarTypes";
-import { useNavbarStore } from "~/store/navbarStore";
-import { useUserStore } from "~/store/userStore";
+import { useNavbarStore } from "~/store/useNavbarStore";
+import { useUserStore } from "~/store/useUserStore";
 import { useHistory } from "~/hooks/useHistory";
 import { IUser } from "~/types/userTypes";
 import { useFriends } from "~/hooks/useFriends";
+import { usePosts } from "~/hooks/usePosts";
+import { useWindowStore } from "~/store/useWindowStore";
+import { WindowType } from "~/types/windowTypes";
 
 const MarkerContext = createContext({});
 
@@ -45,11 +45,13 @@ interface MarkerContextProps {
 
 const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
-    const { user, setMarkers, setHistory, setFriends, setFriendsMarkers } = useUserStore()
-    const { historyQuery, createHistory } = useHistory(user)
-    const { friendsQuery } = useFriends(user)
-    const { setActive: setActiveWindow } = useWindow()
-    const { active: activeTab, setLoading: setTabLoading } = useNavbarStore()
+    const { user } = useUserStore()
+    const { posts } = usePosts()
+    const { history, createHistory } = useHistory()
+    const { friendsPosts } = useFriends()
+
+    const { set: setWindow } = useWindowStore()
+    const { active: activeTab } = useNavbarStore()
 
     const [state, dispatch] = useReducer(markerReducer, initialMarkerState);
     const [isSubscribed, setIsSubscribed] = useState<boolean>()
@@ -108,125 +110,29 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         dispatch({ type: MarkerActionType.UPDATE_ACTIVE_VIEWS, payload: payload });
     }
 
-    const firestoreFetch = async (tab?: TabType): Promise<void> => {
-        try {
-            if (tab) {
-                switch (tab) {
-                    case TabType.DISCOVER: {
-                        const markers = await firestoreFetchAll();
-                        if (markers) {
-                            setMarkers(markers);
-                            setList(markers);
-                        }
-                        break;
-                    }
-                    case TabType.FRIENDS: {
-                        if (friendsQuery.data) {
-                            setList(friendsQuery.data);
-                        }
-                        break;
-                    }
-                    case TabType.HISTORY: {
-                        if (historyQuery.data) {
-                            setList(historyQuery.data);
-                        }
-                        break;
-                    }
-                    case TabType.SUBS: break
-                    case TabType.SEARCH: break
-                    default:
-                        console.error(`${TabType} is not a valid MenuType`);
-                }
-            } else {
-                const markersPromise = firestoreFetchAll();
+    // const firestoreAdd = async (): Promise<boolean> => {
+    //     if (!user || !state.new) return false;
+    //     try {
+    //         const { coordinates, ...rest } = state.new;
+    //         await addDoc(collection(firestore, "markers"), {
+    //             coordinates: new GeoPoint(coordinates.lat, coordinates.long),
+    //             ...rest,
+    //             minZoom: 15,
+    //             subscribedUserIds: [user.userId],
+    //             connectedUserIds: [],
+    //             senderId: user?.userId!,
+    //             createdAt: new Date().getTime(),
+    //             messages: []
+    //         });
 
-                const markers = await markersPromise;
-                if (markers) {
-                    setMarkers(markers);
-                    setList(markers);
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
-    };
-
-    const firestoreFetchAll = async (): Promise<IMarker[] | undefined> => {
-        if (!user?.userId) return;
-        setTabLoading(TabType.DISCOVER, true);
-        try {
-            const markersCollection = collection(firestore, "markers");
-            const publicMarkersQuery = query(markersCollection, where("policy.isPrivate", "==", false));
-
-            const [userMarkersSnapshot, publicMarkersSnapshot] = await Promise.all([
-                getDocs(markersCollection),
-                getDocs(publicMarkersQuery)
-            ]);
-
-            let allMarkers = new Map<string, IMarker>();
-            userMarkersSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const coordinates = data.coordinates;
-                allMarkers.set(doc.id, {
-                    ...data,
-                    markerId: doc.id,
-                    isLoading: false,
-                    connections: null,
-                    coordinates: {
-                        lat: coordinates.latitude,
-                        long: coordinates.longitude,
-                    } as ICoordinates,
-                } as IMarker);
-            });
-
-            publicMarkersSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                const coordinates = data.coordinates;
-                allMarkers.set(doc.id, {
-                    ...data,
-                    markerId: doc.id,
-                    subscribedUserIds: data.subscribedUserIds,
-                    isLoading: false,
-                    connections: null,
-                    coordinates: {
-                        lat: coordinates.latitude,
-                        long: coordinates.longitude,
-                    } as ICoordinates,
-                } as IMarker);
-            });
-
-            setTabLoading(TabType.DISCOVER, false);
-            return Array.from(allMarkers.values());
-        } catch (error) {
-            setTabLoading(TabType.DISCOVER, false);
-            console.error("Error fetching markers:", error);
-            return;
-        }
-    };
-
-    const firestoreAdd = async (): Promise<boolean> => {
-        if (!user || !state.new) return false;
-        try {
-            const { coordinates, ...rest } = state.new;
-            await addDoc(collection(firestore, "markers"), {
-                coordinates: new GeoPoint(coordinates.lat, coordinates.long),
-                ...rest,
-                minZoom: 15,
-                subscribedUserIds: [user.userId],
-                connectedUserIds: [],
-                senderId: user?.userId!,
-                createdAt: new Date().getTime(),
-                messages: []
-            });
-
-            dispatch({ type: MarkerActionType.SET_NEW, payload: null });
-            setActiveWindow(WindowType.DEFAULT)
-            return true;
-        } catch (error) {
-            console.error("Failed to add marker:", error);
-            return false;
-        }
-    };
+    //         dispatch({ type: MarkerActionType.SET_NEW, payload: null });
+    //         setActiveWindow(WindowType.DEFAULT)
+    //         return true;
+    //     } catch (error) {
+    //         console.error("Failed to add marker:", error);
+    //         return false;
+    //     }
+    // };
 
     const firestoreManageActiveMessages = async (action: FirestoreAction, payload?: INewMessage) => {
         const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
@@ -438,22 +344,21 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     const exitingAnimation = async (window: WindowType) => {
-        setActiveWindow(window)
+        setWindow(window)
         await startAnimation(100, 0, () => resetAnimation())
     };
 
     useEffect(() => {
-        user && firestoreFetch();
-    }, [user?.userId]);
-
+        user && posts.data && setList(posts.data)
+    }, [posts.isFetched]);
 
     useEffect(() => {
         switch (activeTab) {
-            case TabType.DISCOVER: setList(user?.markers || [])
+            case TabType.DISCOVER: setList(posts.data || [])
                 break;
-            case TabType.FRIENDS: setList(user?.friendsMarkers || [])
+            case TabType.FRIENDS: setList(friendsPosts || [])
                 break;
-            case TabType.HISTORY: setList(user?.history || [])
+            case TabType.HISTORY: setList(history.data || [])
                 break;
             case TabType.SUBS: setList(user?.subscribedTo || [])
                 break;
@@ -467,7 +372,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         if (user && state.active) {
             const manageAsyncTasks = async () => {
                 updateActiveLoading(true);
-                createHistory(state.active!.markerId, user)
+                createHistory(state.active!.markerId, user.userId)
                 try {
                     setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
 
@@ -512,8 +417,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setPreview,
             setList,
             setFiltered,
-            firestoreAdd,
-            firestoreFetch,
             firestoreManageActiveMessages,
             firestoreManageActiveSubscription,
             firestoreManageActiveViews,

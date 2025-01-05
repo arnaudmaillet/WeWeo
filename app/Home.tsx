@@ -5,14 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated'
 import { useKeyboard } from '~/contexts/KeyboardProvider'
-import { useWindow } from '~/contexts/windows/Context'
 
 import NewMarkerWindow from '~/windows/NewMarker'
-import { WindowType } from '~/contexts/windows/types'
 import { useMarker } from '~/contexts/markers/Context'
 import MarkerChat from '~/components/marker/MarkerChat'
 import { IMarker } from '~/contexts/markers/types'
 import NavbarWindow from '~/windows/Navbar';
+import { useWindowStore } from '~/store/useWindowStore';
+import { WindowType } from '~/types/windowTypes';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
@@ -27,7 +27,7 @@ const MainScreen = () => {
     const backdropOpacity = useSharedValue(0)
 
     const { keyboardProps } = useKeyboard();
-    const { window, setActive: setActiveWindow } = useWindow()
+    const { window, set: setWindow } = useWindowStore()
     const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation } = useMarker()
 
     const screenHeight = Dimensions.get('window').height;
@@ -49,7 +49,7 @@ const MainScreen = () => {
 
     const runOnJSSetSelectedMarker = (point: IMarker | null) => {
         setActiveMarker(point);
-        !point && setActiveWindow(WindowType.DEFAULT);
+        !point && setWindow(WindowType.NAVBAR);
     }
 
     const pan = Gesture.Pan()
@@ -60,7 +60,7 @@ const MainScreen = () => {
         .onFinalize(() => {
             if (offset.value > 30) {
                 offset.value = withSpring(0, {}, () => {
-                    runOnJS(exitingNewMarkerAnimation)(WindowType.DEFAULT)
+                    runOnJS(exitingNewMarkerAnimation)(WindowType.NAVBAR)
                 })
             }
             offset.value = withSpring(0);
@@ -137,7 +137,7 @@ const MainScreen = () => {
 
 
     const renderWindow = () => {
-        switch (window.active) {
+        switch (window) {
             case WindowType.CHAT:
                 return (
                     markerState.active && (

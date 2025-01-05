@@ -64,7 +64,6 @@ export const THEME = {
     },
 };
 
-
 export const INPUT = {
     max_length: {
         first_message: 30
@@ -77,6 +76,14 @@ export const queryOptions = {
 }
 
 export enum QueryKey {
+    USER = "user",
+    POSTS = "posts",
     FRIENDS = "friends",
     HISTORY = "history"
+}
+
+// Mmkv storage keys
+export enum StorageKeys {
+    AuthToken = 'authToken',
+    UserEmail = 'userEmail',
 }

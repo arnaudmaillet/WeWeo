@@ -1,6 +1,5 @@
-import React, { FC } from 'react';
+import React, { FC, useEffect } from 'react';
 import { FlatList, StyleSheet, View, Text, StyleProp, ViewStyle } from 'react-native';
-import { useAuth } from '~/contexts/AuthProvider';
 import { THEME } from '~/constants/constants';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import Animated, {
@@ -8,9 +7,11 @@ import Animated, {
     useSharedValue,
     withTiming,
     interpolateColor,
+    FadeInRight,
 } from 'react-native-reanimated';
-import { IFriend } from '~/contexts/user/types';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
+import { IFriend } from '~/types/userTypes';
+import { useFriends } from '~/hooks/useFriends';
 
 interface FriendsListProps {
     selected: IFriend[];
@@ -25,6 +26,7 @@ interface FriendItemProps {
 }
 
 const FriendItem: FC<FriendItemProps> = ({ friend, isSelected, handleSelect }) => {
+
     const animationValue = useSharedValue(isSelected ? 1 : 0);
 
     const animatedStyle = useAnimatedStyle(() => {
@@ -32,7 +34,7 @@ const FriendItem: FC<FriendItemProps> = ({ friend, isSelected, handleSelect }) =
             backgroundColor: interpolateColor(
                 animationValue.value,
                 [0, 1],
-                [THEME.colors.grayscale.darker_1x, THEME.colors.primary]
+                [THEME.colors.grayscale.main, THEME.colors.primary]
             ),
         };
     });
@@ -64,8 +66,9 @@ const FriendItem: FC<FriendItemProps> = ({ friend, isSelected, handleSelect }) =
 
 const FriendsList: FC<FriendsListProps> = ({ selected, setSelected, style }) => {
     const { user } = useUserStore()
+    const { friends } = useFriends()
 
-    if (!user || !user.friends) return null;
+    if (!user) return null;
 
     const handleSelect = (friend: IFriend) => {
         const updatedList = selected.includes(friend)
@@ -76,16 +79,18 @@ const FriendsList: FC<FriendsListProps> = ({ selected, setSelected, style }) => 
 
     return (
         <FlatList
-            data={user.friends}
+            data={friends.data}
             horizontal
             keyExtractor={(friend: IFriend) => friend.userId.toString()}
             showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-                <FriendItem
-                    friend={item}
-                    isSelected={selected.includes(item)}
-                    handleSelect={handleSelect}
-                />
+            renderItem={({ item, index }) => (
+                <Animated.View entering={FadeInRight.springify().delay(index * 100)}>
+                    <FriendItem
+                        friend={item}
+                        isSelected={selected.includes(item)}
+                        handleSelect={handleSelect}
+                    />
+                </Animated.View>
             )}
             style={style}
         />

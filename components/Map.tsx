@@ -1,5 +1,5 @@
-import { Dimensions, StyleSheet, View, Text, LayoutChangeEvent } from 'react-native';
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Dimensions, StyleSheet, View, Text } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Marker, Region } from 'react-native-maps';
 import haversine from "haversine-distance";
 
@@ -10,9 +10,6 @@ import NewMarker from './marker/NewMarker';
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { THEME } from '~/constants/constants';
-import { fakeUserLocation } from '~/contexts/AuthProvider';
-import { useWindow } from '~/contexts/windows/Context';
-import { WindowType } from '~/contexts/windows/types';
 
 import { useMarker } from '~/contexts/markers/Context'
 import { Image } from 'expo-image';
@@ -23,7 +20,8 @@ import MapView from "react-native-maps";
 import Supercluster, { AnyProps, PointFeature } from 'supercluster';
 import useSupercluster from 'use-supercluster';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
-import { useNavbarStore } from '~/store/navbarStore';
+import { useWindowStore } from '~/store/useWindowStore';
+import { WindowType } from '~/types/windowTypes';
 
 //import KDBush from 'kdbush';
 
@@ -76,7 +74,7 @@ const Map: React.FC<IMap> = () => {
     const screenDimensions = Dimensions.get('window');
 
     const { mapRef, setCamera } = useMap();
-    const { setActive: setActiveWindow } = useWindow()
+    const { set: setWindow } = useWindowStore()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -85,8 +83,8 @@ const Map: React.FC<IMap> = () => {
     } = useMarker()
 
     const [region, setRegion] = useState<Region>({
-        latitude: fakeUserLocation.lat,
-        longitude: fakeUserLocation.long,
+        latitude: 37.7749,
+        longitude: -122.4194,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
     });
@@ -127,7 +125,7 @@ const Map: React.FC<IMap> = () => {
             if (markerState.new) {
                 exitingNewMarkerAnimation(WindowType.CHAT);
             } else {
-                setActiveWindow(WindowType.CHAT)
+                setWindow(WindowType.CHAT)
             }
         }
     };
@@ -201,8 +199,8 @@ const Map: React.FC<IMap> = () => {
                 style={styles.map}
                 showsUserLocation={true}
                 initialRegion={{
-                    latitude: fakeUserLocation.lat,
-                    longitude: fakeUserLocation.long,
+                    latitude: 37.7749,
+                    longitude: -122.4194,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
@@ -231,34 +229,33 @@ const Map: React.FC<IMap> = () => {
                             <Marker
                                 key={`cluster-${point.properties.cluster_id}`}
                                 coordinate={{ latitude: coordinates[1], longitude: coordinates[0] }}
+                                onPress={() => handlePressMarker(marker!)}
                             >
                                 <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
-                                    <TouchableOpacity onPress={() => handlePressMarker(marker!)}>
-                                        <View className='w-[80] items-center'>
-                                            {
-                                                marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
-                                                    <Text className='text-xs text-white font-semibold'>
-                                                        {labelSlicing(marker.label, 50)}
-                                                    </Text>
-                                                </View>
-                                            }
-                                            {
-                                                marker.label.length > 0 ?
-                                                    <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                        <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
-                                                            <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                        </View>
-                                                    </View> :
-                                                    <View className='flex-row items-end'>
-                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                        <View className='absolute rounded-full p-[2] items-center bg-' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
-                                                            <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }}>{cluster.point_count}</Text>
-                                                        </View>
+                                    <View className='w-[80] max-h-[80] justify-center items-center'>
+                                        {
+                                            marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
+                                                <Text className='text-xs text-white font-semibold' allowFontScaling={false}>
+                                                    {labelSlicing(marker.label, 50)}
+                                                </Text>
+                                            </View>
+                                        }
+                                        {
+                                            marker.label.length > 0 ?
+                                                <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                    <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
+                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
                                                     </View>
-                                            }
-                                        </View>
-                                    </TouchableOpacity>
+                                                </View> :
+                                                <View className='flex-row items-end'>
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                    <View className='absolute rounded-full p-[2] items-center min-w-[15]' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
+                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
+                                                    </View>
+                                                </View>
+                                        }
+                                    </View>
                                 </Animated.View>
                             </Marker>
                         );
@@ -272,29 +269,28 @@ const Map: React.FC<IMap> = () => {
                                     latitude: coordinates[1],
                                     longitude: coordinates[0]
                                 }}
+                                onPress={() => handlePressMarker(marker!)}
                             >
                                 <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
-                                    <TouchableOpacity onPress={() => handlePressMarker(marker!)}>
-                                        <View className='w-[80] items-center'>
-                                            {
-                                                marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
-                                                    <Text className='text-xs text-white font-semibold'>
-                                                        {labelSlicing(marker.label, 50)}
-                                                    </Text>
-                                                </View>
-                                            }
-                                            <View className={`${marker.label.length > 0 && 'h-[20] absolute'}`} style={marker.label.length > 0 && { transform: [{ translateY: -16 }] }}>
-                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                    <View className='w-[80] max-h-[80] justify-center items-center'>
+                                        {
+                                            marker.label.length > 0 && <View className='bg-primary /[.9] rounded-md py-[1] px-[4]'>
+                                                <Text className='text-xs text-white font-semibold' allowFontScaling={false}>
+                                                    {labelSlicing(marker.label, 50)}
+                                                </Text>
                                             </View>
+                                        }
+                                        <View className={`${marker.label.length > 0 && 'h-[20] absolute'}`} style={marker.label.length > 0 && { transform: [{ translateY: -13 }] }}>
+                                            {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
                                         </View>
-                                    </TouchableOpacity>
+                                    </View>
                                 </Animated.View>
                             </Marker>
                         );
                     }
                 })}
                 <NewMarker />
-            </MapView>
+            </MapView >
         </View >
     );
 };

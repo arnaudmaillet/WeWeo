@@ -1,37 +1,45 @@
 import { useQuery } from "@tanstack/react-query";
 import { IMarker } from "~/contexts/markers/types";
-import { IUser } from "~/types/userTypes";
 
 import { fetchFriends } from "~/services/friends/fetch";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { TabType } from "~/types/navbarTypes";
-import { useNavbarStore } from "~/store/navbarStore";
+import { useNavbarStore } from "~/store/useNavbarStore";
 import { QueryKey, queryOptions } from "~/constants/constants";
+import { useUserStore } from "~/store/useUserStore";
+import { IFriend } from "~/types/userTypes";
 
-const useFriends = (user?: IUser) => {
+const useFriends = () => {
+    const { user } = useUserStore()
     const { setLoading } = useNavbarStore();
+    const [posts, setPosts] = useState<IMarker[]>([])
     
-    const queryResult = useQuery<IMarker[] | undefined, Error>({
+    const queryResult = useQuery<IFriend[] | undefined, Error>({
             queryKey: [QueryKey.FRIENDS, user?.userId],
-            queryFn:() => fetchFriends(user),
+            queryFn:() => fetchFriends(user?.userId),
             enabled: !!user,
             staleTime: queryOptions.staleTime,
             retry: queryOptions.retry,
         }
     );
 
-    const { isLoading, isError } = queryResult;
+    const { isSuccess, isLoading, isError, error } = queryResult;
+
+    useEffect(()=> {
+        isSuccess && setPosts(queryResult.data!.flatMap((friend) => friend.ownerOf))
+    }, [isSuccess])
 
     useEffect(()=> {
         setLoading(TabType.FRIENDS, isLoading ? true : false);
     }, [isLoading])
 
     useEffect(()=>{
-        isError && console.error(`Error fetching friends data, user ${user?.userId} ${user?.username}`)
+        isError && console.error(`[${user?.userId} ${user?.username}] Error fetching friends data : ${error.message}`)
     }, [isError])
 
     return {
-        friendsQuery: queryResult
+        friends: queryResult,
+        friendsPosts: posts
     }
 };
 

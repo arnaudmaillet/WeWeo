@@ -1,12 +1,12 @@
-import React, { createContext, useState, ReactNode, useRef, useEffect } from 'react';
+import React, { createContext, useState, ReactNode, useEffect } from 'react';
 import { IFile, IMessage } from '~/types/MarkerInterfaces';
 
 import { useMap } from './MapProvider';
 
 import { collection, addDoc, onSnapshot, query, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { firestore } from '~/firebase';
-import { IUser } from './user/types';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
+import { IUser } from '~/types/userTypes';
 
 interface MarkerContextProps {
     message: string;

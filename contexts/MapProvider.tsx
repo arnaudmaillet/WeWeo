@@ -4,7 +4,7 @@ import { collection, addDoc, onSnapshot, GeoPoint, where, query } from "firebase
 import { firestore } from '~/firebase';
 import MapView, { Camera } from 'react-native-maps';
 import { ICoordinates } from '~/types/MapInterfaces';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
 
 export interface MapContextProps {
     mapRef: React.MutableRefObject<MapView | null>;

@@ -9,7 +9,7 @@ const defaultButtons: ITab[] = [
     {
         label: 'Discover',
         type: TabType.DISCOVER,
-        isLoading: true,
+        isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
         icon: createElement(Ionicons, { name: "compass-outline", size: 24 }),

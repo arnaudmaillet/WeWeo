@@ -6,7 +6,7 @@ import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-ic
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
 
 interface SettingsWrapperProps { }
 

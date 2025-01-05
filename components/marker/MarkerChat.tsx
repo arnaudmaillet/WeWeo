@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native'
-import Animated, { FadeOutUp, StretchInY } from 'react-native-reanimated'
+import Animated, { FadeIn, FadeOutUp, SlideInDown, StretchInY } from 'react-native-reanimated'
 
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
@@ -12,7 +12,7 @@ import { useMarker } from '~/contexts/markers/Context';
 import { useKeyboard } from '~/contexts/KeyboardProvider';
 import MarkerHeader from './Header';
 import MarkerInput from './Input';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
 
 export interface IMarkerChatScreen { }
 
@@ -43,7 +43,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
     return (
         <Animated.View
             style={styles.container}
-            entering={StretchInY.springify().damping(17)}
+            entering={FadeIn.springify().damping(17)}
             exiting={FadeOutUp.springify()}
         >
             <MarkerHeader />

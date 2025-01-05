@@ -1,4 +1,4 @@
-import { IMarker, IMarkerHistory } from "~/contexts/markers/types";
+import { IMarker } from "~/contexts/markers/types";
 import { ICoodinatesWithZoom } from "~/types/MapInterfaces";
 
 interface IUser {
@@ -11,13 +11,11 @@ interface IUser {
     markers?: IMarker[],
     subscribedTo?: IMarker[],
     location?: ICoodinatesWithZoom,
-    friends?: IFriend[],
-    friendsMarkers?: IMarker[],
-    history?: IMarkerHistory[]
 }
 
 interface IFriend extends IUser {
-    addedAt: number
+    addedAt: number,
+    [key: string]: any;
 }
 
 export{ IUser, IFriend }

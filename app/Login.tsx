@@ -3,7 +3,8 @@ import { Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Sc
 import Animated, { BounceIn, SlideInDown, SlideInRight } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useKeyboard } from '~/contexts/KeyboardProvider';
-import { useAuth } from '~/contexts/AuthProvider';
+import { useAuth } from '~/hooks/useAuth';
+import { useUserStore } from '~/store/useUserStore';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -13,16 +14,18 @@ const Login = () => {
 
     const router = useRouter();
     const { keyboardPropsOnClick, setKeyboardPropsOnClick } = useKeyboard();
-    const { isLoading, signIn } = useAuth();
+    const { signIn } = useAuth()
+
+    const { isLoading } = useUserStore()
 
     const handleLogin = async () => {
         if (isEmailOk) {
-            setPassword(input); // Mettez à jour l'état du password
-            console.log('try to login with email:', email, 'and password:', input); // Utilisez 'input' ici directement
-            const isLogged = await signIn(email, input);
+            setPassword(input);
+            console.log('try to login with email:', email, 'and password:', input);
+            const { user } = await signIn.mutateAsync({ email: email, password: input });
             setPassword('');
             setIsEmailOk(false);
-            if (isLogged) {
+            if (user) {
                 setEmail('');
                 setInput('');
                 setKeyboardPropsOnClick(!keyboardPropsOnClick);

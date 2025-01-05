@@ -1,50 +1,51 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { queryOptions } from "~/constants/constants";
-import { useNavbarStore } from "~/store/navbarStore";
+import { QueryKey, queryOptions } from "~/constants/constants";
+import { useNavbarStore } from "~/store/useNavbarStore";
 import { TabType } from "~/types/navbarTypes";
-import { IUser } from "~/types/userTypes";
 
 import { fetchHistory } from "~/services/history/fetch";
 import { createHistory } from "~/services/history/create";
 import { IMarkerHistory } from "~/contexts/markers/types";
+import { useUserStore } from "~/store/useUserStore";
 
-interface AddToHistoryParams {
+interface createParams {
     postId: string;
-    user?: IUser;
+    userId?: string;
 }
 
-const useHistory = (user?: IUser) => {
+const useHistory = () => {
+    const { user } = useUserStore()
     const { setLoading } = useNavbarStore();
 
     const queryResult = useQuery<IMarkerHistory[] | null, Error>({
-        queryKey: ["history"],
+        queryKey: [QueryKey.HISTORY],
         queryFn: () => fetchHistory(user?.userId),
         enabled: !!user,
         staleTime: queryOptions.staleTime,
         retry: queryOptions.retry,
     });
 
-    const { isLoading, isError } = queryResult;
+    const { isLoading, isError, error } = queryResult;
 
     useEffect(() => {
         setLoading(TabType.HISTORY, isLoading ? true : false);
     }, [isLoading]);
 
     useEffect(()=>{
-        isError && console.error(`Error fetching history data, user ${user?.userId} ${user?.username}`)
+        isError && console.error(`[${user?.userId} ${user?.username}] Error fetching history data : ${error.message}`)
     }, [isError])
 
     const mutation = useMutation({
-        mutationFn: ({ postId, user }: AddToHistoryParams) => createHistory(postId, user?.userId),
+        mutationFn: ({ postId, userId }: createParams) => createHistory(postId, userId),
         onMutate: () => setLoading(TabType.HISTORY, true),
         onError: (error: any) => console.error("Error adding post to history:", error),
         onSettled: () => setLoading(TabType.HISTORY, false),
     });
 
     return { 
-        historyQuery: queryResult, 
-        createHistory: (postId: string, overrideUser?: IUser) => { mutation.mutate({ postId, user: overrideUser ?? user }) }
+        history: queryResult, 
+        createHistory: (postId: string, overrideUserId?: string) => { mutation.mutate({ postId, userId: overrideUserId ?? user?.userId }) }
     };
 };
 

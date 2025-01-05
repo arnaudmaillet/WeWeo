@@ -1,139 +1,97 @@
-import { collection, getDoc, getDocs, DocumentReference } from "firebase/firestore";
+import { collection, getDoc, getDocs, DocumentReference, doc, DocumentData } from "firebase/firestore";
 import { IMarker } from "~/contexts/markers/types";
 import { firestore } from "~/firebase";
 import { ICoordinates } from "~/types/MapInterfaces";
-import { IFriend, IUser } from "~/types/userTypes";
+import { IFriend } from "~/types/userTypes";
 
-// const fetch = async (user?: IUser): Promise<IMarker[] | undefined> => {
-//     if (!user || !user.friends) return;
+const fetch = async (userId?: string): Promise<IFriend[] | undefined> => {
+    if (!userId) throw new Error('User ID is required');
 
-//     const friendsWithMarkers = await Promise.all(user.friends.map(async friend => {
-//         const friendData: IFriend = { ...friend, ownerOf: [] };
+    // Accéder à la sous-collection 'friends'
+    const friendsCollectionRef = collection(firestore, "users", userId, "friends");
+    const friendsSnapshot = await getDocs(friendsCollectionRef);
 
-//         const ownerOfCollection = collection(firestore, "users", friend.userId, "ownerOf");
-//         const ownerOfSnapshot = await getDocs(ownerOfCollection);
-
-//         if (!ownerOfSnapshot.empty) {
-//             for (const markerDoc of ownerOfSnapshot.docs) {
-//                 const markerData = markerDoc.data();
-//                 let markerDetails = markerData;
-
-//                 if (markerData.markerRef) {
-//                     const markerRefSnapshot = await getDoc(markerData.markerRef);
-//                     if (markerRefSnapshot.exists()) {
-//                         markerDetails = markerRefSnapshot.data() as DocumentData;
-//                     } else {
-//                         console.warn(`MarkerRef ${markerData.markerRef.id} does not exist.`);
-//                         continue;
-//                     }
-//                 }
-
-//                 friendData.ownerOf?.push({
-//                     ...markerDetails,
-//                     markerId: markerDoc.id,
-//                     isLoading: false,
-//                     connections: null,
-//                     coordinates: {
-//                         lat: markerDetails.coordinates.latitude,
-//                         long: markerDetails.coordinates.longitude,
-//                     } as ICoordinates,
-//                 } as IMarker);
-//             }
-//         }
-//         return friendData;
-//     }));
-
-//     const markers = friendsWithMarkers.flatMap((friend: IFriend) => friend.ownerOf);
-//     return markers;
-// };
-
-interface IRawMarker extends Omit<IMarker, "coordinates"> {
-    markerRef?: DocumentReference;
-    coordinates: {
-        latitude: number;
-        longitude: number;
-    };
-}
-
-interface IReferencedMarkerData {
-    coordinates: {
-        latitude: number;
-        longitude: number;
-    };
-    [key: string]: any;
-}
-
-const fetch = async (user?: IUser): Promise<IMarker[] | undefined> => {
-    if (!user || !user.friends) return;
+    if (friendsSnapshot.empty) {
+        throw new Error('No friends found for this user');
+    }
 
     const markerRefs: DocumentReference[] = [];
 
-    const friendsWithMarkers = await Promise.all(
-        user.friends.map(async (friend) => {
-            const friendData: IFriend = { ...friend, ownerOf: [] };
+    // Récupérer les données des amis
+    const friends = await Promise.all(
+        friendsSnapshot.docs.map(async (friendDoc) => {
+            const friendData = friendDoc.data();
+            const userRef = friendData.userRef as DocumentReference;
 
-            const ownerOfCollection = collection(firestore, "users", friend.userId, "ownerOf");
-            const ownerOfSnapshot = await getDocs(ownerOfCollection);
-
-            if (!ownerOfSnapshot.empty) {
-                for (const markerDoc of ownerOfSnapshot.docs) {
-                    const markerData = markerDoc.data() as IRawMarker;
-
-                    if (markerData.markerRef instanceof DocumentReference) {
-                        markerRefs.push(markerData.markerRef);
-                    } else {
-                        if (
-                            markerData.coordinates &&
-                            typeof markerData.coordinates.latitude === "number" &&
-                            typeof markerData.coordinates.longitude === "number"
-                        ) {
-                            friendData.ownerOf?.push({
-                                ...markerData,
-                                markerId: markerDoc.id,
-                                isLoading: false,
-                                connections: null,
-                                coordinates: {
-                                    lat: markerData.coordinates.latitude,
-                                    long: markerData.coordinates.longitude,
-                                } as ICoordinates,
-                            } as IMarker);
-                        } else {
-                            console.warn(`Invalid coordinates for marker ${markerDoc.id}`);
-                        }
-                    }
-                }
+            if (!userRef) {
+                console.warn(`Friend document ${friendDoc.id} does not contain a valid userRef`);
+                return null;
             }
-            return friendData;
+
+            // Récupérer les données de l'utilisateur référencé
+            const userSnapshot = await getDoc(userRef);
+            if (!userSnapshot.exists()) {
+                return null;
+            }
+
+            const friend = userSnapshot.data() as IFriend;
+            return { ...friend, userId: userRef.id, ownerOf: [] as IMarker[] };
         })
     );
 
-    // Charger toutes les références en parallèle
-    const markerRefDocs = await Promise.all(markerRefs.map((ref) => getDoc(ref)));
+    const validFriends = friends.filter((friend) => friend !== null) as IFriend[];
 
+    const friendsWithMarkers = await Promise.all(
+        validFriends.map(async (friend) => {
+    
+            const ownerOfCollection = collection(firestore, "users", friend.userId, "ownerOf");
+            const ownerOfSnapshot = await getDocs(ownerOfCollection);
+    
+            if (!ownerOfSnapshot.empty) {
+                for (const ownerDoc of ownerOfSnapshot.docs) {
+                    const ownerData = ownerDoc.data();
+                    if (ownerData.markerRef instanceof DocumentReference) {
+                        markerRefs.push(ownerData.markerRef);
+                    }
+                }
+            }
+            return { ...friend, ownerOf: [] as IMarker[] };
+        })
+    );
+    
+    // Charger toutes les références markerRef en parallèle
+    const markerRefDocs = await Promise.all(markerRefs.map((ref) => getDoc(ref)));
     const markerRefData = markerRefDocs
         .filter((doc) => doc.exists())
         .map((doc) => ({
             id: doc.id,
-            ...(doc.data() as IReferencedMarkerData),
-        }));
-
-    // Associer les données des références aux marqueurs
+            ...(doc.data()),
+        } as DocumentData));
+    
+    // Associer les données des marqueurs référencés aux amis
     friendsWithMarkers.forEach((friend) => {
-        friend.ownerOf?.forEach((marker) => {
-            const refData = markerRefData.find((ref) => ref.id === marker.markerId);
-            if (refData && refData.coordinates) {
-                Object.assign(marker, {
-                    ...refData,
-                    coordinates: {
-                        lat: refData.coordinates.latitude,
-                        long: refData.coordinates.longitude,
-                    },
-                });
-            }
+        friend.ownerOf = friend.ownerOf || []; // Initialiser ownerOf si nécessaire
+    
+        const markersForFriend = markerRefData.filter((marker) => marker.creatorId === friend.userId);
+
+        markersForFriend.forEach((marker) => {
+            const coordinates = marker.coordinates;
+            const newMarker = {
+                ...marker,
+                markerId: marker.id,
+                isLoading: false,
+                connections: null,
+                coordinates: {
+                    lat: coordinates.latitude,
+                    long: coordinates.longitude,
+                } as ICoordinates,
+            } as IMarker;
+
+            friend.ownerOf.push(newMarker);
         });
     });
 
-    return friendsWithMarkers.flatMap((friend) => friend.ownerOf);
+    return friendsWithMarkers;
 };
 
 export { fetch as fetchFriends };

@@ -12,16 +12,16 @@ import Animated, {
     ZoomInEasyDown,
     ZoomOutEasyUp,
 } from 'react-native-reanimated';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { INPUT, THEME } from '~/constants/constants';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useAuth } from '~/contexts/AuthProvider';
-import { useWindow } from '~/contexts/windows/Context';
 import { useMarker } from '~/contexts/markers/Context';
 import { Image } from 'expo-image';
 import StickersList from '~/components/stickers/List';
 import FriendsList from '~/components/friends/List';
-import { useUserStore } from '~/store/userStore';
+import { useUserStore } from '~/store/useUserStore';
+import { useWindowStore } from '~/store/useWindowStore';
 
 interface NewMarkerWindowProps { }
 
@@ -32,13 +32,13 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
     const [canFriendsDisplayed, setCanFriendsDisplayed] = useState<boolean>(false) // equivalent to windowState.isLoaded but this one works idkw
 
     const { user } = useUserStore()
-    const { window, setLoaded: setWindowLoaded } = useWindow();
+    const { window, isLoading: isWindowLoading, setLoading: setWindowLoading } = useWindowStore();
     const { state: markerState, updateNew: updateNewMarker, firestoreAdd: addNewMarker, } = useMarker();
 
     const friendsContainer = useSharedValue(0);
 
     const animatedStyle = useAnimatedStyle(() => ({
-        height: window.isLoaded
+        height: isWindowLoading
             ? withSpring(heightContainer + friendsContainer.value, { damping: damplingValue }, (finished) => {
                 if (finished) {
                     runOnJS(setDamplingValue)(14)
@@ -59,8 +59,8 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
     return (
         <Animated.View
             style={[animatedStyle, styles.container, { minHeight: heightContainer }]}
-            key={window.active}
-            entering={FadeInDown.springify().withCallback(() => runOnJS(setWindowLoaded)(true))}
+            key={window}
+            entering={FadeInDown.springify().withCallback(() => runOnJS(setWindowLoading)(true))}
             exiting={FadeOutDown.springify()}
         >
             <Animated.View
@@ -121,9 +121,9 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                                         <Text style={styles.accessButtonText}>Everyone</Text>
                                     )}
                                 </TouchableOpacity>
-                                {user?.friends?.length && user?.friends.length > 0 ? (
+                                {/* {user?.friends?.length && user?.friends.length > 0 ? (
                                     <TouchableOpacity
-                                        disabled={!window.isLoaded}
+                                        disabled={!isWindowLoading}
                                         style={[
                                             styles.accessButton,
                                             markerState.new?.policy.isPrivate === true && styles.selectedAccessButton,
@@ -137,7 +137,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                                             })
                                         }
                                     >
-                                        {window.isLoaded ? (
+                                        {isWindowLoading ? (
                                             <MaterialIcons name="group" size={16} color={THEME.colors.primary} />
                                         ) : (
                                             <ActivityIndicator size={16} />
@@ -146,7 +146,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                                             <Text style={styles.accessButtonText}>Friends</Text>
                                         )}
                                     </TouchableOpacity>
-                                ) : undefined}
+                                ) : undefined} */}
                             </View>
                         </Animated.View>
                     </View>
@@ -158,7 +158,7 @@ const NewMarkerWindow: React.FC<NewMarkerWindowProps> = () => {
                     >
                         <Animated.View
                             key={markerState.new?.icon}
-                            entering={window.isLoaded ? ZoomInEasyDown : undefined}
+                            entering={isWindowLoading ? ZoomInEasyDown : undefined}
                             exiting={ZoomOutEasyUp}
                         >
                             <Image source={{ uri: markerState.new?.icon }} style={styles.stickerPreview} contentFit='contain' />

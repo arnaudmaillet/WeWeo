@@ -3,7 +3,7 @@ import { firestore } from "~/firebase";
 
 const create = async (postId: string, userId?: string): Promise<void> => {
     if (!userId) {
-        throw new Error("User not logged in, unable to add to history.");
+        throw new Error("User missing, unable to add to history.");
     }
 
     const userHistoryCollection = collection(firestore, "users", userId, "history");

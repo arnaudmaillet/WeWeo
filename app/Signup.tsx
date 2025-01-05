@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Keyboard, Modal, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '~/contexts/AuthProvider';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import localesData from '~/data/locales.json';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import { useAuth } from '~/hooks/useAuth';
 
 interface LocaleProps {
     label: string;
@@ -28,7 +28,7 @@ const Signup = () => {
     const [step, setStep] = useState(1); // Étape 1, 2 ou 3
 
     const router = useRouter();
-    const { isLoading, signUp } = useAuth();
+    // const { isLoading, signUp } = useAuth();
 
     const dotScale = useSharedValue(1); // Valeur partagée pour l'animation de l'échelle
     const inputsRefs = Array(6).fill(null).map(() => useRef<TextInput>(null)); // Références pour les inputs
@@ -55,24 +55,24 @@ const Signup = () => {
         setStep(2);
     };
 
-    const handleSignup = () => {
-        if (!username || !birthdate || !locale) {
-            alert("Please fill out all fields.");
-            return;
-        }
+    // const handleSignup = () => {
+    //     if (!username || !birthdate || !locale) {
+    //         alert("Please fill out all fields.");
+    //         return;
+    //     }
 
-        // Appel à la fonction signUp ici
-        signUp(email, password, username, birthdate, locale.value)
-            .then(() => {
-                // Passer à l'étape 3 uniquement si signUp réussit
-                // setStep(3);
-            })
-            .catch(error => {
-                alert(error.message); // Afficher l'erreur si signUp échoue
-            });
+    //     // Appel à la fonction signUp ici
+    //     signUp(email, password, username, birthdate, locale.value)
+    //         .then(() => {
+    //             // Passer à l'étape 3 uniquement si signUp réussit
+    //             // setStep(3);
+    //         })
+    //         .catch(error => {
+    //             alert(error.message); // Afficher l'erreur si signUp échoue
+    //         });
 
-        Keyboard.dismiss();
-    };
+    //     Keyboard.dismiss();
+    // };
 
     const handleConfirmSignUp = () => {
         const code = confirmationCode.join(''); // Concaténer les 6 inputs pour obtenir le code complet
@@ -229,9 +229,9 @@ const Signup = () => {
                                 </TouchableOpacity>
                             </Modal>
 
-                            <TouchableOpacity onPress={handleSignup} style={styles.signupButton}>
+                            {/* <TouchableOpacity onPress={handleSignup} style={styles.signupButton}>
                                 <Text style={styles.signupButtonText}>注册</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity> */}
                         </>
                     ) : (
                         // Step 3 : Confirmation de l'inscription avec 6 inputs pour le code de confirmation
@@ -258,7 +258,7 @@ const Signup = () => {
                                 ))}
                             </View>
 
-                            {
+                            {/* {
                                 isLoading ? (
                                     <View style={styles.signupButton}>
                                         <ActivityIndicator size="small" color="#fff" />
@@ -268,7 +268,7 @@ const Signup = () => {
                                         <Text style={styles.signupButtonText}>Confirmer</Text>
                                     </TouchableOpacity>
                                 )
-                            }
+                            } */}
                         </>
                     )}
 
