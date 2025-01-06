@@ -9,7 +9,7 @@ import { IUser } from '~/types/userTypes';
  * @param onAuthCallback Fonction appelée lors des changements d'état.
  * @returns Fonction pour se désabonner de l'écoute.
  */
-const listeningOnAuthChanges = (onAuthCallback: (user: IUser | null) => void) => {
+const listener = (onAuthCallback: (user: IUser | null) => void) => {
     return onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
             try {
@@ -35,4 +35,4 @@ const listeningOnAuthChanges = (onAuthCallback: (user: IUser | null) => void) =>
     });
 };
 
-export { listeningOnAuthChanges };
+export { listener as listeningOnAuthChanges };

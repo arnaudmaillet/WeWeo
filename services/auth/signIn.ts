@@ -16,7 +16,7 @@ interface UserWithToken {
  * @throws Erreur si l'utilisateur ou ses données ne sont pas trouvées
  */
 
-const signInUser = async (email: string, password: string): Promise<UserWithToken> => {
+const signIn = async (email: string, password: string): Promise<UserWithToken> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
@@ -34,4 +34,4 @@ const signInUser = async (email: string, password: string): Promise<UserWithToke
     };
 };
 
-export { signInUser, UserWithToken }
+export { signIn as signInUser, UserWithToken }

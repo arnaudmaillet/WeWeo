@@ -15,6 +15,7 @@ import { useFriends } from '~/hooks/useFriends';
 import { usePosts } from '~/hooks/usePosts';
 import { impactAsync, ImpactFeedbackStyle } from 'expo-haptics';
 import { useWindowStore } from '~/store/useWindowStore';
+import { useSubscriptions } from '~/hooks/useSubscriptions';
 
 interface NavbarWindowProps { }
 
@@ -22,6 +23,7 @@ const NavbarWindow: React.FC<NavbarWindowProps> = () => {
     const { window, setLoading } = useWindowStore()
     const { posts } = usePosts()
     const { history } = useHistory()
+    const { subscriptions } = useSubscriptions()
     const { friends, friendsPosts } = useFriends()
     const { tabs, active: activeTab, setActive: setActiveTab, isOpen: isTabOpen, setOpen: setTabOpen } = useNavbarStore()
     const { setPreview: setPreviewMarker, firestoreFetch: firestoreFetchMarkers, setList } = useMarker()
@@ -106,6 +108,8 @@ const NavbarWindow: React.FC<NavbarWindowProps> = () => {
             case TabType.HISTORY:
                 history.refetch()
                 break
+            case TabType.SUBSCRIPTIONS:
+                subscriptions.refetch()
             default:
         }
     }

@@ -1,20 +1,24 @@
 import { create } from "zustand";
+import { IMarker } from "~/contexts/markers/types";
 import { IUser } from "~/types/userTypes";
 
 interface UserState {
-  user?: IUser;
-  token?: string;
+  user: null | IUser;
+  token: null | string;
   isLoading: boolean;
+  activePost: null | IMarker
   set: (user: IUser) => void;
   setLoading: (status: boolean) => void
+  setActivePost: (post: null | IMarker) => void
   clearUser: () => void;
   logout:() => void
 }
 
 const useUserStore = create<UserState>((set, get) => ({
-  user: undefined,
-  token: undefined,
+  user: null,
+  token: null,
   isLoading: false,
+  activePost: null,
 
   set: (user) => set({ user }),
 
@@ -22,11 +26,15 @@ const useUserStore = create<UserState>((set, get) => ({
     set({ isLoading: status})
   },
 
-  logout: () => set({ user: undefined }),
+  setActivePost: (post) => {
+    set({ activePost: post })
+  },
+
+  logout: () => set({ user: null }),
 
   clearUser: () => {
-    set({ user: undefined })
-    set({ token: undefined })
+    set({ user: null })
+    set({ token: null })
   }
 }));
 

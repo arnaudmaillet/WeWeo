@@ -22,6 +22,7 @@ import useSupercluster from 'use-supercluster';
 import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { useWindowStore } from '~/store/useWindowStore';
 import { WindowType } from '~/types/windowTypes';
+import { useUserStore } from '~/store/useUserStore';
 
 //import KDBush from 'kdbush';
 
@@ -75,6 +76,7 @@ const Map: React.FC<IMap> = () => {
 
     const { mapRef, setCamera } = useMap();
     const { set: setWindow } = useWindowStore()
+    const { setActivePost } = useUserStore()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -122,6 +124,7 @@ const Map: React.FC<IMap> = () => {
             });
             setMarkerSnap(point);
             setActiveMarker(point);
+            setActivePost(point)
             if (markerState.new) {
                 exitingNewMarkerAnimation(WindowType.CHAT);
             } else {

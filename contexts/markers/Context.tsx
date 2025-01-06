@@ -17,6 +17,7 @@ import { useFriends } from "~/hooks/useFriends";
 import { usePosts } from "~/hooks/usePosts";
 import { useWindowStore } from "~/store/useWindowStore";
 import { WindowType } from "~/types/windowTypes";
+import { useSubscriptions } from "~/hooks/useSubscriptions";
 
 const MarkerContext = createContext({});
 
@@ -49,6 +50,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { posts } = usePosts()
     const { history, createHistory } = useHistory()
     const { friendsPosts } = useFriends()
+    const { subscriptions } = useSubscriptions()
 
     const { set: setWindow } = useWindowStore()
     const { active: activeTab } = useNavbarStore()
@@ -133,75 +135,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     //         return false;
     //     }
     // };
-
-    const firestoreManageActiveMessages = async (action: FirestoreAction, payload?: INewMessage) => {
-        const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
-
-        switch (action) {
-            case FirestoreAction.SUBSCRIBE:
-                const q = query(messagesCollection, orderBy("createdAt", "asc"));
-
-                const unsubscribeMessages = onSnapshot(q, async (snapshot) => {
-                    const onNewMessages = await Promise.all(
-                        snapshot.docs.map(async (docRef) => {
-                            const messageData = docRef.data();
-                            const { senderId } = messageData;
-                            let userInfo = null;
-
-                            if (senderId) {
-                                const userDoc = await getDoc(doc(firestore, "users", senderId));
-                                userInfo = userDoc.exists() ? userDoc.data() : null;
-                            }
-
-                            const message: IMessage = {
-                                messageId: docRef.id,
-                                senderInfo: userInfo as IUser,
-                                markerId: state.active!.markerId,
-                                senderId: senderId,
-                                content: messageData.content,
-                                type: messageData.type,
-                                createdAt: messageData.createdAt,
-                            };
-
-                            return message;
-                        })
-                    );
-                    updateActiveMessages(onNewMessages)
-                });
-
-                const markerDocRef = doc(firestore, `markers/${state.active!.markerId}`);
-                const unsubscribeMarker = onSnapshot(markerDocRef, async (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        const markerData = docSnapshot.data();
-                        const connectedUserIds = markerData.connectedUserIds || [];
-                        const usersData = await Promise.all(
-                            connectedUserIds.map(async (userId: string) => {
-                                const userDoc = await getDoc(doc(firestore, "users", userId));
-                                return userDoc.exists() ? { userId, ...userDoc.data() } : null;
-                            })
-                        );
-                        updateActiveConnections(usersData);
-                    }
-                });
-
-                return () => {
-                    unsubscribeMessages();
-                    unsubscribeMarker();
-                };
-            case FirestoreAction.ADD:
-                if (user && state.active?.markerId && payload) {
-                    try {
-                        const messagesCollection = collection(firestore, `markers/${state.active!.markerId}/messages`);
-                        await addDoc(messagesCollection, payload);
-                    } catch (error) {
-                        console.error("Error sending message:", error);
-                    }
-                }
-            default:
-                console.log(`FirestoreAction: ${action} is not implemented`)
-                return
-        }
-    }
 
     const firestoreManageActiveConnection = (action: FirestoreAction) => {
         switch (action) {
@@ -360,7 +293,7 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
                 break;
             case TabType.HISTORY: setList(history.data || [])
                 break;
-            case TabType.SUBS: setList(user?.subscribedTo || [])
+            case TabType.SUBSCRIPTIONS: setList(subscriptions.data || [])
                 break;
             case TabType.SEARCH: break
             default: console.error(`${activeTab} is not a type of MenuType`)
@@ -368,38 +301,38 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }, [activeTab])
 
 
-    useEffect(() => {
-        if (user && state.active) {
-            const manageAsyncTasks = async () => {
-                updateActiveLoading(true);
-                createHistory(state.active!.markerId, user.userId)
-                try {
-                    setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
+    // useEffect(() => {
+    //     if (user && state.active) {
+    //         const manageAsyncTasks = async () => {
+    //             updateActiveLoading(true);
+    //             createHistory(state.active!.markerId, user.userId)
+    //             try {
+    //                 setIsSubscribed(state.active!.subscribedUserIds.includes(user.userId));
 
-                    await Promise.all([
-                        firestoreManageActiveMessages(FirestoreAction.SUBSCRIBE),
-                        firestoreManageActiveViews(FirestoreAction.ADD),
-                    ]);
+    //                 await Promise.all([
+    //                     firestoreManageActiveMessages(FirestoreAction.SUBSCRIBE),
+    //                     firestoreManageActiveViews(FirestoreAction.ADD),
+    //                 ]);
 
-                    return firestoreManageActiveConnection(FirestoreAction.SUBSCRIBE);
-                } catch (error) {
-                    console.error("Erreur lors de la gestion des tâches Firestore :", error);
-                } finally {
-                    updateActiveLoading(false);
-                }
-            };
+    //                 return firestoreManageActiveConnection(FirestoreAction.SUBSCRIBE);
+    //             } catch (error) {
+    //                 console.error("Erreur lors de la gestion des tâches Firestore :", error);
+    //             } finally {
+    //                 updateActiveLoading(false);
+    //             }
+    //         };
 
-            let cleanupFn: (() => void) | undefined;
+    //         let cleanupFn: (() => void) | undefined;
 
-            manageAsyncTasks()
-                .then((cleanup) => {
-                    cleanupFn = cleanup;
-                })
-                .catch((error) => console.error(error));
+    //         manageAsyncTasks()
+    //             .then((cleanup) => {
+    //                 cleanupFn = cleanup;
+    //             })
+    //             .catch((error) => console.error(error));
 
-            return () => { cleanupFn && cleanupFn() };
-        }
-    }, [state.active?.markerId]);
+    //         return () => { cleanupFn && cleanupFn() };
+    //     }
+    // }, [state.active?.markerId]);
 
 
     return (
@@ -417,7 +350,6 @@ const MarkerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
             setPreview,
             setList,
             setFiltered,
-            firestoreManageActiveMessages,
             firestoreManageActiveSubscription,
             firestoreManageActiveViews,
             enteringAnimation,

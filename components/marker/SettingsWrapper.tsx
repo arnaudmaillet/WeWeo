@@ -4,24 +4,24 @@ import Animated, { ZoomIn, ZoomOut, runOnJS } from 'react-native-reanimated';
 import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
 import { THEME } from '~/constants/constants';
-import { useMarker } from '~/contexts/markers/Context';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import { useUserStore } from '~/store/useUserStore';
+import { useSubscriptions } from '~/hooks/useSubscriptions';
 
 interface SettingsWrapperProps { }
 
 const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
-    const { user } = useUserStore();
-    const { state: markerState, isSubscribed, firestoreManageActiveSubscription } = useMarker();
+    const { user, activePost } = useUserStore();
+    const { isSubscribed, toggleSubscription } = useSubscriptions()
 
     // Contrôle de la visibilité pour chaque bouton
     const [showSettings, setShowSettings] = useState(true);
     const [showBookmark, setShowBookmark] = useState(true);
     const [notification, setNotification] = useState<boolean>(false);
 
-    if (!markerState.active || !user) return null;
+    if (!activePost || !user) return null;
 
-    const isCreator = markerState.active.creatorId === user.userId;
+    const isCreator = activePost.creatorId === user.userId;
 
     return (
         <View style={styles.container}>
@@ -52,7 +52,7 @@ const SettingsWrapper: React.FC<SettingsWrapperProps> = () => {
                     entering={ZoomIn.springify()}
                     exiting={ZoomOut.springify().withCallback(() => runOnJS(setShowBookmark)(!showBookmark))}
                 >
-                    <TouchableOpacity onPress={firestoreManageActiveSubscription}>
+                    <TouchableOpacity onPress={() => toggleSubscription(activePost!.markerId)}>
                         {isSubscribed ? (
                             <MaterialIcons name="bookmark" size={22} color={THEME.colors.primary} />
                         ) : (

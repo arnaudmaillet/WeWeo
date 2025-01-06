@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { listeningOnAuthChanges } from '~/services/auth/authListener';
+import { listeningOnAuthChanges } from '~/services/auth/listener';
 import { useUserStore } from '~/store/useUserStore';
 import { StorageKeys } from '~/constants/constants';
 import { IUser } from '~/types/userTypes';

@@ -7,12 +7,12 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Message from './Message';
 
 import { THEME } from '~/constants/constants';
-import { useMarker } from '~/contexts/markers/Context';
 
 import { useKeyboard } from '~/contexts/KeyboardProvider';
 import MarkerHeader from './Header';
 import MarkerInput from './Input';
 import { useUserStore } from '~/store/useUserStore';
+import { useMessages } from '~/hooks/useMessages';
 
 export interface IMarkerChatScreen { }
 
@@ -20,11 +20,11 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
 
     const flatListRef = useRef<FlatList>(null);
 
-    const { user } = useUserStore()
-    const { state: markerState } = useMarker()
+    const { user, activePost } = useUserStore()
+    const { messages } = useMessages(activePost?.markerId)
     const { isKeyboardVisible } = useKeyboard()
 
-    if (!markerState.active || !user) return null
+    if (!user) return null
 
     const [showStickers, setShowStickers] = useState<boolean>(false)
 
@@ -34,7 +34,7 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
         }, 50);
 
         return () => clearTimeout(timeout);
-    }, [showStickers, markerState.active.messages]);
+    }, [showStickers, messages.data]);
 
     useEffect(() => {
         isKeyboardVisible && flatListRef.current?.scrollToEnd({ animated: true });
@@ -49,11 +49,11 @@ const MarkerChat: React.FC<IMarkerChatScreen> = () => {
             <MarkerHeader />
             <View style={styles.messageContainer}>
                 {
-                    markerState.active && !markerState.active.isLoading && markerState.active.messages && <FlatList
+                    messages.data && messages.isLoading === false && <FlatList
                         ref={flatListRef}
-                        data={markerState.active.messages}
+                        data={messages.data}
                         renderItem={({ item, index }) => {
-                            const previousMessage = index > 0 ? markerState.active!.messages[index - 1] : null;
+                            const previousMessage = index > 0 ? messages.data![index - 1] : null;
                             const isSameUser = previousMessage && previousMessage.senderId === item.senderId;
 
                             return (

@@ -6,15 +6,15 @@ const create = async (postId: string, userId?: string): Promise<void> => {
         throw new Error("User missing, unable to add to history.");
     }
 
-    const userHistoryCollection = collection(firestore, "users", userId, "history");
-    const markerRef = doc(firestore, "markers", postId);
-    const historyDocRef = doc(userHistoryCollection, postId);
-    const historyDocSnapshot = await getDoc(historyDocRef);
+    const historyCollection = collection(firestore, "users", userId, "history");
+    const ref = doc(firestore, "markers", postId);
+    const docRef = doc(historyCollection, postId);
+    const snapshot = await getDoc(docRef);
 
-    if (historyDocSnapshot.exists()) {
-        await updateDoc(historyDocRef, { viewedAt: new Date() });
+    if (snapshot.exists()) {
+        await updateDoc(docRef, { viewedAt: new Date() });
     } else {
-        await setDoc(historyDocRef, { markerRef, viewedAt: new Date() });
+        await setDoc(docRef, { ref, viewedAt: new Date() });
     }
 };
 

@@ -43,6 +43,10 @@ interface IMarker extends INewMarker {
     isLoading: boolean
 }
 
+interface IPostSubscription extends IMarker {
+    subscribedAt: number
+}
+
 interface IMarkerHistory extends IMarker {
     viewedAt: number
 }
@@ -71,4 +75,4 @@ enum MarkerActionType {
     UPDATE_ACTIVE_VIEWS = "UPDATE_ACTIVE_VIEWS"
 }
 
-export { MarkerType, INewMessage, IMessage, IPolicy, INewMarker, IMarker, MarkerState, MarkerActionType, IMarkerHistory }
+export { MarkerType, INewMessage, IMessage, IPolicy, INewMarker, IMarker, MarkerState, MarkerActionType, IMarkerHistory, IPostSubscription }

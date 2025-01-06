@@ -5,19 +5,19 @@ import { ICoordinates } from "~/types/MapInterfaces";
 
 const fetch = async (userId?: string): Promise<IMarkerHistory[] | null> => {
     if(!userId) throw new Error('User ID is required');
-    const userHistoryCollection = collection(firestore, "users", userId, "history");
+    const historyCollection = collection(firestore, "users", userId, "history");
   
-    const querySnapshot = await getDocs(userHistoryCollection);
-    const markerPromises = querySnapshot.docs.map(async (doc) => {
-      const markerRef = doc.data().markerRef;
-      const markerSnapshot = await getDoc(markerRef);
+    const querySnapshot = await getDocs(historyCollection);
+    const promise = querySnapshot.docs.map(async (doc) => {
+      const ref = doc.data().markerRef;
+      const snapshot = await getDoc(ref);
   
-      if (markerSnapshot.exists()) {
-        const markerData = markerSnapshot.data() as DocumentData;
-        const coordinates = markerData.coordinates;
+      if (snapshot.exists()) {
+        const data = snapshot.data() as DocumentData;
+        const coordinates = data.coordinates;
         return {
-          ...markerData,
-          markerId: markerSnapshot.id,
+          ...data,
+          markerId: snapshot.id,
           viewedAt: doc.data().viewedAt.toDate(),
           coordinates: {
             lat: coordinates.latitude,
@@ -28,8 +28,8 @@ const fetch = async (userId?: string): Promise<IMarkerHistory[] | null> => {
       return null;
     });
   
-    const historyWithNulls = await Promise.all(markerPromises);
-    return historyWithNulls.filter((item): item is IMarkerHistory => item !== null);
+    const posts = await Promise.all(promise);
+    return posts.filter((item): item is IMarkerHistory => item !== null);
 };
 
 export { fetch as fetchHistory }

@@ -7,16 +7,8 @@ import { ITab, TabType } from '../types/navbarTypes';
 
 const defaultButtons: ITab[] = [
     {
-        label: 'Discover',
-        type: TabType.DISCOVER,
-        isLoading: false,
-        color: 'gray',
-        activeColor: THEME.colors.primary,
-        icon: createElement(Ionicons, { name: "compass-outline", size: 24 }),
-    },
-    {
         label: 'Subs',
-        type: TabType.SUBS,
+        type: TabType.SUBSCRIPTIONS,
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
@@ -29,6 +21,14 @@ const defaultButtons: ITab[] = [
         color: 'gray',
         activeColor: THEME.colors.primary,
         icon: createElement(MaterialIcons, { name: "group", size: 24 }),
+    },
+    {
+        label: 'Discover',
+        type: TabType.DISCOVER,
+        isLoading: false,
+        color: 'gray',
+        activeColor: THEME.colors.primary,
+        icon: createElement(Ionicons, { name: "compass-outline", size: 24 }),
     },
     {
         label: 'History',

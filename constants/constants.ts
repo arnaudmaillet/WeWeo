@@ -79,7 +79,9 @@ export enum QueryKey {
     USER = "user",
     POSTS = "posts",
     FRIENDS = "friends",
-    HISTORY = "history"
+    HISTORY = "history",
+    MESSAGES = "messages",
+    SUBSCRIPTIONS = "subscriptions"
 }
 
 // Mmkv storage keys

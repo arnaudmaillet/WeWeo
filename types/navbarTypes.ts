@@ -3,7 +3,7 @@ import { ReactElement } from "react"
 enum TabType {
     DISCOVER = "DISCOVER",
     FRIENDS = "FRIENDS",
-    SUBS = "SUBS",
+    SUBSCRIPTIONS = "SUBSCRIPTIONS",
     HISTORY = "HISTORY",
     SEARCH = "SEARCH",
 }
