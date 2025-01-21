@@ -4,7 +4,7 @@ import { IMarker } from "~/contexts/markers/types";
 import { useEffect } from "react";
 import { TabType } from "~/types/navbarTypes";
 import { useNavbarStore } from "~/store/useNavbarStore";
-import { QueryKey, queryOptions } from "~/constants/constants";
+import { QueryKey, QUERY_OPTIONS } from "~/constants/constants";
 
 import { fetchPosts } from "~/services/posts/fetch";
 import { useUserStore } from "~/store/useUserStore";
@@ -23,8 +23,8 @@ const usePosts = () => {
             queryKey: [QueryKey.POSTS],
             queryFn:() => fetchPosts(),
             enabled: !!user,
-            staleTime: queryOptions.staleTime,
-            retry: queryOptions.retry,
+            staleTime: QUERY_OPTIONS.staleTime,
+            retry: QUERY_OPTIONS.retry,
         }
     );
 

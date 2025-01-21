@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { QueryKey, queryOptions } from "~/constants/constants";
+import { QueryKey, QUERY_OPTIONS } from "~/constants/constants";
 import { IMarker } from "~/contexts/markers/types";
 import { createSubscription } from "~/services/subscriptions/create";
 import { deleteSubscription } from "~/services/subscriptions/delete";
@@ -22,8 +22,8 @@ const useSubscriptions = () => {
         queryKey: [QueryKey.SUBSCRIPTIONS],
         queryFn: () => fetchSubscriptions(user?.userId),
         enabled: !!user,
-        staleTime: queryOptions.staleTime,
-        retry: queryOptions.retry,
+        staleTime: QUERY_OPTIONS.staleTime,
+        retry: QUERY_OPTIONS.retry,
     });
 
     const { data, isLoading, isError, error } = queryResult;

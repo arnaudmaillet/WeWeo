@@ -1,6 +1,6 @@
 import { View, Text, ActivityIndicator, Dimensions } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import Animated, { ZoomIn, FadeInDown, FadeOutDown, runOnJS, FadeOut, useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomOut, FadeInRight } from 'react-native-reanimated'
+import Animated, { ZoomIn, FadeInDown, FadeOutDown, runOnJS, FadeOut, useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomOut, FadeInRight, SlideInDown, SlideOutDown } from 'react-native-reanimated'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { THEME } from '~/constants/constants';
 import { useMarker } from '~/contexts/markers/Context';
@@ -120,7 +120,7 @@ const NavbarWindow: React.FC<NavbarWindowProps> = () => {
             key={window}
             className="bg-grayscale py-3 rounded-3xl shadow-lg"
             entering={FadeInDown.springify()}
-            exiting={FadeOutDown.springify().withCallback(() => runOnJS(setLoading)(true))}
+            exiting={SlideOutDown.withCallback(() => runOnJS(setLoading)(true))}
         >
 
             <Animated.View key={activeTab} style={animatedContainerStyle}>
@@ -204,7 +204,7 @@ const NavbarWindow: React.FC<NavbarWindowProps> = () => {
                                 }
                                 setTabPressedEvent(!tabPressedEvent)
                             }} onLongPress={() => activeTab === tab.type && refetch(tab.type)}>
-                                <Animated.View className='h-[25] items-center justify-center' key={tab.isLoading.toString()} entering={ZoomIn.springify()} exiting={ZoomOut}>
+                                <Animated.View className='h-[30px] items-center justify-center' key={tab.isLoading.toString()} entering={ZoomIn.springify()} exiting={ZoomOut}>
                                     {
                                         tab.isLoading ?
                                             <ActivityIndicator color={THEME.colors.primary} /> :

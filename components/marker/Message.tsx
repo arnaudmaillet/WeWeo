@@ -7,8 +7,8 @@ import { doc, getDoc } from "firebase/firestore";
 
 import locales from '~/data/locales.json';
 import { THEME } from '~/constants/constants';
-import { IUser } from '~/contexts/user/types';
 import { useUserStore } from '~/store/useUserStore';
+import { IUser } from '~/types/userTypes';
 
 interface MessageComponentProps {
     item: IMessage;

@@ -8,11 +8,11 @@ import { useKeyboard } from '~/contexts/KeyboardProvider'
 
 import NewMarkerWindow from '~/windows/NewMarker'
 import { useMarker } from '~/contexts/markers/Context'
-import MarkerChat from '~/components/marker/MarkerChat'
 import { IMarker } from '~/contexts/markers/types'
 import NavbarWindow from '~/windows/Navbar';
 import { useWindowStore } from '~/store/useWindowStore';
 import { WindowType } from '~/types/windowTypes';
+import { useUserStore } from '~/store/useUserStore';
 
 
 const _MAX_GESTURE_VERTICAL_OFFSET = 20
@@ -29,6 +29,7 @@ const MainScreen = () => {
     const { keyboardProps } = useKeyboard();
     const { window, set: setWindow } = useWindowStore()
     const { state: markerState, setActive: setActiveMarker, exitingAnimation: exitingNewMarkerAnimation } = useMarker()
+    const { postFeed } = useUserStore()
 
     const screenHeight = Dimensions.get('window').height;
 
@@ -119,11 +120,11 @@ const MainScreen = () => {
         })
 
     useEffect(() => {
-        if (markerState.active?.markerId) {
+        if (markerState.active?.markerId || postFeed) {
             offset.value = 0;
             backdropOpacity.value = withTiming(1, { duration: 2000 });
         }
-    }, [markerState.active?.markerId]);
+    }, [markerState.active?.markerId, postFeed]);
 
 
 
@@ -140,22 +141,7 @@ const MainScreen = () => {
         switch (window) {
             case WindowType.CHAT:
                 return (
-                    markerState.active && (
-                        <>
-                            <View style={styles.backdrop} />
-                            <GestureDetector gesture={panGesture}>
-                                <Animated.View style={[translateSheetY, styles.sheet, { bottom: insets.bottom, height: screenHeight - (insets.top + insets.bottom) }]}>
-                                    <KeyboardAvoidingView
-                                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                        keyboardVerticalOffset={65}
-                                        style={styles.keyboardAvoidingView}
-                                    >
-                                        <MarkerChat />
-                                    </KeyboardAvoidingView>
-                                </Animated.View>
-                            </GestureDetector>
-                        </>
-                    )
+                    postFeed && (<></>) // null ?
                 )
             case WindowType.NEW_MARKER:
                 return (
@@ -230,6 +216,12 @@ const styles = StyleSheet.create({
     },
     keyboardAvoidingView: {
         flex: 1,
+    },
+    allScreen: {
+        position: "absolute",
+        alignSelf: 'center',
+        width: '100%',
+        zIndex: 1,
     },
     sheet: {
         position: "absolute",

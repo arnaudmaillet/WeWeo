@@ -5,7 +5,7 @@ import { fetchFriends } from "~/services/friends/fetch";
 import { useEffect, useState } from "react";
 import { TabType } from "~/types/navbarTypes";
 import { useNavbarStore } from "~/store/useNavbarStore";
-import { QueryKey, queryOptions } from "~/constants/constants";
+import { QueryKey, QUERY_OPTIONS } from "~/constants/constants";
 import { useUserStore } from "~/store/useUserStore";
 import { IFriend } from "~/types/userTypes";
 
@@ -18,8 +18,8 @@ const useFriends = () => {
             queryKey: [QueryKey.FRIENDS, user?.userId],
             queryFn:() => fetchFriends(user?.userId),
             enabled: !!user,
-            staleTime: queryOptions.staleTime,
-            retry: queryOptions.retry,
+            staleTime: QUERY_OPTIONS.staleTime,
+            retry: QUERY_OPTIONS.retry,
         }
     );
 

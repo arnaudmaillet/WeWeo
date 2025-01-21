@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { QueryKey, queryOptions } from "~/constants/constants";
+import { QueryKey, QUERY_OPTIONS } from "~/constants/constants";
 import { useNavbarStore } from "~/store/useNavbarStore";
 import { TabType } from "~/types/navbarTypes";
 
@@ -22,8 +22,8 @@ const useHistory = () => {
         queryKey: [QueryKey.HISTORY],
         queryFn: () => fetchHistory(user?.userId),
         enabled: !!user,
-        staleTime: queryOptions.staleTime,
-        retry: queryOptions.retry,
+        staleTime: QUERY_OPTIONS.staleTime,
+        retry: QUERY_OPTIONS.retry,
     });
 
     const { isLoading, isError, error } = queryResult;

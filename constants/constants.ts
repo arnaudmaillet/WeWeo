@@ -70,7 +70,7 @@ export const INPUT = {
     }
 };
 
-export const queryOptions = {
+export const QUERY_OPTIONS = {
     staleTime: 5 * 60 * 1000, // Cache les données pendant 5 minutes
     retry: 1
 }
@@ -88,4 +88,12 @@ export enum QueryKey {
 export enum StorageKeys {
     AuthToken = 'authToken',
     UserEmail = 'userEmail',
+}
+
+
+export const KEYBOARD_VERTICAL_OFFSET = {
+    post: {
+        default: 65,
+        lastItem: 105
+    }
 }

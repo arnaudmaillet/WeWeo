@@ -19,7 +19,6 @@ const useAuthListener = () => {
                     { key: StorageKeys.UserEmail, payload: user.email || '' },
                 )
                 setUser(user);
-                console.log(user)
             } else {
                 removeTokens(StorageKeys.AuthToken, StorageKeys.UserEmail)
                 clearUser();

@@ -29,6 +29,7 @@ export default function Layout() {
                     <Stack.Screen name="Login" options={{ title: 'Login', headerShown: false, animation: 'slide_from_left' }} />
                     <Stack.Screen name="Signup" options={{ title: 'Signup', headerShown: false }} />
                     <Stack.Screen name="Home" options={{ title: 'Home', headerShown: false, animation: 'slide_from_bottom' }} />
+                    <Stack.Screen name="feed" options={{ title: 'Feed', headerShown: false, presentation: 'transparentModal', contentStyle: { backgroundColor: 'rgba(0,0,0,0.6)' }, animation: 'fade' }} />
                   </Stack>
                 </MarkerProvider>
               </Deprecated>

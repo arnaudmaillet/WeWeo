@@ -66,7 +66,7 @@ const MarkerInput: React.FC<IMarkerInput> = ({ showStickers, setShowStickers }) 
                         </View>
                     </TouchableOpacity>
                 </View>
-                <View style={styles.messageInputWrapper}>
+                <View style={styles.messageInputWrapper} className='rounded-full'>
                     <TextInput
                         ref={inputRef}
                         style={styles.messageInput}
@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: THEME.colors.grayscale.darker_1x,
-        borderRadius: 10,
         paddingHorizontal: 10,
         marginTop: 10,
         height: 40,

@@ -13,6 +13,7 @@ import { THEME } from '~/constants/constants';
 
 import { useMarker } from '~/contexts/markers/Context'
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { IMarker, MarkerType } from '~/contexts/markers/types';
 import { BBox } from 'geojson';
 
@@ -23,6 +24,8 @@ import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated';
 import { useWindowStore } from '~/store/useWindowStore';
 import { WindowType } from '~/types/windowTypes';
 import { useUserStore } from '~/store/useUserStore';
+import { useRouter } from 'expo-router';
+import { Circle } from 'react-native-progress';
 
 //import KDBush from 'kdbush';
 
@@ -73,10 +76,11 @@ const edgePadding = {
 const Map: React.FC<IMap> = () => {
 
     const screenDimensions = Dimensions.get('window');
+    const router = useRouter()
 
     const { mapRef, setCamera } = useMap();
     const { set: setWindow } = useWindowStore()
-    const { setActivePost } = useUserStore()
+    const { setActivePost, setPostsFeed } = useUserStore()
     const {
         state: markerState,
         exitingAnimation: exitingNewMarkerAnimation,
@@ -117,14 +121,20 @@ const Map: React.FC<IMap> = () => {
         return clusterMarkers.reduce((prev, current) => prev.properties.payload.subscribedUserIds.length > current.properties.payload.subscribedUserIds.length ? prev : current);
     };
 
-    const handlePressMarker = (point: IMarker) => {
-        if (mapRef.current) {
+    const getClusterMarkers = (clusterMarkers: PointFeature<AnyProps>[]) => {
+        return clusterMarkers.map(marker => marker.properties.payload as IMarker);
+    };
+
+
+    const handlePressMarkers = (points: IMarker[] | null) => {
+        if (mapRef.current && points) {
             mapRef.current.getCamera().then((camera) => {
                 setCamera(camera);
             });
-            setMarkerSnap(point);
-            setActiveMarker(point);
-            setActivePost(point)
+
+            router.push(`/feed/`);
+            setPostsFeed(points)
+
             if (markerState.new) {
                 exitingNewMarkerAnimation(WindowType.CHAT);
             } else {
@@ -221,39 +231,46 @@ const Map: React.FC<IMap> = () => {
                     let marker: IMarker | null = null
                     let cluster: AnyProps | null = null
                     let topMarker: Supercluster.PointFeature<Supercluster.AnyProps> | null = null
+                    let markers: IMarker[] | null = null
                     let coordinates = point.geometry.coordinates
 
                     if (supercluster && point.properties.cluster) {
                         cluster = point.properties
                         topMarker = getTopMarker(supercluster.getLeaves(cluster.cluster_id as number));
+                        markers = getClusterMarkers(supercluster.getLeaves(cluster.cluster_id as number))
                         marker = topMarker.properties.payload as IMarker
                         const iconSize = marker.label.length > 0 ? 20 : 40
                         return (
                             <Marker
                                 key={`cluster-${point.properties.cluster_id}`}
                                 coordinate={{ latitude: coordinates[1], longitude: coordinates[0] }}
-                                onPress={() => handlePressMarker(marker!)}
+                                onPress={() => handlePressMarkers(markers)}
                             >
-                                <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
+                                <Animated.View entering={ZoomIn.springify().delay(300).randomDelay().mass(.05)} exiting={ZoomOut.mass(.05)}>
                                     <View className='w-[80] max-h-[80] justify-center items-center'>
                                         {
-                                            marker.label.length > 0 && <View className='bg-primary/[.9] rounded-md py-[1] px-[4]'>
-                                                <Text className='text-xs text-white font-semibold' allowFontScaling={false}>
-                                                    {labelSlicing(marker.label, 50)}
-                                                </Text>
+                                            marker.label.length > 0 && <View className='rounded-md overflow-hidden'>
+                                                <LinearGradient colors={['rgba(106,137,204,0.9)', 'rgba(126,136,151,0.8)']} locations={[.35, .35]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                                                    <Text className='text-xs text-white font-semibold my-[1] mx-[4]' allowFontScaling={false}>
+                                                        {labelSlicing(marker.label, 50)}
+                                                    </Text>
+                                                </LinearGradient>
                                             </View>
                                         }
                                         {
                                             marker.label.length > 0 ?
                                                 <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
                                                     <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
                                                         <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
                                                     </View>
                                                 </View> :
                                                 <View className='flex-row items-end'>
-                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
-                                                    <View className='absolute rounded-full p-[2] items-center min-w-[15]' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
+                                                    <Circle className='absolute z-10' style={{ transform: [{ translateX: -2 }, { translateY: 2 }] }} progress={0.8} size={44} borderWidth={0} color={THEME.colors.primary} unfilledColor='rgb(249,250,251)' strokeCap='round' direction='counter-clockwise' thickness={2} />
+                                                    <View className='bg-gray-50/90 rounded-full overflow-hidden'>
+                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
+                                                    </View>
+                                                    <View className='z-20 absolute rounded-full p-[2] items-center min-w-[15]' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
                                                         <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
                                                     </View>
                                                 </View>
@@ -272,19 +289,26 @@ const Map: React.FC<IMap> = () => {
                                     latitude: coordinates[1],
                                     longitude: coordinates[0]
                                 }}
-                                onPress={() => handlePressMarker(marker!)}
+                                onPress={() => handlePressMarkers([marker!])}
                             >
-                                <Animated.View entering={ZoomIn.springify().duration(300).delay(300).randomDelay()} exiting={ZoomOut}>
+                                <Animated.View entering={ZoomIn.springify().delay(300).randomDelay().mass(.05)} exiting={ZoomOut.mass(.05)}>
                                     <View className='w-[80] max-h-[80] justify-center items-center'>
                                         {
-                                            marker.label.length > 0 && <View className='bg-primary /[.9] rounded-md py-[1] px-[4]'>
-                                                <Text className='text-xs text-white font-semibold' allowFontScaling={false}>
-                                                    {labelSlicing(marker.label, 50)}
-                                                </Text>
+                                            marker.label.length > 0 && <View className='rounded-md overflow-hidden'>
+                                                <LinearGradient colors={['rgba(106,137,204,0.9)', 'rgba(126,136,151,0.8)']} locations={[.70, .70]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                                                    <Text className='text-xs text-white font-semibold my-[1] mx-[4]' allowFontScaling={false}>
+                                                        {labelSlicing(marker.label, 50)}
+                                                    </Text>
+                                                </LinearGradient>
                                             </View>
                                         }
                                         <View className={`${marker.label.length > 0 && 'h-[20] absolute'}`} style={marker.label.length > 0 && { transform: [{ translateY: -13 }] }}>
-                                            {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' />}
+                                            {
+                                                (marker.icon && marker.label.length === 0) && <Circle className='absolute z-10' style={{ transform: [{ translateX: -2 }, { translateY: -2 }] }} progress={0.8} size={44} borderWidth={0} color={THEME.colors.primary} unfilledColor='rgb(249,250,251)' strokeCap='round' direction='counter-clockwise' thickness={2} />
+                                            }
+                                            <View className='bg-gray-50/90 rounded-full overflow-hidden'>
+                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
+                                            </View>
                                         </View>
                                     </View>
                                 </Animated.View>

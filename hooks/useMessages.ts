@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { QueryKey, queryOptions } from "~/constants/constants"; // Ajustez selon votre projet
+import { QueryKey, QUERY_OPTIONS } from "~/constants/constants"; // Ajustez selon votre projet
 import { IMessage } from "~/contexts/markers/types";
 import { createMessage } from "~/services/messages/create";
 import { messageSubscription } from "~/services/messages/subscription";
@@ -27,8 +27,8 @@ const useMessages = (markerId: string | undefined) => {
                 return () => unsubscribe();
             }),
         enabled: !!markerId,
-        staleTime: queryOptions.staleTime,
-        retry: queryOptions.retry,
+        staleTime: QUERY_OPTIONS.staleTime,
+        retry: QUERY_OPTIONS.retry,
     });
 
     const { isError, error } = queryResult;

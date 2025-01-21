@@ -12,7 +12,7 @@ const defaultButtons: ITab[] = [
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
-        icon: createElement(MaterialIcons, { name: "bookmark-outline", size: 24 }),
+        icon: createElement(MaterialIcons, { name: "bookmark-outline", size: 28 }),
     },
     {
         label: 'Friends',
@@ -20,7 +20,7 @@ const defaultButtons: ITab[] = [
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
-        icon: createElement(MaterialIcons, { name: "group", size: 24 }),
+        icon: createElement(MaterialIcons, { name: "group", size: 28 }),
     },
     {
         label: 'Discover',
@@ -28,7 +28,7 @@ const defaultButtons: ITab[] = [
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
-        icon: createElement(Ionicons, { name: "compass-outline", size: 24 }),
+        icon: createElement(Ionicons, { name: "compass-outline", size: 28 }),
     },
     {
         label: 'History',
@@ -36,7 +36,7 @@ const defaultButtons: ITab[] = [
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
-        icon: createElement(MaterialIcons, { name: "history", size: 24 }),
+        icon: createElement(MaterialIcons, { name: "history", size: 28 }),
     },
     {
         label: 'Search',
@@ -44,7 +44,7 @@ const defaultButtons: ITab[] = [
         isLoading: false,
         color: 'gray',
         activeColor: THEME.colors.primary,
-        icon: createElement(MaterialIcons, { name: "search", size: 24 }),
+        icon: createElement(MaterialIcons, { name: "search", size: 28 }),
     },
 ]
 
