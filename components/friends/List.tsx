@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC } from 'react';
 import { FlatList, StyleSheet, View, Text, StyleProp, ViewStyle } from 'react-native';
 import { THEME } from '~/constants/constants';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';

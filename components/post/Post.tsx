@@ -1,5 +1,5 @@
 import { NativeScrollEvent, NativeSyntheticEvent, View } from 'react-native'
-import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react'
+import React, { Dispatch, FC, memo, SetStateAction, useEffect, useState } from 'react'
 import { router } from 'expo-router';
 import Animated, { interpolate, SharedValue, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -9,7 +9,7 @@ import { useWindowStore } from '~/store/useWindowStore';
 import { useMessages } from '~/hooks/useMessages';
 
 import Footer from './Footer';
-import Comments from '~/components/post/comments/Comments'
+import ScrollView from '~/components/post/ScrollView'
 import Media from './media/Media';
 
 import { WindowType } from '~/types/windowTypes';
@@ -104,12 +104,7 @@ const Post: FC<PostProps> = ({ index, listLength, currentPostId, post, height, s
                 className={`flex-auto bg-grayscale rounded-3xl mx-[10px] py-3.5 gap-3 z-10`}
                 style={[animatedVerticalScrollScaling, { height: height }]}
             >
-                <Header
-                    post={post}
-                    isCurrentPost={currentPostId === post.markerId}
-                    onLayout={(e) => { headerHeight.value = e.nativeEvent.layout.height }}
-                />
-                <Comments data={messages.data || []} />
+                <ScrollView data={messages.data || []} post={post} />
                 <Footer keyboardVerticalOffset={keyboardVerticalOffset} comments={messages.data?.length || 0} />
             </Animated.View>
             {/* <Animated.View
@@ -123,4 +118,4 @@ const Post: FC<PostProps> = ({ index, listLength, currentPostId, post, height, s
     )
 }
 
-export default Post
+export default memo(Post)

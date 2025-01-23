@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { IMessage } from '~/types/MarkerInterfaces';
-import { FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { THEME } from '~/constants/constants';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
@@ -11,7 +11,7 @@ type MessageProps = {
     self: IMessage;
 };
 
-const Message: React.FC<MessageProps> = React.memo(({ self }) => {
+const Message: React.FC<MessageProps> = ({ self }) => {
 
     const [selected, setSelected] = useState<boolean>(false)
 
@@ -39,6 +39,10 @@ const Message: React.FC<MessageProps> = React.memo(({ self }) => {
                 <View>
                     <Text className='text-gray-700'>{self.content}</Text>
                 </View>
+                <View className='flex-row items-center'>
+                    <MaterialIcons name="location-on" size={12} color={THEME.colors.grayscale.darker_1x} />
+                    <Text className='text-xs text-gray-300'>USA, Los Angeles</Text>
+                </View>
             </View>
             <TouchableOpacity onPress={handlePress}>
                 <View className='flex'>
@@ -50,6 +54,6 @@ const Message: React.FC<MessageProps> = React.memo(({ self }) => {
             </TouchableOpacity>
         </View>
     );
-});
+};
 
-export default Message
+export default memo(Message)

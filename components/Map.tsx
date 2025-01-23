@@ -260,7 +260,7 @@ const Map: React.FC<IMap> = () => {
                                         {
                                             marker.label.length > 0 ?
                                                 <View style={{ height: 20, flexDirection: 'row', alignItems: 'flex-end', position: 'absolute', top: 0, transform: [{ translateY: -16 }] }}>
-                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
+                                                    {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} cachePolicy='memory' />}
                                                     <View style={{ backgroundColor: THEME.colors.accent, borderRadius: 8, padding: 2, minWidth: 15, alignItems: 'center' }}>
                                                         <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
                                                     </View>
@@ -268,7 +268,7 @@ const Map: React.FC<IMap> = () => {
                                                 <View className='flex-row items-end'>
                                                     <Circle className='absolute z-10' style={{ transform: [{ translateX: -2 }, { translateY: 2 }] }} progress={0.8} size={44} borderWidth={0} color={THEME.colors.primary} unfilledColor='rgb(249,250,251)' strokeCap='round' direction='counter-clockwise' thickness={2} />
                                                     <View className='bg-gray-50/90 rounded-full overflow-hidden'>
-                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
+                                                        {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} cachePolicy='memory' />}
                                                     </View>
                                                     <View className='z-20 absolute rounded-full p-[2] items-center min-w-[15]' style={{ backgroundColor: THEME.colors.accent, transform: [{ translateX: 5 }, { translateY: 5 }] }}>
                                                         <Text style={{ fontSize: 8, fontWeight: 'bold', color: 'grey' }} allowFontScaling={false}>{cluster.point_count}</Text>
@@ -307,7 +307,7 @@ const Map: React.FC<IMap> = () => {
                                                 (marker.icon && marker.label.length === 0) && <Circle className='absolute z-10' style={{ transform: [{ translateX: -2 }, { translateY: -2 }] }} progress={0.8} size={44} borderWidth={0} color={THEME.colors.primary} unfilledColor='rgb(249,250,251)' strokeCap='round' direction='counter-clockwise' thickness={2} />
                                             }
                                             <View className='bg-gray-50/90 rounded-full overflow-hidden'>
-                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} />}
+                                                {marker.icon && <Image source={{ uri: marker.icon }} style={{ height: iconSize, width: iconSize }} contentFit='contain' allowDownscaling={false} cachePolicy='memory' />}
                                             </View>
                                         </View>
                                     </View>

@@ -5,7 +5,14 @@
     "typeRoots": ["./node_modules/@types", "./@types", "./env.d.ts"],
     "baseUrl": ".",
     "paths": {
-      "~/*": ["*"]
+      "~/*": ["*"],
+      "@/*": ["*"],
+      "@app/*": ["app/*"],
+      "@contants/*": ["contants/*"],
+      "@components/*": ["components/*"],
+      "@hooks/*": ["hooks/*"],
+      "@services/*": ["services/*"],
+      "@store/*": ["store/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]

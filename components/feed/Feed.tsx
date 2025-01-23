@@ -2,8 +2,8 @@ import { useState, useRef, FC } from 'react';
 import { Dimensions, ViewToken } from 'react-native'
 import Animated, { SlideInDown, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Post from '~/components/post/Post';
 import { IMarker } from '~/contexts/markers/types';
+import Post from '@components/post/Post'
 import { useUserStore } from '~/store/useUserStore';
 
 
@@ -59,6 +59,7 @@ const Feed: FC = () => {
             initialNumToRender={2}
             maxToRenderPerBatch={2}
             disableScrollViewPanResponder={true}
+            removeClippedSubviews={true}
         />
     )
 }

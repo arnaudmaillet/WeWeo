@@ -1,4 +1,4 @@
-import { View, KeyboardAvoidingView, Text } from 'react-native'
+import { View, KeyboardAvoidingView, Text, ActivityIndicator } from 'react-native'
 import React, { FC, useState } from 'react'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import Input from './Input'
@@ -20,8 +20,10 @@ const Footer: FC<FooterProps> = ({ keyboardVerticalOffset, comments }: FooterPro
     const { isIncognito, setIsIncognito } = useUserStore()
     const { isKeyboardVisible } = useKeyboard()
 
+
     const [isLiked, setIsLiked] = useState<boolean>(false)
     const [isBookmarked, setIsBookmarked] = useState<boolean>(false)
+    const [isUserIconLoading, setIsUserIconLoading] = useState<boolean>(false)
 
     const { formatNumber } = useNumberFormatter()
 
@@ -56,11 +58,15 @@ const Footer: FC<FooterProps> = ({ keyboardVerticalOffset, comments }: FooterPro
                                                     <MaterialCommunityIcons name="incognito" size={24} color="gray" />
                                                 </Animated.View> :
                                                 <Animated.View entering={ZoomInEasyDown.springify().mass(.2)} exiting={ZoomOut.springify().mass(.2)} className='w-[35] h-[35] z-10 bg-grayscale-darker_2x rounded-full justify-center items-center overflow-hidden self-center'>
+                                                    {
+                                                        !isUserIconLoading && <ActivityIndicator size='small' style={{ position: 'absolute', alignSelf: 'center' }} />
+                                                    }
                                                     <Image
                                                         source={'https://wewe-files.s3.eu-west-3.amazonaws.com/stickers/sticker5.gif'}
-                                                        style={{ height: 35, width: 35 }}
+                                                        style={{ height: 35, width: 35, zIndex: 10 }}
                                                         contentFit="contain"
                                                         allowDownscaling={false}
+                                                        onLoadEnd={() => setIsUserIconLoading(true)}
                                                     />
                                                 </Animated.View>
 

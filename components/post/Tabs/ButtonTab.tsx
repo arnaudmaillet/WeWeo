@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { memo, useEffect } from 'react';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import Animated, { FadeInRight, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { THEME } from '~/constants/constants';
@@ -38,4 +38,4 @@ const ButtonTab: React.FC<ButtonTabProps> = ({ index, label, isActive, onPress }
     );
 };
 
-export default ButtonTab;
+export default memo(ButtonTab);

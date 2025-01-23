@@ -33,8 +33,8 @@ const Header: React.FC<IHeader> = ({ post, isCurrentPost, onLayout }: IHeader) =
     }));
 
     return (
-        <View className="flex p-5 gap-5 bg-grayscale-lighter_1x rounded-2xl border border-neutral-100 shadow-inner z-10 mx-3.5" onLayout={onLayout}>
-            <View className="flex-row gap-4">
+        <View className="flex p-5 gap-5 bg-grayscale-lighter_1x/90 rounded-2xl z-10" onLayout={onLayout}>
+            <View className="flex-row gap-4" onLayout={onLayout}>
                 <View className="w-[50] h-[50] z-10 bg-grayscale-darker_2x rounded-full justify-center items-center overflow-hidden">
                     <Image
                         source={{
@@ -101,14 +101,6 @@ const Header: React.FC<IHeader> = ({ post, isCurrentPost, onLayout }: IHeader) =
                         />
                     </TouchableOpacity>
                 </View>
-            </View>
-            <View className="flex-auto">
-                <Text className="text-xl font-bold text-gray-600">How to manage your money</Text>
-            </View>
-            <View className="flex-auto">
-                <Text className="font-medium text-gray-400">
-                    {post.label.length > 0 ? post.label : 'test'}
-                </Text>
             </View>
         </View>
     );

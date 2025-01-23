@@ -4,6 +4,7 @@ import { FontAwesome6, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '~/constants/constants';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
 import { useUserStore } from '~/store/useUserStore';
+import { useKeyboard } from '~/contexts/KeyboardProvider';
 
 interface InputProps {
     placeholder?: string
@@ -11,6 +12,7 @@ interface InputProps {
 
 const Input: FC<InputProps> = ({ placeholder = '' }: InputProps) => {
     const { isIncognito } = useUserStore();
+    const { isKeyboardVisible } = useKeyboard()
     const [message, setMessage] = useState<string>('');
 
     const isTyping = message !== '';
@@ -37,7 +39,7 @@ const Input: FC<InputProps> = ({ placeholder = '' }: InputProps) => {
         >
             <TextInput
                 className="flex-auto w-36 h-10"
-                placeholder={placeholder}
+                placeholder={isKeyboardVisible ? isIncognito ? "@anonymous-673646" : '@Arnaud.maillet' : placeholder}
                 onChangeText={setMessage}
             />
             <TouchableOpacity onPress={handleSendMessage}>

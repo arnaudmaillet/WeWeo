@@ -6,8 +6,8 @@ import ButtonTab from './ButtonTab'
 interface TabsProps {
     titleVisible?: boolean
     tabsVisible?: boolean
-    active: string
-    setActive: Dispatch<SetStateAction<string>>
+    active?: string
+    setActive?: Dispatch<SetStateAction<string>>
     onTitlePress?: () => void
     onLayout?: (event: LayoutChangeEvent) => void
 }
@@ -39,7 +39,7 @@ const Tabs: FC<TabsProps> = ({
                             index={index}
                             label={item}
                             isActive={active === item}
-                            onPress={() => setActive(item)}
+                            onPress={() => setActive && setActive(item)}
                         />
                     )}
                 />

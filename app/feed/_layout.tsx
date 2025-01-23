@@ -1,11 +1,12 @@
 import { Stack } from "expo-router";
 
-const PostLayout = () => {
+const Layout = () => {
     return (
         <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" options={{ contentStyle: { backgroundColor: 'transparent' } }} />
+            <Stack.Screen name="viewer" options={{ title: 'Viewer', animation: 'slide_from_bottom', gestureDirection: 'vertical', contentStyle: { borderRadius: 20, overflow: "hidden" } }} />
         </Stack>
     );
 };
 
-export default PostLayout
+export default Layout

@@ -46,6 +46,7 @@ const fetchPosts = async (): Promise<IMarker[]> => {
     });
 
     return Array.from(allPosts.values());
+    // return [Array.from(allPosts.values())[0]] as IMarker[];
 };
 
 export { fetchPosts }
