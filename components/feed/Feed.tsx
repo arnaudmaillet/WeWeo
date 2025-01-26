@@ -10,14 +10,13 @@ import { useUserStore } from '~/store/useUserStore';
 const Feed: FC = () => {
     const insets = useSafeAreaInsets();
 
-    const { user, postFeed } = useUserStore()
+    const { user, postFeed, activePost, setActivePost } = useUserStore()
     const { height } = Dimensions.get('window')
 
     const itemSpacing = 8
     const itemHeight = height * 0.85
     const itemFullHeight = itemHeight + itemSpacing
 
-    const [currentPost, setCurrentPost] = useState<IMarker | null>(null)
     const [isHeaderVisible, setIsHeaderVisible] = useState<boolean>(true)
 
     const scrollY = useSharedValue(0)
@@ -27,7 +26,7 @@ const Feed: FC = () => {
 
     const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
         if (viewableItems.length > 0) {
-            setCurrentPost(viewableItems[0].item)
+            setActivePost(viewableItems[0].item)
         }
     }).current;
 
@@ -37,7 +36,6 @@ const Feed: FC = () => {
             renderItem={({ item, index }) => (
                 <Post
                     post={item}
-                    currentPostId={currentPost?.markerId}
                     index={index}
                     listLength={postFeed!.length}
                     height={itemHeight}

@@ -10,8 +10,9 @@ export const THEME = {
         border: '#000000',
         shadow: '#000000',
         error: '#FF0000',
-        success: '#008000',
-        warning: '#FFA500',
+        success: '#00A64E',
+        warning: '#E0A600',
+        danger: '#E05A5A',
         info: '#00BFFF',
         disabled: '#A9A9A9',
         grayscale: {
@@ -72,7 +73,8 @@ export const INPUT = {
 
 export const QUERY_OPTIONS = {
     staleTime: 5 * 60 * 1000, // Cache les données pendant 5 minutes
-    retry: 1
+    retry: 1,
+    debounce: 1000
 }
 
 export enum QueryKey {
@@ -81,7 +83,8 @@ export enum QueryKey {
     FRIENDS = "friends",
     HISTORY = "history",
     MESSAGES = "messages",
-    SUBSCRIPTIONS = "subscriptions"
+    SUBSCRIPTIONS = "subscriptions",
+    LIKES= "likes"
 }
 
 // Mmkv storage keys

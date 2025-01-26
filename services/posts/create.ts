@@ -1,12 +1,12 @@
 import { addDoc, collection, GeoPoint } from "firebase/firestore";
 import { firestore } from "~/firebase";
 
-interface IPostPayloadOnCreate {
+type Payload = {
     coordinates: { lat: number; long: number };
     [key: string]: any;
 }
 
-const create = async (payload: IPostPayloadOnCreate, userId?: string): Promise<void> => {
+const create = async (payload: Payload, userId?: string): Promise<void> => {
 
     const { coordinates, ...rest } = payload;
 
@@ -26,4 +26,4 @@ const create = async (payload: IPostPayloadOnCreate, userId?: string): Promise<v
     });
 };
 
-export { create as createPost, IPostPayloadOnCreate }
+export { create as createPost, Payload as PostPayload }

@@ -1,13 +1,13 @@
 import { LayoutChangeEvent, Text, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Image } from 'expo-image';
-import { IMarker } from '~/contexts/markers/types';
-import { THEME } from '~/constants/constants';
 import { Circle } from 'react-native-progress';
 import { MaterialIcons } from '@expo/vector-icons';
 import { TouchableOpacity, TouchableWithoutFeedback } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { IMarker } from '@contexts/markers/types';
+import { THEME } from '@constants/constants';
 interface IHeader {
     post: IMarker;
     isCurrentPost: boolean;
@@ -59,10 +59,7 @@ const Header: React.FC<IHeader> = ({ post, isCurrentPost, onLayout }: IHeader) =
                     direction="counter-clockwise"
                 />
                 <View className="flex flex-auto gap-[5px]">
-                    <View className="flex-row gap-[5px] items-center">
-                        <Text className="font-semibold text-gray-700">Arnaud M</Text>
-                        <Text className="text-sm text-gray-300">- 2m</Text>
-                    </View>
+                    <Text className="font-semibold text-gray-700">Arnaud M</Text>
                     <View className="flex-auto flex-row items-center gap-[5px]">
                         <View className="w-[25] h-[25] z-10 bg-grayscale-darker_2x rounded-full justify-center items-center overflow-hidden self-center">
                             <Image

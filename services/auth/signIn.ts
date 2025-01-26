@@ -3,10 +3,6 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { IUser } from '~/types/userTypes';
 
-interface UserWithToken {
-    user: IUser;
-    token: string;
-}
 
 /**
  * Authentifie un utilisateur via Firebase et récupère les données utilisateur depuis Firestore.
@@ -16,7 +12,7 @@ interface UserWithToken {
  * @throws Erreur si l'utilisateur ou ses données ne sont pas trouvées
  */
 
-const signIn = async (email: string, password: string): Promise<UserWithToken> => {
+const signIn = async (email: string, password: string): Promise<IUser> => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
@@ -26,12 +22,8 @@ const signIn = async (email: string, password: string): Promise<UserWithToken> =
     }
 
     const userData = userDoc.data() as IUser;
-    const token = await firebaseUser.getIdToken();
 
-    return {
-        user: { ...userData, userId: firebaseUser.uid },
-        token,
-    };
+    return { ...userData, userId: firebaseUser.uid }
 };
 
-export { signIn as signInUser, UserWithToken }
+export { signIn as signInUser }

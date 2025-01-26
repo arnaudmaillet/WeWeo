@@ -8,12 +8,8 @@ import { QueryKey, QUERY_OPTIONS } from "~/constants/constants";
 
 import { fetchPosts } from "~/services/posts/fetch";
 import { useUserStore } from "~/store/useUserStore";
-import { createPost, IPostPayloadOnCreate } from "~/services/posts/create";
+import { createPost, PostPayload } from "~/services/posts/create";
 
-interface createParams {
-    payload: IPostPayloadOnCreate;
-    userId?: string;
-}
 
 const usePosts = () => {
     const { user } = useUserStore()
@@ -39,8 +35,8 @@ const usePosts = () => {
     }, [isError])
 
 
-    const mutation = useMutation({
-        mutationFn: ({ payload, userId }: createParams) => createPost(payload, userId),
+    const mutationCreate = useMutation({
+        mutationFn: (payload: PostPayload) => createPost(payload, user?.userId),
         onMutate: () => setLoading(TabType.DISCOVER, true),
         onError: (error: any) => console.error("Error adding post to history:", error),
         onSettled: () => setLoading(TabType.DISCOVER, false),
@@ -48,7 +44,7 @@ const usePosts = () => {
 
     return {
         posts: queryResult,
-        createPost: (payload: IPostPayloadOnCreate, overrideUserId?: string) => { mutation.mutate({ payload, userId: overrideUserId ?? user?.userId }) }
+        createPost: (payload: PostPayload) => { mutationCreate.mutate(payload) },
     }
 };
 

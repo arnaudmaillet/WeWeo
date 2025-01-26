@@ -1,13 +1,14 @@
 import { View, Text } from 'react-native'
 import React, { FC, useMemo, useState } from 'react'
-import { IMarker } from '~/contexts/markers/types'
+import { IMarker } from '@contexts/markers/types'
 import { FlatList } from 'react-native-gesture-handler'
-import Image from './media/gallery/Image'
+import Image from '@components/post/media/gallery/Image'
+import { MaterialIcons } from '@expo/vector-icons'
+import { THEME } from '~/constants/constants'
 
 interface ContentProps {
     post: IMarker
 }
-
 
 const imagesUri = [
     "https://images.unsplash.com/photo-1529391387768-ab39476d6a52?q=80&w=2126&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -53,8 +54,15 @@ const Content: FC<ContentProps> = ({ post }: ContentProps) => {
 
     return (
         <View className='px-3.5 gap-5'>
-            <View className="flex-auto">
-                <Text className="text-xl font-bold text-gray-600">How to manage your money</Text>
+            <View className='flex-auto gap-0.5'>
+                <View className="flex-auto flex-row gap-2">
+                    <Text className="text-xl font-bold text-gray-600 leading-7">How to manage your money</Text>
+                    <Text className="text-sm text-gray-300 leading-7">- 2m</Text>
+                </View>
+                <View className='flex-row items-center'>
+                    <MaterialIcons name="location-on" size={12} color={THEME.colors.grayscale.darker_1x} />
+                    <Text className='text-xs text-gray-300'>USA, Los Angeles</Text>
+                </View>
             </View>
             <View className="flex-auto">
                 <Text className="font-medium text-gray-400">
@@ -86,7 +94,6 @@ const Content: FC<ContentProps> = ({ post }: ContentProps) => {
                 }
 
             </View>
-
         </View>
     )
 }

@@ -1,7 +1,7 @@
 import { View, Text, LayoutChangeEvent } from 'react-native'
 import React, { Dispatch, FC, SetStateAction } from 'react'
 import { FlatList, TouchableOpacity } from 'react-native-gesture-handler'
-import ButtonTab from './ButtonTab'
+import ButtonTab from '@components/post/tabs/ButtonTab'
 
 interface TabsProps {
     titleVisible?: boolean
@@ -21,10 +21,10 @@ const Tabs: FC<TabsProps> = ({
     onLayout
 }: TabsProps) => {
     return (
-        <View className='flex-row gap-3 bg-grayscale-lighter_1x/[.93] p-3 rounded-2xl' onLayout={onLayout}>
+        <View className='flex-row gap-3 bg-grayscale-lighter_1x/[.93] p-5 rounded-2xl' onLayout={onLayout}>
             {
                 titleVisible && <TouchableOpacity onPress={onTitlePress}>
-                    <Text className='self-center text-2xl font-semibold text-gray-400'>Comments</Text>
+                    <Text className='self-center text-2xl font-semibold text-gray-500'>Comments</Text>
                 </TouchableOpacity>
             }
             {

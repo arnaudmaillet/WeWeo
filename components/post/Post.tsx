@@ -8,15 +8,17 @@ import { useUserStore } from '~/store/useUserStore';
 import { useWindowStore } from '~/store/useWindowStore';
 import { useMessages } from '~/hooks/useMessages';
 
-import Footer from './Footer';
-import ScrollView from '~/components/post/ScrollView'
+import ChatScrollView from '@components/post/chat/ScrollView'
+
+import ThreadFooter from '@components/post/Footer';
+import ThreadScrollView from '@components/post/thread/ScrollView'
 import Media from './media/Media';
 
 import { WindowType } from '~/types/windowTypes';
 import { IMarker } from '~/contexts/markers/types';
 
 import { KEYBOARD_VERTICAL_OFFSET } from '~/constants/constants';
-import Header from './Header';
+import Header from './thread/Header';
 
 const MARGIN_CARD_X = 10
 const BORDER_CARD_WIDTH = 5
@@ -25,14 +27,13 @@ interface PostProps {
     index: number
     listLength: number
     post: IMarker
-    currentPostId?: string
     height: number
     scrollY: SharedValue<number>
     isHeaderVisible: boolean
     setIsHeaderVisible: Dispatch<SetStateAction<boolean>>
 }
 
-const Post: FC<PostProps> = ({ index, listLength, currentPostId, post, height, scrollY, isHeaderVisible, setIsHeaderVisible }: PostProps) => {
+const Post: FC<PostProps> = ({ index, listLength, post, height, scrollY, isHeaderVisible, setIsHeaderVisible }: PostProps) => {
 
     const { setActivePost } = useUserStore()
     const { set: setWindow } = useWindowStore()
@@ -92,6 +93,7 @@ const Post: FC<PostProps> = ({ index, listLength, currentPostId, post, height, s
         backgroundColor.value = withTiming(1, { duration: 1000 });
     }, []);
 
+
     return (
         <Swipeable
             renderLeftActions={renderLeftActions}
@@ -104,9 +106,19 @@ const Post: FC<PostProps> = ({ index, listLength, currentPostId, post, height, s
                 className={`flex-auto bg-grayscale rounded-3xl mx-[10px] py-3.5 gap-3 z-10`}
                 style={[animatedVerticalScrollScaling, { height: height }]}
             >
-                <ScrollView data={messages.data || []} post={post} />
-                <Footer keyboardVerticalOffset={keyboardVerticalOffset} comments={messages.data?.length || 0} />
+                <ChatScrollView post={post} data={messages.data || []} />
+                <ThreadFooter post={post} keyboardVerticalOffset={keyboardVerticalOffset} comments={messages.data?.length || 0} />
             </Animated.View>
+
+            {/* <Animated.View
+                className={`flex-auto bg-grayscale rounded-3xl mx-[10px] py-3.5 gap-3 z-10`}
+                style={[animatedVerticalScrollScaling, { height: height }]}
+            >
+                <ThreadScrollView data={messages.data || []} post={post} />
+                <ThreadFooter keyboardVerticalOffset={keyboardVerticalOffset} comments={messages.data?.length || 0} />
+            </Animated.View> */}
+
+
             {/* <Animated.View
                 className={`flex-auto rounded-3xl mx-[${MARGIN_CARD_X}px] border-[${BORDER_CARD_WIDTH}px] border-grayscale gap-3 z-10 overflow-hidden`}
                 style={[animatedVerticalScrollScaling, animatedBackgroundOpacity, { height: height }]}
